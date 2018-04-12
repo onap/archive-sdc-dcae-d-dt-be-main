@@ -1,0 +1,12 @@
+.classpath
+.settings/
+.project
+.DS_Store
+
+#a bit dangerous, make sure we do not have any package named target ..
+**/target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties

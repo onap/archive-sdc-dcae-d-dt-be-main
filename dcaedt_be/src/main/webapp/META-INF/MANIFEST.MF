@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Implementation-Title: dcae-be
+Implementation-Version: APPLICATION_VERSION
+Implementation-Vendor-Id: org.onap.sdc.dcae
+Build-Jdk: 1.7.0_45
+Created-By: Apache Maven 3.2.1
+Archiver-Version: Plexus Archiver
+Specification-Version: 1707.0.0-SNAPSHOT

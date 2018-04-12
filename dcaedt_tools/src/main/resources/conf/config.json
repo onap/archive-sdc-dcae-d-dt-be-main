@@ -1,0 +1,51 @@
+{
+	"templateInfo": [{
+		"name": "SNMP Fault",
+		"description": "SNMP FM with Map-Supplement-Enrich",
+		"category": "Template",
+		"subCategory":"Base Monitoring Template",
+		"updateIfExist": "true",
+		"composition": [{
+			"type": "Map",
+			"alias": "mapper"
+		}, {
+			"type": "Supplement",
+			"alias": "sup"
+		}, {
+			"type": "Enrich",
+			"alias": "enrich"
+		}]
+	},
+		{
+			"name": "FOI",
+			"description": "FOI SFTP with FOI-Collector and Docker-Map",
+			"category": "Template",
+			"subCategory":"Base Monitoring Template",
+			"updateIfExist": "true",
+			"composition": [{
+				"type": "foi",
+				"alias": "collector"
+			}, {
+				"type": "DockerMap",
+				"alias": "map"
+			}],
+			"relations": [{
+				"fromComponent": "collector.foi",
+				"fromRequirement": "stream_publish_0",
+				"toComponent": "map.feed0",
+				"toCapability": "feed"
+			}]
+		},
+		{
+			"name": "Syslog non-VES Collector",
+			"description": "Syslog flow with Syslog Collector",
+			"category": "Template",
+			"subCategory": "Base Monitoring Template",
+			"updateIfExist": "true",
+			"composition": [{
+				"type": "Syslog",
+				"alias": "collector"
+			}]
+		}
+	]
+}

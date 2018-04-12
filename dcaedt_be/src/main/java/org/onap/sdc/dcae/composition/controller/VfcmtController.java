@@ -1,0 +1,183 @@
+package org.onap.sdc.dcae.composition.controller;
+
+import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.dcae.composition.impl.ReferenceBusinessLogic;
+import org.onap.sdc.dcae.composition.impl.VfcmtBusinessLogic;
+import org.onap.sdc.dcae.composition.restmodels.CreateVFCMTRequest;
+import org.onap.sdc.dcae.composition.restmodels.ImportVFCMTRequest;
+import org.onap.sdc.dcae.composition.restmodels.sdc.ExternalReferencesMap;
+import org.onap.sdc.dcae.composition.restmodels.sdc.Resource;
+import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
+import org.onap.sdc.dcae.errormng.ErrConfMgr.ApiType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@EnableAutoConfiguration
+@CrossOrigin
+public class VfcmtController extends BaseController{
+
+
+	@Autowired
+	private VfcmtBusinessLogic vfcmtBusinessLogic;
+    @Autowired
+    private ReferenceBusinessLogic referenceBusinessLogic;
+
+	private static final String VFCMT = "VFCMT";
+	private static final String TEMPLATE = "Template";
+    private static final String BASE_MONITORING_TEMPLATE = "Base Monitoring Template";
+
+
+
+    /***
+     * Get one resource information
+     * @param theResourceId retrieved resource id
+     * @return ResponseEntity
+     */
+    @RequestMapping(value = { "/resource/{theResourceId}" }, method = { RequestMethod.GET }, produces = {"application/json" })
+    public ResponseEntity resource(@PathVariable String theResourceId, @ModelAttribute("requestId") String requestId) {
+        try {
+            ResourceDetailed resource = baseBusinessLogic.getSdcRestClient().getResource(theResourceId, requestId);
+            return new ResponseEntity<>(resource, HttpStatus.OK);
+        }catch (Exception e) {
+            return handleException(e, ApiType.GET_VFCMT);
+        }
+    }
+
+    /***
+     * Get All resources
+     * @return ResponseEntity
+     */
+    @RequestMapping(value = { "/getResourcesByCategory" }, method = { RequestMethod.GET }, produces = {"application/json" })
+    public ResponseEntity getResourcesByCategory(@ModelAttribute("requestId") String requestId) {
+        try {
+            List<Resource> resources = baseBusinessLogic.getSdcRestClient().getResources(VFCMT, null, null, requestId);
+            return new ResponseEntity<>(resources, HttpStatus.OK);
+        } catch (Exception e) {
+            return handleException(e, ApiType.GET_ALL_VFCMTS);
+        }
+    }
+
+    /***
+     * Get All resources by Service
+     * @return ResponseEntity
+     */
+
+    @RequestMapping(value = { "/{contextType}/{uuid}/{version}/getVfcmtsForMigration" }, method = { RequestMethod.GET }, produces = {"application/json" })
+    public ResponseEntity getVfcmtsForMigration(@RequestHeader("USER_ID") String userId,
+                                                       @PathVariable String contextType,
+                                                       @PathVariable String uuid,
+                                                       @PathVariable String version,
+                                                       @ModelAttribute("requestId") String requestId){
+
+        return vfcmtBusinessLogic.getVfcmtsForMigration(userId, contextType, uuid, version, requestId);
+    }
+
+    /***
+     * Get All resources by Monitoring Template Category
+     * @return ResponseEntity
+     */
+    @RequestMapping(value = { "/getResourcesByMonitoringTemplateCategory" }, method = { RequestMethod.GET }, produces = {"application/json" })
+    public ResponseEntity getResourcesByMonitoringTemplateCategory(@ModelAttribute("requestId") String requestId) {
+        try {
+            List<Resource> resources = baseBusinessLogic.getSdcRestClient().getResources(VFCMT, TEMPLATE, BASE_MONITORING_TEMPLATE, requestId);
+            return new ResponseEntity<>(resources, HttpStatus.OK);
+        } catch (Exception e) {
+            return handleException(e, ApiType.GET_ALL_VFCMTS);
+        }
+    }
+
+    /***
+     * Create new Vfcmt
+     * @param userId retrieved user ID
+     * @param request retrieved request
+     * @return ResponseEntity
+     */
+    @RequestMapping(value = "/createVFCMT", method = RequestMethod.POST, produces = {"application/json" })
+    public ResponseEntity createVFCMT(@RequestHeader("USER_ID") String userId, @RequestBody CreateVFCMTRequest request, @ModelAttribute("requestId") String requestId) {
+		vfcmtBusinessLogic.addSdcMandatoryFields(request, userId);
+        try {
+            ResourceDetailed response = baseBusinessLogic.getSdcRestClient().createResource(userId, request, requestId);
+            debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "createVFCMT after post: {}", response);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            return handleException(e, ApiType.CREATE_NEW_VFCMT);
+        }
+    }
+
+    /***
+     * Create new Vfcmt from general screen
+     * @param userId retrieved user ID
+     * @param request retrieved request
+     * @return ResponseEntity
+     */
+    @RequestMapping(value = "/createMC", method = RequestMethod.POST, produces = {"application/json" })
+    public ResponseEntity createMC(@RequestHeader("USER_ID") String userId, @RequestBody CreateVFCMTRequest request, @ModelAttribute("requestId") String requestId) {
+        return vfcmtBusinessLogic.createMcFromTemplate(userId, request, requestId);
+    }
+
+
+	/***
+	 * Clone or import existing VFCMT and attach to selected service/resource
+	 * @param userId
+	 * @param request
+	 * @return ResponseEntity
+	 */
+	@RequestMapping(value = "/importMC", method = RequestMethod.POST, produces = {"application/json" })
+	public ResponseEntity importMC(@RequestHeader("USER_ID") String userId, @RequestBody ImportVFCMTRequest request, @ModelAttribute("requestId") String requestId) {
+		return vfcmtBusinessLogic.importMC(userId, request, requestId);
+	}
+
+    /***
+     * GET a list of Monitoring Components of a service by uuid and version
+     * @param context the context type of this request
+     * @param uuid the uuid of the type requested
+     * @param version the version of the entity requested
+     * @return ResponseEntity
+     */
+    @RequestMapping(value = { "/{context}/{uuid}/{version}/monitoringComponents" }, method = { RequestMethod.GET }, produces = {"application/json" })
+    public ResponseEntity getMonitoringComponents(@PathVariable String context, @PathVariable String uuid, @PathVariable String version, @ModelAttribute("requestId") String requestId) {
+        try {
+            ExternalReferencesMap mcRefs = baseBusinessLogic.getSdcRestClient().getMonitoringReferences(context, uuid, version, requestId);
+            debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Got monitoring references map from SDC: {}", mcRefs.values());
+            return new ResponseEntity<>(referenceBusinessLogic.fetchMonitoringComponents(mcRefs, requestId), HttpStatus.OK);
+        } catch (Exception e) {
+            return handleException(e, ApiType.GET_SERVICE);
+        }
+    }
+
+    @RequestMapping(value = { "/{context}/{serviceUuid}/{vfiName}/{vfcmtUuid}/deleteVfcmtReference" }, method = { RequestMethod.DELETE }, produces = {"application/json" })
+    public ResponseEntity deleteVfcmtReference(@RequestHeader("USER_ID")  String userId, @PathVariable String context, @PathVariable String serviceUuid, @PathVariable String vfiName, @PathVariable String vfcmtUuid, @ModelAttribute String requestId) {
+        try {
+            referenceBusinessLogic.deleteVfcmtReference(userId, context, serviceUuid, vfiName, vfcmtUuid, requestId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return handleException(e, ApiType.DELETE_VFCMT_REFERENCE);
+        }
+    }
+
+    @RequestMapping(value = { "/{context}/{monitoringComponentName}/{serviceUuid}/{vfiName}/{vfcmtUuid}/deleteVfcmtReference" }, method = { RequestMethod.DELETE }, produces = {"application/json" })
+    public ResponseEntity deleteVfcmtReferenceWithBlueprint(@RequestHeader("USER_ID")  String userId, @PathVariable String context, @PathVariable String monitoringComponentName, @PathVariable String serviceUuid, @PathVariable String vfiName, @PathVariable String vfcmtUuid, @ModelAttribute String requestId) {
+        try {
+            referenceBusinessLogic.deleteVfcmtReference(userId, context, serviceUuid, vfiName, vfcmtUuid, requestId);
+        } catch (Exception e) {
+            return handleException(e, ApiType.DELETE_VFCMT_REFERENCE);
+        }
+        return referenceBusinessLogic.deleteVfcmtReferenceBlueprint(userId, context, monitoringComponentName, serviceUuid, vfiName, vfcmtUuid, requestId);
+    }
+
+	@RequestMapping(value = { "/getVfcmtReferenceData/{vfcmtUuid}" }, method = { RequestMethod.GET }, produces = {"application/json" })
+	public ResponseEntity getVfcmtReferenceData(@PathVariable String vfcmtUuid, @ModelAttribute String requestId) {
+		try {
+			return vfcmtBusinessLogic.getVfcmtReferenceData(vfcmtUuid, requestId);
+		} catch (Exception e) {
+			return handleException(e, ApiType.GET_VFCMT);
+		}
+	}
+
+}

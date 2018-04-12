@@ -1,0 +1,288 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+	
+	"definitions": {
+
+		"otherFields": {
+			"description": "additional fields not reported elsewhere",
+			"type": "array",
+			"items":
+				"$ref": "#/definitions/field"
+			}
+		},
+		"requestError": {
+			"description": "standard request error data structure",
+			"type": "object",
+			"properties": {
+			    "messageId": {
+					"description": "Unique message identifier of the format ABCnnnn where ABC is either SVC for Service Exceptions or POL for Policy Exception",
+					"type": "string"
+				},
+				"text": {
+					"description": "Message text, with replacement variables marked with %n, where n is an index into the list of <variables> elements, starting at 1",
+					"type": "string"
+				},
+				"url": {
+					"description": "Hyperlink to a detailed error resource e.g., an HTML page for browser user agents",
+					"type": "string"
+				},
+				"variables": {
+					"description": "List of zero or more strings that represent the contents of the variables used by the message text",
+					"type": "string"
+				}
+			},
+			"required": [ "messageId", "text" ]
+		},
+		"stateChangeFields": {
+			"description": "stateChange fields",
+			"type": "object",
+			"properties": {
+				"additionalFields": {
+					"description": "additional stateChange fields if needed",
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/field"
+					}
+				},
+				"newState": {
+					"description": "new state of the entity",
+					"type": "string",
+					"enum": [
+						"inService",
+						"maintenance",
+						"outOfService"
+					]
+				},
+				"oldState": {
+					"description": "previous state of the entity",
+					"type": "string",
+					"enum": [
+						"inService",
+						"maintenance",
+						"outOfService"
+					]
+				},
+				"stateChangeFieldsVersion": {
+					"description": "version of the stateChangeFields block",
+					"type": "number"
+				},
+				"stateInterface": {
+					"description": "card or port name of the entity that changed state",
+					"type": "string"
+				}
+			},
+			"required": [ "newState", "oldState", "stateInterface" ]
+		},
+		"suppressedNvPairs": {
+			"description": "List of specific NvPairsNames to suppress within a given Name-Value Field for event Throttling",
+			"type": "object",
+			"properties": {
+				"nvPairFieldName": {
+					"description": "Name of the field within which are the nvpair names to suppress",
+					"type": "string"
+				},
+				"suppressedNvPairNames": {
+					"description": "Array of nvpair names to suppress within the nvpairFieldName",
+			        "type": "array",
+					"items": {
+					    "type": "string"
+					}
+				}
+			},
+			"required": [ "nvPairFieldName", "suppressedNvPairNames" ]
+		},
+		"syslogFields": {
+			"description": "sysLog fields",
+			"type": "object",
+			"properties": {
+				"additionalFields": {
+					"description": "additional syslog fields if needed",
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/field"
+					}
+				},
+				"eventSourceHost": {
+					"description": "hostname of the device",
+					"type": "string"
+				},
+				"eventSourceType": {
+					"description": "type of event source; examples: other, router, switch, host, card, port, slotThreshold, portThreshold, virtualMachine, virtualNetworkFunction",
+					"type": "string"
+				},
+				"syslogFacility": {
+					"description": "numeric code from 0 to 23 for facility--see table in documentation",
+					"type": "number"
+				},
+				"syslogFieldsVersion": {
+					"description": "version of the syslogFields block",
+					"type": "number"
+				},
+				"syslogMsg": {
+					"description": "syslog message",
+					"type": "string"
+				},
+				"syslogPri": {
+					"description": "0-192 combined severity and facility",
+					"type": "number"
+				},
+				"syslogProc": {
+					"description": "identifies the application that originated the message",
+					"type": "string"
+				},
+				"syslogProcId": {
+					"description": "a change in the value of this field indicates a discontinuity in syslog reporting",
+					"type": "number"
+				},
+				"syslogSData": {
+					"description": "syslog structured data consisting of a structured data Id followed by a set of key value pairs",
+					"type": "string"
+				},
+				"syslogSdId": {
+					"description": "0-32 char in format name@number for example ourSDID@32473",
+					"type": "string"
+				},
+				"syslogSev": {
+					"description": "numerical Code for  severity derived from syslogPri as remaider of syslogPri / 8",
+					"type": "string"
+				},
+				"syslogTag": {
+					"description": "msgId indicating the type of message such as TCPOUT or TCPIN; NILVALUE should be used when no other value can be provided",
+					"type": "string"
+				},
+				"syslogVer": {
+					"description": "IANA assigned version of the syslog protocol specification - typically 1",
+					"type": "number"
+				}
+			},
+			"required": [ "eventSourceType", "syslogMsg", "syslogTag" ]
+		},
+		"thresholdCrossingAlertFields": {
+			"description": "fields specific to threshold crossing alert events",
+			"type": "object",
+			"properties": {
+				"additionalFields": {
+					"description": "additional threshold crossing alert fields if needed",
+					"type": "array",
+					"items": {  
+						"$ref": "#/definitions/field" 
+					}
+				},
+				"additionalParameters": {
+					"description": "performance counters",
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/counter"
+					}
+				},
+				"alertAction": {
+					"description": "Event action",
+					"type": "string",
+					"enum": [
+						"CLEAR",
+						"CONT",
+						"SET"
+					]
+				},
+				"alertDescription": {
+					"description": "Unique short alert description such as IF-SHUB-ERRDROP",
+					"type": "string"
+				},
+				"alertType": {
+					"description": "Event type",
+					"type": "string",
+					"enum": [
+						"CARD-ANOMALY",
+						"ELEMENT-ANOMALY",
+						"INTERFACE-ANOMALY",
+						"SERVICE-ANOMALY"
+					]
+				},
+				"alertValue": {
+					"description": "Calculated API value (if applicable)",
+					"type": "string"
+				},
+				"associatedAlertIdList": {
+					"description": "List of eventIds associated with the event being reported",
+					"type": "array",
+					"items": { "type": "string" }
+				},
+				"collectionTimestamp": {
+					"description": "Time when the performance collector picked up the data; with RFC 2822 compliant format: Sat, 13 Mar 2010 11:29:05 -0800",
+					"type": "string"
+				},
+				"dataCollector": {
+					"description": "Specific performance collector instance used",
+					"type": "string"
+				},
+				"elementType": {
+					"description": "type of network element - internal ATT field",
+					"type": "string"
+				},
+				"eventSeverity": {
+					"description": "event severity or priority",
+					"type": "string",
+					"enum": [
+						"CRITICAL",
+						"MAJOR",
+						"MINOR",
+						"WARNING",
+						"NORMAL"
+					]
+				},
+				"eventStartTimestamp": {
+					"description": "Time closest to when the measurement was made; with RFC 2822 compliant format: Sat, 13 Mar 2010 11:29:05 -0800",
+					"type": "string"
+				},
+				"interfaceName": {
+					"description": "Physical or logical port or card (if applicable)",
+					"type": "string"
+				},
+				"networkService": {
+					"description": "network name - internal ATT field",
+					"type": "string"
+				},
+				"possibleRootCause": {
+					"description": "Reserved for future use",
+					"type": "string"
+				},
+				"thresholdCrossingFieldsVersion": {
+					"description": "version of the thresholdCrossingAlertFields block",
+					"type": "number"
+				}
+			},
+			"required": [
+				"additionalParameters",
+				"alertAction",
+				"alertDescription",
+				"alertType",
+				"collectionTimestamp",
+				"eventSeverity",
+				"eventStartTimestamp"
+			]
+		},
+		"vNicUsage": {
+			"description": "usage of identified virtual network interface card",
+			"type": "object",
+			"properties": {
+				"broadcastPacketsIn": { "type": "number" },
+				"broadcastPacketsOut": { "type": "number" },
+				"bytesIn": { "type": "number" },
+				"bytesOut": { "type": "number" },
+				"multicastPacketsIn": { "type": "number" },
+				"multicastPacketsOut": { "type": "number" },
+				"packetsIn": { "type": "number" },
+				"packetsOut": { "type": "number" },
+				"unicastPacketsIn": { "type": "number" },
+				"unicastPacketsOut": { "type": "number" },
+				"vNicIdentifier": { "type": "string" }
+			},
+			"required": [ "bytesIn", "bytesOut", "packetsIn", "packetsOut", "vNicIdentifier"]
+		}
+	},
+	"title": "Event Listener",
+	"type": "object",
+	"properties": {
+        "event": {"$ref": "#/definitions/event"}
+    }
+}

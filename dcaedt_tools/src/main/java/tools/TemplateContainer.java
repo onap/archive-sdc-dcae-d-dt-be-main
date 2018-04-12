@@ -1,0 +1,329 @@
+package tools;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import json.response.ItemsResponse.Item;
+import json.templateInfo.Composition;
+import json.templateInfo.Relation;
+import json.templateInfo.TemplateInfo;
+import org.apache.commons.lang3.StringUtils;
+import utilities.IDcaeRestClient;
+import utilities.IReport;
+
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+
+
+public class TemplateContainer {
+    private static final String NODES = "nodes";
+    private static final String RELATIONSHIP = "relationship";
+    private static long nidCounter = 0;
+    private final IReport report;
+    private final IDcaeRestClient dcaeRestClient;
+    private final List<TemplateInfo> templateInfos;
+    private final Map<String, List<Item>> elementsByFolderNames;
+    private LoggerDebug debugLogger = LoggerDebug.getInstance();
+
+
+    public TemplateContainer(IReport report, IDcaeRestClient dcaeRestClient, List<TemplateInfo> templateInfos, Map<String, List<Item>> elementsByFolderNames) {
+        this.report = report;
+        this.dcaeRestClient = dcaeRestClient;
+        this.templateInfos = templateInfos;
+        this.elementsByFolderNames = elementsByFolderNames;
+    }
+
+    private List<Item> findTemplate(TemplateInfo templateInfo) {
+        AtomicReference<List<Item>> items = new AtomicReference<>();
+        items.set(new ArrayList<>());
+        elementsByFolderNames.keySet().stream()
+                .forEach(folderName -> {
+                    List<Item> itemList = returnMatchedTemplate(folderName, templateInfo);
+                    items.get().addAll(itemList);
+                });
+        if (items.get().size() == templateInfo.getComposition().size()) {
+            return items.get();
+        }
+        return new ArrayList<>();
+    }
+
+    private List<Item> returnMatchedTemplate(String folderName, TemplateInfo templateInfo) {
+        List<Item> items = new ArrayList<>();
+        elementsByFolderNames.get(folderName).stream()
+                .forEach(item -> templateInfo.getComposition().stream().forEach(composition ->
+                {
+                    if (composition.getType().equalsIgnoreCase(item.getName())) {
+                        items.add(item);
+                    }
+                }));
+        return items;
+    }
+
+
+    public Map<TemplateInfo, JsonObject> getCdumps() {
+        Map<TemplateInfo, JsonObject> templateInfoToJsonObjectMap = new HashMap<>();
+        for (TemplateInfo templateInfo : templateInfos) {
+            List<Item> items = findTemplate(templateInfo);
+            if (items == null || items.isEmpty()) {
+                report.addErrorMessage("vfcmt: " + templateInfo.getName() + ". DCAE Component not found");
+                continue;
+            }
+            templateInfoToJsonObjectMap.put(templateInfo, getCdumpJsonObject(items, templateInfo));
+        }
+        return templateInfoToJsonObjectMap;
+    }
+
+    private JsonObject getCdumpJsonObject(List<Item> items, TemplateInfo templateInfo) {
+        JsonObject cdumpJsonObject = generateCdumpInput(templateInfo);
+        Map<Item, Map<String, NodeData>> itemMapHashMap = new HashMap<>();
+        JsonArray relationsJsonArray = new JsonArray();
+        for (Item item : items) {
+            debugLogger.log("Creating cdump for item: " + item.getName());
+            JsonArray jsonArrayNode = cdumpJsonObject.getAsJsonArray(NODES);
+            JsonParser jsonParser = new JsonParser();
+            JsonArray allNodeTemplates = jsonParser.parse(dcaeRestClient.getItemModel(item.getItemId())).getAsJsonObject().get("data").getAsJsonObject().get("model").getAsJsonObject().get(NODES).getAsJsonArray();
+            Map<String, NodeData> stringRelationsDataMap = new HashMap<>();
+            for (JsonElement nodeElement : allNodeTemplates) {
+                JsonObject responseModelJson = nodeElement.getAsJsonObject();
+                JsonObject responseTypeInfoJson = jsonParser.parse(dcaeRestClient.getItemType(item.getItemId(), responseModelJson.get("type").getAsString())).getAsJsonObject().get("data").getAsJsonObject().get("type").getAsJsonObject();
+                JsonObject jsonObjectElement = newVfcmtJSON(responseModelJson.get("name").getAsString(), item.getModels().get(0).getItemId());
+                jsonObjectElement.addProperty("id", responseTypeInfoJson.get("itemId").getAsString().split("/")[0]);
+                String nid = "n." + new Date().getTime() + "." + nidCounter++;
+                jsonObjectElement.addProperty("nid", nid);
+                NodeData nodeData = createNodeData(responseModelJson, responseTypeInfoJson, responseModelJson.get("name").getAsString());
+                stringRelationsDataMap.put(nid, nodeData);
+                jsonObjectElement.add("capabilities", nodeData.getCapabilities());
+                jsonObjectElement.add("requirements", nodeData.getRequirements());
+                jsonObjectElement.add("properties", nodeData.getProperties());
+                jsonObjectElement.add("typeinfo", nodeData.getTypeInfo());
+                JsonObject typeJsonObject = new JsonObject();
+                typeJsonObject.addProperty("name", responseModelJson.get("type").getAsString());
+                jsonObjectElement.add("type", typeJsonObject);
+                JsonElement ndataElement = createNData(responseModelJson.get("name").getAsString(), nid);
+                jsonObjectElement.add("ndata", ndataElement);
+                jsonArrayNode.add(jsonObjectElement);
+            }
+            itemMapHashMap.put(item, stringRelationsDataMap);
+        }
+        JsonElement jsonElement = createTemplateInfoRelations(templateInfo, itemMapHashMap);
+        if (jsonElement != null && jsonElement.isJsonArray()) {
+            for (JsonElement element : jsonElement.getAsJsonArray()) {
+                relationsJsonArray.add(element);
+            }
+        }
+        jsonElement = createSelfRelations(itemMapHashMap);
+        if (jsonElement != null && jsonElement.isJsonArray()) {
+            for (JsonElement element : jsonElement.getAsJsonArray()) {
+                relationsJsonArray.add(element);
+            }
+
+        }
+        cdumpJsonObject.add("relations", relationsJsonArray);
+        return cdumpJsonObject;
+    }
+
+    //We need it only for printing the relations (front end requirement)
+    private JsonElement createNData(String name, String nid) {
+        JsonObject ndataElement = new JsonObject();
+        ndataElement.addProperty("name", nid);
+        ndataElement.addProperty("label", name);
+        ndataElement.addProperty("x",438);
+        ndataElement.addProperty("y",435);
+        ndataElement.addProperty("px",437);
+        ndataElement.addProperty("py",434);
+        ndataElement.add("ports", new JsonArray());
+        ndataElement.addProperty("radius", 30);
+
+        return ndataElement;
+    }
+
+    private JsonElement createSelfRelations(Map<Item, Map<String, NodeData>> nodeDataByNidByItem) {
+        JsonArray jsonArrayRelations = new JsonArray();
+        for (Item item : nodeDataByNidByItem.keySet()) {
+            Map<String, NodeData> nodeDataByNid = nodeDataByNidByItem.get(item);
+            if (nodeDataByNid.size() < 2) {
+                continue;
+            }
+            Map<JsonObject, String> nidListByRequirement = new HashMap<>();
+            for (String nid : nodeDataByNid.keySet()) {
+                JsonArray jsonArrayRequirements = nodeDataByNid.get(nid).getRequirements();
+                for (JsonElement requirement : jsonArrayRequirements) {
+                    JsonObject jsonObject = requirement.getAsJsonObject();
+                    if (jsonObject.has("node")) {
+                        nidListByRequirement.put(jsonObject, nid);
+                    }
+                }
+            }
+            for (JsonObject requirement : nidListByRequirement.keySet()) {
+                String toNodeName = requirement.get("node").toString().replaceAll("\"", "");
+                boolean isFound = false;
+                NodeData toNodeData;
+                String toNId = null;
+                for (String nid : nodeDataByNid.keySet()) {
+                    toNodeData = nodeDataByNid.get(nid);
+                    toNId = nid;
+                    if (toNodeData.getName().equalsIgnoreCase(toNodeName)) {
+                        isFound = true;
+                        break;
+                    }
+                }
+                if (isFound) {
+                    JsonObject relationElement = new JsonObject();
+                    NodeData fromNode = nodeDataByNidByItem.get(item).get(nidListByRequirement.get(requirement));
+                    relationElement.addProperty("rid", "ink." + nidListByRequirement.get(requirement) + "." + nidCounter++);
+                    relationElement.addProperty("n1", nidListByRequirement.get(requirement));
+                    relationElement.addProperty("name1", fromNode.getName());
+                    JsonObject metaData = new JsonObject();
+                    metaData.addProperty("n1", nidListByRequirement.get(requirement));
+                    metaData.addProperty("p1", requirement.get("name").toString().replaceAll("\"", ""));
+                    relationElement.addProperty("n2", toNId);
+                    relationElement.addProperty("name2", toNodeName);
+                    metaData.addProperty("n2", toNId);
+                    String capabilityFullName = requirement.get("capability").getAsJsonObject().get("name").toString();
+                    String capabilityShortName = StringUtils.substringAfterLast(capabilityFullName, ".");
+                    metaData.addProperty("p2", capabilityShortName.replaceAll("\"", ""));
+                    JsonArray relationship = new JsonArray();
+                    relationship.add(fromNode.getName().replaceAll("\"", ""));
+                    JsonElement requirementRelationship = requirement.get(RELATIONSHIP);
+                    if (requirementRelationship != null) {
+                        relationship.add(requirementRelationship.getAsJsonObject().get("type").toString().replaceAll("\"", ""));
+                    } else {
+                        relationship.add((JsonElement) null);
+                    }
+
+                    relationship.add(requirement.get("name").toString().replaceAll("\"", ""));
+                    metaData.add(RELATIONSHIP, relationship);
+                    relationElement.add("meta", metaData);
+                    jsonArrayRelations.add(relationElement);
+                }
+            }
+        }
+        return jsonArrayRelations;
+    }
+
+    private NodeData createNodeData(JsonObject responseModelJson, JsonObject responseTypeInfoJson, String nodeName) {
+        JsonArray capabilities = responseModelJson.get("capabilities").getAsJsonArray();
+        JsonArray requirements = responseModelJson.get("requirements").getAsJsonArray();
+        JsonArray properties = responseModelJson.get("properties").getAsJsonArray();
+        return new NodeData(capabilities, requirements, properties, responseTypeInfoJson, nodeName);
+    }
+
+    private JsonArray createTemplateInfoRelations(TemplateInfo templateInfo, Map<Item, Map<String, NodeData>> nodeDataByNidByItem) {
+        JsonArray jsonArrayRelations = new JsonArray();
+
+        if (templateInfo.getRelations() == null) {
+            return null;
+        }
+        for (Relation relation : templateInfo.getRelations()) {
+            JsonObject metaData = new JsonObject();
+            JsonObject relationElement = new JsonObject();
+            String fromComponent = relation.getFromComponent();
+            String toComponent = relation.getToComponent();
+            String fromComponentAlias = StringUtils.substringBefore(fromComponent, ".");
+            String fromComponentNodeName = StringUtils.substringAfterLast(fromComponent, ".");
+            String toComponentAlias = StringUtils.substringBefore(toComponent, ".");
+            String toComponentNodeName = StringUtils.substringAfterLast(toComponent, ".");
+            boolean findTo = false;
+            boolean findFrom = false;
+            for (Item item : nodeDataByNidByItem.keySet()) {
+                Map<String, NodeData> nodeDataByNid = nodeDataByNidByItem.get(item);
+                for (String nid : nodeDataByNid.keySet()) {
+                    NodeData currentNodeData = nodeDataByNid.get(nid);
+
+                    Optional<Composition> isFoundComposition = templateInfo.getComposition().stream()
+                            .filter(element -> fromComponentAlias.equalsIgnoreCase(element.getAlias()) && element.getType().equalsIgnoreCase(item.getName()) && fromComponentNodeName.equalsIgnoreCase(currentNodeData.getName())).findAny();
+                    if (isFoundComposition.isPresent()) {
+                        boolean isFound = findNode(relation.getFromRequirement(), currentNodeData.getRequirements());
+                        if (isFound) {
+                            relationElement.addProperty("rid", "ink." + nid + "." + nidCounter++);
+                            relationElement.addProperty("n1", nid);
+                            relationElement.addProperty("name1", currentNodeData.getName());
+                            metaData.addProperty("n1", nid);
+                            metaData.addProperty("p1", relation.getFromRequirement());
+                            JsonArray relationship = new JsonArray();
+                            relationship.add(fromComponentNodeName);
+                            String requirementRelationshipType = findRequirementType(relation.getFromRequirement(), currentNodeData.getRequirements());
+                            if (requirementRelationshipType != null) {
+                                relationship.add(requirementRelationshipType);
+                            } else {
+                                relationship.add((JsonElement) null);
+                            }
+                            relationship.add(toComponentNodeName);
+                            metaData.add(RELATIONSHIP, relationship);
+                            findFrom = true;
+                        }
+
+                    }
+
+                    isFoundComposition = templateInfo.getComposition().stream()
+                            .filter(element -> toComponentAlias.equalsIgnoreCase(element.getAlias()) && element.getType().equalsIgnoreCase(item.getName()) && toComponentNodeName.equalsIgnoreCase(currentNodeData.getName())).findAny();
+                    if (isFoundComposition.isPresent()) {
+                        boolean isFound = findNode(relation.getToCapability(), currentNodeData.getCapabilities());
+                        if (isFound) {
+                            relationElement.addProperty("n2", nid);
+                            relationElement.addProperty("name2",  currentNodeData.getName());
+                            metaData.addProperty("n2", nid);
+                            metaData.addProperty("p2", relation.getToCapability());
+                            findTo = true;
+                        }
+                    }
+                }
+            }
+            if (findTo && findFrom) {
+                relationElement.add("meta", metaData);
+                jsonArrayRelations.add(relationElement);
+            } else {
+                report.addErrorMessage("Didn't find match relation from: " + relation.getFromComponent() + ", to: "+ relation.getToComponent());
+            }
+        }
+
+        return jsonArrayRelations;
+    }
+
+    private String findRequirementType(String fromRequirement, JsonArray requirements) {
+        Iterator<JsonElement> jsonElements = requirements.iterator();
+        while (jsonElements.hasNext()) {
+            JsonObject jsonObject = (JsonObject) jsonElements.next();
+            String name = jsonObject.get("name").getAsString();
+            if (fromRequirement.equals(name) && jsonObject.has("type")) {
+                return jsonObject.get("type").toString().replaceAll("\"", "");
+            }
+        }
+
+        return null;
+    }
+
+    private boolean findNode(String endPoint, JsonArray node) {
+        Iterator<JsonElement> jsonElements = node.iterator();
+        while (jsonElements.hasNext()) {
+            JsonObject jsonObject = (JsonObject) jsonElements.next();
+            String name = jsonObject.get("name").getAsString();
+            if (endPoint.equals(name)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private JsonObject newVfcmtJSON(String name, String description) {
+        JsonObject json = new JsonObject();
+        json.addProperty("name", name);
+        json.addProperty("description", description);
+        return json;
+    }
+
+    private JsonObject generateCdumpInput(TemplateInfo templateInfo) {
+        JsonObject json = new JsonObject();
+        json.addProperty("version", 0);
+        json.addProperty("flowType", templateInfo.getName());
+        json.add(NODES, new JsonArray());
+
+        json.add("inputs", new JsonArray());
+        json.add("outputs", new JsonArray());
+
+        return json;
+
+    }
+}

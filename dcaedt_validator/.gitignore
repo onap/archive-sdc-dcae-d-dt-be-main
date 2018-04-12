@@ -1,0 +1,14 @@
+/bin/
+.project
+checker/target/*
+kwalify/target/*
+service/target/*
+/checker/bin/*
+/kwalify/bin/*
+/service/bin/*
+/kwalify/.settings/*
+/checker/.settings/*
+*.classpath
+/service/.settings/*
+/commons-pipeline/*
+/.settings/*

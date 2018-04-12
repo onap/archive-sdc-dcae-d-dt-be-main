@@ -1,0 +1,12 @@
+{
+  "dcaeBeHost": "http://localhost",
+  "dcaeBePort": "8446",
+  "apiPath": "",
+  "credential" :{
+    "editor": "Carlos_Santana",
+    "username": "cs0008",
+    "password": "",
+    "firstName": "",
+    "lastName": ""
+  }
+}

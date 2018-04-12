@@ -1,0 +1,37 @@
+#_policy_type_storage_definition:
+#  <<: *policy_type_definition
+#  mapping:
+#    <<: *policy_type_mapping
+#    targets:
+#      <<: *policy_type_targets
+#      storage: inline
+
+/_data_type_definition/mapping/derived_from:
+  storage: none
+
+/_node_type_definition/mapping/derived_from:
+  storage: none
+
+/_capability_type_definition/mapping/derived_from:
+  storage: none
+/_capability_type_definition/mapping/valid_source_types:
+  storage: inline
+
+/_relationship_type_definition/mapping/derived_from:
+  storage: none
+/_relationship_type_definition/mapping/valid_target_types:
+  storage: inline
+
+/_policy_type_definition/mapping/derived_from:
+  storage: none
+/_policy_type_definition/mapping/targets:
+  storage: inline
+
+/_node_template_definition/mapping/type:
+  storage: none
+
+/_policy_template_definition/mapping/targets:
+  storage: inline
+
+/_policy_template_definition/mapping/type:
+  storage: none
