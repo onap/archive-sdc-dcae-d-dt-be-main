@@ -1,23 +1,23 @@
 /*
- *                        AT&T - PROPRIETARY
- *          THIS FILE CONTAINS PROPRIETARY INFORMATION OF
- *        AT&T AND IS NOT TO BE DISCLOSED OR USED EXCEPT IN
- *             ACCORDANCE WITH APPLICABLE AGREEMENTS.
- *
- *          Copyright (c) 2015 AT&T Knowledge Ventures
- *              Unpublished and Not for Publication
- *                     All Rights Reserved
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
  */
 package org.onap.sdc.dcae.catalog.engine;
-/*
- *          THIS FILE CONTAINS PROPRIETARY INFORMATION OF
- *        AT&T AND IS NOT TO BE DISCLOSED OR USED EXCEPT IN
- *             ACCORDANCE WITH APPLICABLE AGREEMENTS.
- *
- *          Copyright (c) 2015 AT&T Knowledge Ventures
- *              Unpublished and Not for Publication
- *                     All Rights Reserved
- */
+
 
 import java.util.HashMap;
 import java.util.List;
@@ -69,23 +69,23 @@ import org.springframework.web.bind.annotation.CrossOrigin;
  *  }
  *
  * If a non-2xx reponse is provided and error occured at catalog engine processing level.
- * If error has occured in data retrieval then the response error object is not empty. 
+ * If error has occured in data retrieval then the response error object is not empty.
  *
  * Available uris
  *   /catalog
  *		/elements	: roots of the catalog; request body is optional but can specify a label under 'startingLabel'
  *								response contains items under 'data/elements'
- *		/{itemId}/elements : catalog descendants of the given item, possibly a mix of folders and items  
+ *		/{itemId}/elements : catalog descendants of the given item, possibly a mix of folders and items
  *								response contains items under 'data/elements'
  *		/lookup.by.name : lookup catalog entries by name.
 									The request body must contain a 'selector' entry with a 'name' criteria
  *								response contains items under 'data/elements'
  *                Example: '{"id":"5d0c1cf4-11aa-11e6-a148-3e1d05defe78","selector":{"name":"Firewall"}}'
  *		/lookup.by.annotation
-									The request body must contain a 'annotation' entry and it can have a 'selector' entry 
+									The request body must contain a 'annotation' entry and it can have a 'selector' entry
  *								with a multiple annotation property criteria
  *								response contains items under 'data/elements'
- *		/lookup.by.model.property.value : 
+ *		/lookup.by.model.property.value :
  *								The request must contain a "selector" entry as a JSONObject containing the selection criteria
  *								(property name with values) and desired output properties (null values). Example:
  *									"selector":{"att-part-number":"L-CSR-50M-APP-3Y",
@@ -145,7 +145,7 @@ public class CatalogController {
 //				new CatalogHandler<Folders>(request, result) {
 //					public CatalogResponse handleData(Folders theFolders) {
 //						JSONArray ja = new JSONArray();
-//						if (theFolders != null) {	
+//						if (theFolders != null) {
 //							for (Folder folder : theFolders) {
 //								ja.put(patchData(catalog, folder.data()));
 //							}
@@ -153,7 +153,7 @@ public class CatalogController {
 //						CatalogResponse response = new CatalogResponse(this.request);
 //						response.data()
 //										.put("elements", ja);
-//						return response;	
+//						return response;
 //					}
 //			});
 //		return result;
@@ -221,19 +221,19 @@ public class CatalogController {
 //
 //						response.data()
 //										.put("element", theFolder.data());
-//						return response;	
+//						return response;
 //					}
 //				});
-//		
+//
 //		return result;
 //	}
 //
 //	@RequestMapping(value="/lookup.by.name",method=RequestMethod.POST, produces = "application/json")
 //  public DeferredResult<CatalogResponse> elementsByName(@RequestBody ElementsLookup theRequest) {
-//		
+//
 //		Catalog catalog = getCatalog(theRequest.getCatalog());
 //		DeferredResult<CatalogResponse> result = new DeferredResult<CatalogResponse>(theRequest.getTimeout());
-//		
+//
 //		catalog
 //			.lookup(new JSONObject(theRequest.getSelector()))
 //			.setHandler(
@@ -257,7 +257,7 @@ public class CatalogController {
 //
 //	@RequestMapping(value="/lookup.by.annotation",method=RequestMethod.POST, produces = "application/json")
 //  public DeferredResult<CatalogResponse> elementsByAnnotation(@RequestBody ElementsLookup theRequest) {
-//		
+//
 //		Catalog catalog = getCatalog(theRequest.getCatalog());
 //		DeferredResult<CatalogResponse> result = new DeferredResult<CatalogResponse>(theRequest.getTimeout());
 //
@@ -279,7 +279,7 @@ public class CatalogController {
 //						return response;
 //					}
 //				});
-//	
+//
 //		return result;
 //	}
 
@@ -288,9 +288,9 @@ public class CatalogController {
    *//*
 	@RequestMapping(value="/lookup.by.model.property.value",method=RequestMethod.POST, produces = "application/json")
   public DeferredResult<CatalogResponse> elementsByModelPropertyValue(@RequestBody ElementsLookup theRequest) {
-		
+
 		DeferredResult<CatalogResponse> result = new DeferredResult<CatalogResponse>(theRequest.getTimeout());
-		
+
 		NeoCatalog catalog = asNeo(getCatalog(theRequest.getCatalog()));
 		if (catalog == null) {
 			result.setErrorResult(
@@ -321,17 +321,17 @@ public class CatalogController {
 	}
 */
 	/**
-   * This follows the current convention that each item will have a single model 
+   * This follows the current convention that each item will have a single model
 		2 stage
    */
 //	@RequestMapping(value="/{theItemId}/model",method={RequestMethod.POST,RequestMethod.GET}, produces = "application/json")
 //  //public DeferredResult<CatalogResponse> model(@RequestBody ElementRequest theRequest) {
 //  public DeferredResult<CatalogResponse> model(@RequestBody(required=false) ElementRequest theRequest, @PathVariable String theItemId) {
 //		final ElementRequest request = (theRequest == null) ? ElementRequest.EMPTY_REQUEST : theRequest;
-//		
+//
 //		Catalog catalog = getCatalog(request.getCatalog());
 //		DeferredResult<CatalogResponse> result = new DeferredResult<CatalogResponse>(request.getTimeout());
-//	
+//
 //		catalog
 ////			.fetchItemByItemId(/*theRequest.getProductId()*/theItemId)
 //			.item(theItemId)
@@ -356,8 +356,8 @@ public class CatalogController {
 //						}
 //						if (models.size() > 1) {
 //							return new CatalogError(this.request, "Item has more than one model !?");
-//						}	
-//			try{			
+//						}
+//			try{
 //						catalog.template(models.get(0).id())
 //							.withInputs()
 //							.withOutputs()
@@ -386,21 +386,21 @@ public class CatalogController {
 //				}
 //				catch (Exception x) {
 //					x.printStackTrace();
-//				}		
+//				}
 //						return null;
 //					}
 //				});
 //
 //		return result;
 //	}
-	
+
 //	@RequestMapping(value="/{theItemId}/type/{theTypeName}",method={RequestMethod.POST,RequestMethod.GET}, produces = "application/json")
 //  public DeferredResult<CatalogResponse> model(@RequestBody(required=false) ElementRequest theRequest, @PathVariable String theItemId, @PathVariable String theTypeName) {
 //		final ElementRequest request = (theRequest == null) ? ElementRequest.EMPTY_REQUEST : theRequest;
-//	
+//
 //		Catalog catalog = getCatalog(request.getCatalog());
 //		DeferredResult<CatalogResponse> result = new DeferredResult<CatalogResponse>(request.getTimeout());
-//	
+//
 //		catalog.type(theItemId, theTypeName)
 //			.withHierarchy()
 //			.withCapabilities()
@@ -417,7 +417,7 @@ public class CatalogController {
 //										return response;
 //									}
 //								});
-//		
+//
 //		return result;
 //	}
 
@@ -495,7 +495,7 @@ public class CatalogController {
 	public void initCatalog() {
 		// Dump some info and construct our configuration objects
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "initCatalog");
-			
+
 		this.defaultCatalog = URI.create(systemProperties.getProperties().getProperty(DcaeBeConstants.Config.ASDC_CATALOG_URL));
 		// Initialize default catalog connection
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "default catalog at {}", this.defaultCatalog);
@@ -591,4 +591,4 @@ public class CatalogController {
 			}
 		}
 	}
-}	
+}
