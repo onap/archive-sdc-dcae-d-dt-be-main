@@ -18,7 +18,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.onap.sdc.dcae.property</groupId>
+            <groupId>org.onap.sdc.dcae-d.dt-be-property</groupId>
             <artifactId>DCAE-DT-PROPERTY</artifactId>
             <version>${project.version}</version>
             <exclusions>
