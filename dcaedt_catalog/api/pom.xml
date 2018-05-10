@@ -2,9 +2,9 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>org.onap.sdc.dcae</groupId>
+		<groupId>org.onap.sdc.dcae-d.dt-be-main</groupId>
 		<artifactId>DCAE-DT-Catalog</artifactId>
-		<version>1806.0.1-SNAPSHOT</version>
+		<version>1.2.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>DCAE-DT-Catalog-API</artifactId>
 	<packaging>jar</packaging>
@@ -105,8 +105,8 @@
 						</manifestEntries>
 					</archive>
 				</configuration>
-				<!-- <executions> <execution> <id>make-assembly</id> this is used for 
-					inheritance merges <phase>package</phase> bind to the packaging phase <goals> 
+				<!-- <executions> <execution> <id>make-assembly</id> this is used for
+					inheritance merges <phase>package</phase> bind to the packaging phase <goals>
 					<goal>single</goal> </goals> </execution> </executions> -->
 			</plugin>
 		</plugins>
@@ -155,18 +155,18 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.onap.sdc.dcae</groupId>
+			<groupId>org.onap.sdc.dcae-d.dt-be-main</groupId>
 			<artifactId>DCAE-DT-Catalog-Commons</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.onap.sdc.dcae</groupId>
+			<groupId>org.onap.sdc.dcae-d.dt-be-main</groupId>
 			<artifactId>DCAE-DT-Catalog-ASDC</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>
-			<groupId>org.onap.sdc.dcae</groupId>
+			<groupId>org.onap.sdc.dcae-d.dt-be-main</groupId>
 			<artifactId>DCAE-DT-Validator-Checker</artifactId>
 			<version>${project.version}</version>
 		</dependency>
