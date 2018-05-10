@@ -54,27 +54,27 @@
 			<version>20160810</version>
 		</dependency>
 		<dependency>
-			<groupId>org.onap.sdc.dcae</groupId>
+			<groupId>org.onap.sdc.dcae-d</groupId>
 			<artifactId>DCAE-DT-Catalog-ASDC</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.onap.sdc.dcae</groupId>
+			<groupId>org.onap.sdc.dcae-d</groupId>
 			<artifactId>DCAE-DT-Catalog-API</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.onap.sdc.dcae</groupId>
+			<groupId>org.onap.sdc.dcae-d</groupId>
 			<artifactId>DCAE-DT-Catalog-Commons</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.onap.sdc.dcae</groupId>
+			<groupId>org.onap.sdc.dcae-d</groupId>
 			<artifactId>DCAE-DT-Catalog-DB</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.onap.sdc.dcae</groupId>
+			<groupId>org.onap.sdc.dcae-d</groupId>
 			<artifactId>DCAE-DT-Catalog-Service</artifactId>
 			<version>${project.version}</version>
 		</dependency>
