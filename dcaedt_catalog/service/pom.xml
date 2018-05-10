@@ -72,7 +72,7 @@
 			<version>1.4.1.RELEASE</version>
 		</dependency>
         <dependency>
-            <groupId>org.onap.sdc.dcae</groupId>
+            <groupId>org.onap.sdc.dcae-d.dt-be-main</groupId>
             <artifactId>DCAE-DT-Catalog-API</artifactId>
             <version>${project.version}</version>
         </dependency>
