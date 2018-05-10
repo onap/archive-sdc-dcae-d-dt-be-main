@@ -152,7 +152,7 @@
 			<version>0.9.11</version>
 		</dependency>
 		<dependency>
-			<groupId>org.onap.sdc.dcae-d</groupId>
+			<groupId>org.onap.sdc.dcae-d.dt-be-main</groupId>
 			<artifactId>kwalify</artifactId>
 			<version>${project.version}</version>
 		</dependency>
