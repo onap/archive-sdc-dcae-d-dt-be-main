@@ -2,13 +2,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.onap.sdc.dcae.tools</groupId>
+    <groupId>org.onap.sdc.dcae-d.tools</groupId>
     <artifactId>dcaedt_tools</artifactId>
     <name>DCAE-D Tools</name>
     <parent>
-        <groupId>org.onap.sdc.dcae</groupId>
+        <groupId>org.onap.sdc.dcae-d.dt-be-main</groupId>
         <artifactId>dcae_dt_be_main</artifactId>
-        <version>1806.0.1-SNAPSHOT</version>
+        <version>1.2.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -74,7 +74,7 @@
             <version>2.8.0</version>
         </dependency>
         <dependency>
-            <groupId>org.onap.sdc.dcae.property</groupId>
+            <groupId>org.onap.sdc.dcae-d.dt-be-property</groupId>
             <artifactId>DCAE-DT-PROPERTY</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -126,7 +126,7 @@
             <version>4.12</version>
         </dependency>
     </dependencies>
-    
+
     <distributionManagement>
       <site>
           <id>onap-site</id>
