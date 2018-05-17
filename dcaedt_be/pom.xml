@@ -154,6 +154,38 @@
 				</dependency>
 			</dependencies>
 		</profile>
+		<profile>
+		  <id>docker</id>
+			<build>
+			<plugins>
+				<plugin>
+						<artifactId>maven-resources-plugin</artifactId>
+						<version>3.0.2</version>
+						<executions>
+								<execution>
+										<id>copy-dcae-be-war</id>
+										<phase>validate</phase>
+										<goals>
+												<goal>copy-resources</goal>
+										</goals>
+										<configuration>
+												<outputDirectory>${project.parent.basedir}/docker/docker_be/target</outputDirectory>
+												<resources>
+														<resource>
+																<directory>${project.basedir}/target</directory>
+																<includes>
+																		<include>dcae.war</include>
+																</includes>
+														</resource>
+												</resources>
+										</configuration>
+								</execution>
+						</executions>
+				</plugin>
+			</plugins>
+		</build>
+		</profile>
+
 	</profiles>
 	<build>
 		<finalName>dcae</finalName>
