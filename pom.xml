@@ -16,6 +16,18 @@
         <!-- lookup parent from repository -->
     </parent>
 
+    <properties>
+        <maven.build.timestamp.format>yyyyMMdd'T'HHmm</maven.build.timestamp.format>
+        <docker.tag>${project.version}-${maven.build.timestamp}</docker.tag>
+        <docker.latest.tag>${project.version}-latest</docker.latest.tag>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>1.8</java.version>
+        <nexus.proxy>https://nexus.onap.org</nexus.proxy>
+        <staging.profile.id>176c31dfe190a</staging.profile.id>
+        <sitePath>/content/sites/site/org/openecomp/sdc/${project.version}</sitePath>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.onap.sdc.dcae-d.dt-be-property</groupId>
@@ -34,13 +46,7 @@
         </dependency>
     </dependencies>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <java.version>1.8</java.version>
-        <nexus.proxy>https://nexus.onap.org</nexus.proxy>
-        <staging.profile.id>176c31dfe190a</staging.profile.id>
-    </properties>
+
     <build>
         <plugins>
             <plugin>
@@ -63,32 +69,54 @@
                 </executions>
             </plugin>
             <!-- Site Plugin -->
-      			<plugin>
-      				<groupId>org.apache.maven.plugins</groupId>
-      				<artifactId>maven-site-plugin</artifactId>
-      				<version>3.4</version>
-      				<dependencies>
-      					<dependency>
-      						<groupId>org.apache.maven.wagon</groupId>
-      						<artifactId>wagon-webdav-jackrabbit</artifactId>
-      						<version>2.10</version>
-      					</dependency>
-      				</dependencies>
-      			</plugin>
-      			<!-- Staging Plugin -->
-      			<plugin>
-      				<groupId>org.sonatype.plugins</groupId>
-      				<artifactId>nexus-staging-maven-plugin</artifactId>
-      				<version>1.6.7</version>
-      				<extensions>true</extensions>
-      				<configuration>
-      					<nexusUrl>${nexus.proxy}</nexusUrl>
-      					<stagingProfileId>${staging.profile.id}</stagingProfileId>
-      					<serverId>ecomp-staging</serverId>
-      				</configuration>
-      			</plugin>
+            <plugin>
+      		    <groupId>org.apache.maven.plugins</groupId>
+      			<artifactId>maven-site-plugin</artifactId>
+      			<version>3.4</version>
+      			<dependencies>
+      				<dependency>
+      					<groupId>org.apache.maven.wagon</groupId>
+      					<artifactId>wagon-webdav-jackrabbit</artifactId>
+      					<version>2.10</version>
+      				</dependency>
+      			</dependencies>
+            </plugin>
+      		<!-- Staging Plugin -->
+      		<plugin>
+      			<groupId>org.sonatype.plugins</groupId>
+      			<artifactId>nexus-staging-maven-plugin</artifactId>
+      			<version>1.6.7</version>
+      			<extensions>true</extensions>
+      			<configuration>
+      				<nexusUrl>${nexus.proxy}</nexusUrl>
+      				<stagingProfileId>${staging.profile.id}</stagingProfileId>
+      				<serverId>ecomp-staging</serverId>
+      			</configuration>
+      		</plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <execution>
+                        <id>parse-version</id>
+                        <goals>
+                            <goal>parse-version</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+
     <profiles>
         <profile>
             <id>all</id>
@@ -102,37 +130,8 @@
                 <module>dcaedt_tools</module>
             </modules>
         </profile>
-        <profile>
-            <id>docker</id>
-            <properties>
-                <!-- Docker tags -->
-                <maven.build.timestamp.format>yyyyMMdd'T'HHmm</maven.build.timestamp.format>
-                <docker.tag>${project.version}-${maven.build.timestamp}</docker.tag>
-                <docker.latest.tag>${project.version}-latest</docker.latest.tag>
-                <docker.staging.tag>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}-STAGING-latest</docker.staging.tag>
-            </properties>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>build-helper-maven-plugin</artifactId>
-                        <version>1.8</version>
-                        <executions>
-                            <execution>
-                                <id>parse-version</id>
-                                <goals>
-                                    <goal>parse-version</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-         </profile>
     </profiles>
+
     <repositories>
         <!-- LF repositories -->
         <repository>
