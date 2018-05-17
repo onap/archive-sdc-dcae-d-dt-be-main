@@ -1,0 +1,7 @@
+name 'Deploy-DCAE'
+maintainer 'The Authors'
+maintainer_email 'you@example.com'
+license 'all_rights'
+description 'Installs/Configures Deploy-DCAE'
+long_description 'Installs/Configures Deploy-DCAE'
+version '1.0.0'

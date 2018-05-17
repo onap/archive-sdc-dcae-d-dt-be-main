@@ -1,0 +1,17 @@
+{
+  "name": "dcae-tools",
+  "description": "Running DCAE setup Jar",
+  "json_class": "Chef::Role",
+  "default_attributes": {
+
+  },
+  "override_attributes": {
+
+  },
+  "chef_type": "role",
+  "run_list": [
+    "recipe[Deploy-DCAE::dcae_tools_setup]"
+  ],
+  "env_run_lists": {
+  }
+}

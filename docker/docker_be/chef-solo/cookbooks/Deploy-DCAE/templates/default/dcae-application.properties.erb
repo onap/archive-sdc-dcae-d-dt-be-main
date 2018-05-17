@@ -1,0 +1,37 @@
+# Configure the server to run with SSL/TLS and using HTTPS
+server.port=<%= @dcae_be_port %>
+server.contextPath=/
+##ScheduleTimer
+scheduled.timer.value=5000
+asdc_catalog_url=asdc
+uri=<%= @protocol %>://<%= @consumerAuth %>@<%= @sdc_be_vip %>:<%= @sdc_be_port %>#demo
+toscalab.url=http://localhost:8085
+blueprinter.uri=${toscalab.url}/translate
+blueprinter.hcuri=${toscalab.url}/healthcheck
+blueprinter.hcretrynum=3
+asdc_rootPath=/sdc/v1/catalog/
+healthpoller.fixedDelay=120000
+compositionConfig.isRuleEditorActive=true
+compositionConfig.flowTypes={"Syslog":{"entryPointPhaseName":"syslog_map","lastPhaseName":"map_publish"},\
+	"SNMP":{"entryPointPhaseName":"snmp_map","lastPhaseName":"map_publish"},\
+    "FOI":{"entryPointPhaseName":"foi_map","lastPhaseName":"map_publish"},\
+    "Guest OS":{"entryPointPhaseName":"guest_os_map","lastPhaseName":"map_publish"},\
+    "Status Poller":{"entryPointPhaseName":"status_poller_map","lastPhaseName":"map_publish"},\
+    "SNMP Polling":{"entryPointPhaseName":"snmp_polling_map","lastPhaseName":"map_publish"},\
+    "TCA Hi Lo":{"entryPointPhaseName":"tca_hi_lo_map","lastPhaseName":"map_publish"},\
+    "Syslog Collector":{"entryPointPhaseName":"syslog_map","lastPhaseName":"syslog_publish"},\
+    "Syslog MSEA":{"entryPointPhaseName":"syslog_map","lastPhaseName":"syslog_publish"},\
+    "Status Poller Collector":{"entryPointPhaseName":"status_poller_map","lastPhaseName":"status_poller_publish"},\
+    "Status Poller MSE":{"entryPointPhaseName":"snmp_map","lastPhaseName":"snmp_publish"},\
+    "FOI Collector":{"entryPointPhaseName":"pmossFoiPhase","lastPhaseName":"foiEventToDmaapPhase"},\
+    "Docker Map":{"entryPointPhaseName":"docker_map","lastPhaseName":"docker_publish"},\
+    "SNMP MSE":{"entryPointPhaseName":"snmp_map","lastPhaseName":"snmp_publish"},\
+    "SAM Collector":{"entryPointPhaseName":"sam_collector_map","lastPhaseName":"sam_collector_publish"},\
+    "Docker MSE":{"entryPointPhaseName":"docker_map","lastPhaseName":"docker_publish"},\
+    "SNMP PM Poller":{"entryPointPhaseName":"docker_map","lastPhaseName":"docker_publilsh"},\
+    "Discovery and MIB Poller":{"entryPointPhaseName":"snmp_pm_map","lastPhaseName":"snmp_pm_publish"},\
+    "Nagios docker MSE":{"entryPointPhaseName":"docker_map","lastPhaseName":"docker_publish"},\
+    "VES Fault":{"entryPointPhaseName":"ves_fault_map","lastPhaseName":"ves_fault_publish"},\
+    "VES Heartbeat":{"entryPointPhaseName":"ves_heartbeat_map","lastPhaseName":"ves_heartbeat_publish"},\
+    "VES Measurement":{"entryPointPhaseName":"ves_measurement_map","lastPhaseName":"ves_measurement_publish"},\
+    "VES Syslog":{"entryPointPhaseName":"ves_syslog_map","lastPhaseName":"ves_syslog_publish"}}

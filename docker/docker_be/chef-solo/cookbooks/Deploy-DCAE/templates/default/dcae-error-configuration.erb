@@ -1,0 +1,278 @@
+# DCAE-D Errors
+errors:
+    OK: {
+        code: 200,
+        message: "OK",
+        messageId: "200"
+    }
+    CREATED: {
+        code: 201,
+        message: "OK",
+        messageId: "201"
+    }
+    NO_CONTENT: {
+        code: 204,
+        message: "No Content",
+        messageId: "204"
+    }
+#--------POL4050-----------------------------     
+    NOT_ALLOWED: {
+        code: 405,
+        message: "Error: Method not allowed.",
+        messageId: "POL4050"
+    }
+#--------POL5000-----------------------------     
+    GENERAL_ERROR: {
+        code: 500,
+        message: "Error: Internal Server Error. Please try again later.",
+        messageId: "POL5000"
+    }
+#--------POL5500-----------------------------
+    CATALOG_NOT_AVAILABLE: {
+        code: 502,
+        message: "Error - SDC Catalog currently not available. Please try again later",
+        messageId: "POL5500"
+    }
+#--------POL5501-----------------------------
+    AUTH_ERROR: {
+        code: 502,
+        message: "Error – connection to SDC catalog could not be authenticated. Please contact your administrator",
+        messageId: "POL5501"
+    }
+
+#---------SVC4000----------------------------- 
+    INVALID_CONTENT: {
+        code: 400,
+        message: "Error: Invalid content.",
+        messageId: "SVC4000"
+    }
+
+#---------SVC6001----------------------------- 
+    NOT_FOUND: {
+        code: 404,
+        message: "No Monitoring Templates were found.",
+        messageId: "SVC6001"
+    }
+#---------SVC6005----------------------------- 
+    CONFIGURATION_ERROR: {
+        code: 500,
+        message: "Error – Failed to find configuration.",
+        messageId: "SVC6005"
+    }
+#---------SVC6006----------------------------- 
+    VES_SCHEMA_NOT_FOUND: {
+        code: 500,
+        message: "Error – Failed to find VES Schema definitions.",
+        messageId: "SVC6006"
+    }  
+#---------SVC6007----------------------------- 
+# %1 - VES Schema filename
+# %2 - error reason
+    VES_SCHEMA_INVALID: {
+        code: 500,
+        message: "Error – Failed to parse VES Schema file '%1'. [%2]",
+        messageId: "SVC6007"
+    }
+#---------SVC6008----------------------------- 
+    FLOW_TYPES_CONFIGURATION_ERROR: {
+        code: 500,
+        message: "Error – Failed to read flow type definitions.",
+        messageId: "SVC6008"
+    } 
+#---------SVC6010----------------------------- 
+    CLONE_FAILED: {
+        code: 409,
+        message: "Error – could not import Monitoring Template.",
+        messageId: "SVC6010"
+    }
+#---------SVC6020----------------------------- 
+    EMPTY_SERVICE_LIST: {
+        code: 404,
+        message: "Service List is not available.",
+        messageId: "SVC6020"
+    }
+#---------SVC6021----------------------------- 
+    MONITORING_TEMPLATE_ATTACHMENT_ERROR: {
+        code: 409,
+        message: "Error – Monitoring Template is not available for editing.",
+        messageId: "SVC6021"
+    }
+
+#---------SVC6031----------------------------- 
+# %1 - Component Name
+    MISSING_TOSCA_FILE: {
+        code: 404,
+        message: "Error – Could not read component %1 details.",
+        messageId: "SVC6031"
+    }
+#---------SVC6032----------------------------- 
+# %1 - Component Name
+    VALIDATE_TOSCA_ERROR: {
+        code: 500,
+        message: "Error – Component %1 details could not be parsed.",
+        messageId: "SVC6032"
+    }
+#---------SVC6033----------------------------- 
+    SUBMIT_BLUEPRINT_ERROR: {
+        code: 500,
+        message: "Error –Failed to submit blueprint.",
+        messageId: "SVC6033"
+    }
+#---------SVC6034----------------------------- 
+# %1 -VFCMT Name
+    GENERATE_BLUEPRINT_ERROR: {
+        code: 500,
+        message: "Error – Failed to generate blueprint file for Monitoring Template %1.",
+        messageId: "SVC6034"
+    }
+#---------SVC6035----------------------------- 
+# %1 - the error reason
+    INVALID_RULE_FORMAT: {
+        code: 400,
+        message: "Error - Rule format is invalid: %1.",
+        messageId: "SVC6035"
+    } 
+#---------SVC6036----------------------------- 
+    SAVE_RULE_FAILED: {
+        code: 409,
+        message: "Error - Failed to save rule. Internal persistence error",
+        messageId: "SVC6036"
+    }
+
+#---------SVC6038-----------------------------
+# %1 - VFCMT uuid
+    RESOURCE_NOT_VFCMT_ERROR: {
+        code: 400,
+        message: "Resource with uuid %1 is either not of resourceType='VFCMT' or not of category='Template' or not of subCategory='Monitoring Template'",
+        messageId: "SVC6038"
+    }
+#---------SVC6039-----------------------------
+# %1 - serviceUuid
+# %2 - vfiName
+    VFI_FETCH_ERROR: {
+        code: 404,
+        message: "Service %1 does not contain a VFI named %2",
+        messageId: "SVC6039"
+    }
+#-----------SVC6085---------------------------
+# %1 - current user id
+# %2 - resource/service name
+# %3 - last modifier user id
+    USER_CONFLICT: {
+         code: 403,
+         message: "Error: User conflict. Operation not allowed for user %1 on asset %2 checked out by %3.",
+         messageId: "SVC6085"
+    }
+
+#---------SVC6100-----------------------------
+    MISSING_RULE_DESCRIPTION: {
+        code: 400,
+        message: "Please enter a valid rule description.",
+        messageId: "SVC6100"
+    }
+#---------SVC6101-----------------------------
+    MISSING_ACTION: {
+        code: 400,
+        message: "Rule must have at least one action.",
+        messageId: "SVC6101"
+    }
+
+#---------SVC6104-----------------------------
+# %1 - action target
+    MISSING_CONCAT_VALUE: {
+        code: 400,
+        message: "Please fill all from fields of concat action to %1",
+        messageId: "SVC6104"
+    }
+#---------SVC6105-----------------------------
+# %1 - condition group type
+    INVALID_GROUP_CONDITION: {
+        code: 400,
+        message: "Undefined condition group type: %1",
+        messageId: "SVC6105"
+    }
+
+#---------SVC6106-----------------------------
+    MISSING_CONDITION_ITEM: {
+        code: 400,
+        message: "Please enter all condition items",
+        messageId: "SVC6106"
+    }
+#---------SVC6107-----------------------------
+# %1 - left/right
+    MISSING_OPERAND: {
+        code: 400,
+        message: "Please enter the %1 operand field",
+        messageId: "SVC6107"
+    }
+#---------SVC6108-----------------------------
+# %1 - operator
+    INVALID_OPERATOR: {
+        code: 400,
+        message: "Undefined operator: %1",
+        messageId: "SVC6108"
+    }
+#---------SVC6109-----------------------------
+# %1 - action target
+    MISSING_ENTRY: {
+        code: 400,
+        message: "Please fill all key-value pairs of map action to %1",
+        messageId: "SVC6109"
+    }
+#---------SVC6110-----------------------------
+# %1 - action target
+    MISSING_DEFAULT_VALUE: {
+        code: 400,
+        message: "Please fill the default value of map action to %1",
+        messageId: "SVC6110"
+    }
+#---------SVC6111-----------------------------
+    DUPLICATE_KEY: {
+        code: 400,
+        message: "Error: Duplication in map keys exists, please modify rule configuration",
+        messageId: "SVC6111"
+    }
+#---------SVC6112-----------------------------
+# %1 - dependent actions
+    ACTION_DEPENDENCY: {
+        code: 400,
+        message: "A circular dependency was detected between actions. The following fields should be resolved: %1",
+        messageId: "SVC6112"
+    }
+#---------SVC6113-----------------------------
+# %1 - dependent rule ids
+# %2 - dependent action targets
+    RULE_DEPENDENCY: {
+        code: 400,
+        message: "A circular dependency was detected between rules: %1 within fields: %2",
+        messageId: "SVC6113"
+    }
+#---------SVC6114-----------------------------
+# %1 - dcae component name
+    NODE_NOT_FOUND: {
+        code: 400,
+        message: "DCAE component %1 not found in composition",
+        messageId: "SVC6114"
+    }
+#---------SVC6115-----------------------------
+    DELETE_RULE_FAILED: {
+        code: 409,
+        message: "Delete rule failed. Internal persistence error",
+        messageId: "SVC6115"
+    }
+#---------SVC6116-----------------------------
+# %1 - reason
+    TRANSLATE_FAILED: {
+        code: 400,
+        message: "Translation failed. Reason: %1",
+        messageId: "SVC6116"
+    }
+#---------SVC6117-----------------------------
+# %1 - field name
+# %2 - action type
+# %3 - action target
+    MISSING_ACTION_FIELD: {
+        code: 400,
+        message: "Please fill the %1 field of %2 action to %3",
+        messageId: "SVC6117"
+    }

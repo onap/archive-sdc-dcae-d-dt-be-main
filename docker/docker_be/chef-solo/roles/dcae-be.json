@@ -1,0 +1,19 @@
+{
+  "name": "dcae-be",
+  "description": "Installation application Setup- dcaeBE",
+  "json_class": "Chef::Role",
+  "default_attributes": {
+
+  },
+  "override_attributes": {
+
+  },
+  "chef_type": "role",
+  "run_list": [
+    "recipe[Deploy-DCAE::jetty_setup]",
+    "recipe[Deploy-DCAE::dcae_setup]",
+    "recipe[Deploy-DCAE::consumer_creation]"
+  ],
+  "env_run_lists": {
+  }
+}
