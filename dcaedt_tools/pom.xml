@@ -57,6 +57,61 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.23.0</version>
+                <configuration>
+                    <verbose>true</verbose>
+                    <apiVersion>1.23</apiVersion>
+                    <images>
+                        <!-- Build tools image -->
+                        <image>
+                            <name>onap/dcae-tools</name>
+                            <alias>dcae-tools</alias>
+                            <build>
+                                <cleanup>try</cleanup>
+                                <dockerFileDir>${project.parent.basedir}/docker/docker_tools</dockerFileDir>
+                                <tags>
+                                    <tag>${docker.tag}</tag>
+                                    <tag>${docker.latest.tag}</tag>
+                                    <tag>${docker.staging.tag}</tag>
+                                 </tags>
+                            </build>
+                        </image>
+                    </images>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>clean-images</id>
+                        <phase>pre-clean</phase>
+                        <goals>
+                            <goal>remove</goal>
+                        </goals>
+                        <configuration>
+                            <removeAll>true</removeAll>
+                            <image>onap/dcae-be</image>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-images</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>push-images</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>push</goal>
+                        </goals>
+                        <configuration>
+                            <image>onap/dcae-tools</image>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
           </plugins>
         </build>
       </profile>
