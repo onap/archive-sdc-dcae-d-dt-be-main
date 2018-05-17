@@ -175,7 +175,7 @@
 						<executions>
 							<execution>
 								<id>copy-dcae-be-war</id>
-								<phase>verify</phase>
+								<phase>prepare-package</phase>
 									<goals>
 										<goal>copy-resources</goal>
 									</goals>
