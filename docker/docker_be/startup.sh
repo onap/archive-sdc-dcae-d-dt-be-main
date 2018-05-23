@@ -1,5 +1,6 @@
 #!/bin/sh
-set -x 
+#set -x
+
 # Run chef-solo for configuration
 cd /var/opt/dcae-be/chef-solo
 chef-solo -c solo.rb -E ${ENVNAME} --log_level "debug" --logfile "/tmp/Chef-Solo.log"
@@ -14,5 +15,5 @@ fi
 cd /var/lib/jetty
 /docker-entrypoint.sh &
 
-#while true; do sleep 2; done
-exec "$@";
+while true; do sleep 2; done
+#exec "$@";
