@@ -1,6 +1,6 @@
 package org.onap.sdc.dcae.composition.controller;
 
-import org.onap.sdc.dcae.composition.restmodels.sdc.Asset;
+import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
 import org.onap.sdc.dcae.enums.AssetType;
 import org.onap.sdc.dcae.enums.LifecycleOperationType;
@@ -17,24 +17,20 @@ import java.util.UUID;
 @CrossOrigin
 public class LifecycleController extends BaseController {
 
-    private static final String VFCMT = "vfcmt";
-
     @RequestMapping(value={"/checkin/{assetType}/{uuid}"}, method={RequestMethod.PUT}, produces={"application/json"})
     public ResponseEntity putCheckin(
             @PathVariable("assetType") String assetType,
             @PathVariable("uuid") UUID uuid,
-            @RequestHeader("USER_ID") String user_id,
+            @RequestHeader("USER_ID") String userId,
             @ModelAttribute("requestId") String requestId)  {
 
         try {
-            switch (assetType) {
-                case VFCMT:
-                     Asset res_checkin = checkin(user_id, uuid.toString(), AssetType.RESOURCE, requestId);
-                     return new ResponseEntity<>(res_checkin, HttpStatus.OK);
-
-                default:
-                    return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
+        	if (AssetType.VFCMT == getValidAssetTypeOrNull(assetType)) {
+				ResourceDetailed resCheckin = checkinVfcmt(userId, uuid.toString(), requestId);
+				return new ResponseEntity<>(resCheckin, HttpStatus.OK);
+            } else {
+				return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+			}
         } catch (Exception e) {
             return handleException(e, ErrConfMgr.ApiType.CHECK_IN_RESOURCE);
         }
@@ -44,17 +40,15 @@ public class LifecycleController extends BaseController {
     public ResponseEntity putCheckout(
             @PathVariable("assetType") String assetType,
             @PathVariable("uuid") UUID uuid,
-            @RequestHeader("USER_ID") String user_id,
+            @RequestHeader("USER_ID") String userId,
             @ModelAttribute("requestId") String requestId)  {
 
         try {
-            switch (assetType) {
-                case VFCMT:
-                     Asset asset = checkout(user_id, uuid.toString(), AssetType.RESOURCE, requestId);
-                     return new ResponseEntity<>(asset, HttpStatus.OK);
-
-                default:
-                    return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+			if (AssetType.VFCMT == getValidAssetTypeOrNull(assetType)) {
+				ResourceDetailed asset = checkoutVfcmt(userId, uuid.toString(), requestId);
+				return new ResponseEntity<>(asset, HttpStatus.OK);
+			} else {
+				return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
         } catch (Exception e) {
             return handleException(e, ErrConfMgr.ApiType.CHECK_OUT_RESOURCE);
@@ -65,20 +59,20 @@ public class LifecycleController extends BaseController {
     public ResponseEntity putCertify(
             @PathVariable("assetType") String assetType,
             @PathVariable("uuid") String uuid,
-            @RequestHeader("USER_ID") String user_id,
+            @RequestHeader("USER_ID") String userId,
             @ModelAttribute("requestId") String requestId)  {
 
         try {
-            switch (assetType) {
-            case VFCMT:
-                ResourceDetailed vfcmt = baseBusinessLogic.getSdcRestClient().changeResourceLifecycleState(user_id, uuid, LifecycleOperationType.CERTIFY.name(), "certifying VFCMT", requestId);
-                return new ResponseEntity<>(vfcmt, HttpStatus.OK);
+			if (AssetType.VFCMT == getValidAssetTypeOrNull(assetType)) {
+				ResourceDetailed vfcmt = baseBusinessLogic.getSdcRestClient().changeResourceLifecycleState(userId, uuid, LifecycleOperationType.CERTIFY.name(), "certifying VFCMT", requestId);
+				return new ResponseEntity<>(vfcmt, HttpStatus.OK);
 
-            default:
+			} else {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
         } catch (Exception e) {
             return handleException(e, ErrConfMgr.ApiType.CHECK_OUT_RESOURCE);
         }
     }
+
 }

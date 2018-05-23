@@ -30,9 +30,9 @@ public class RuleTranslator implements IRuleElementTranslator<Rule> {
 		}
 	}
 
-	public Translation translateToHpJson(Rule rule) {
+	public Object translateToHpJson(Rule rule) {
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Start translating rule {}", rule.getUid());
-		Translation translation = new ActionRuleTranslation(rule);
+		Object translation = new ActionRuleTranslation(rule);
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Finished translation for rule {}. Result: {}", rule.getUid(), new Gson().toJson(translation));
 		return translation;
 	}
@@ -42,10 +42,11 @@ public class RuleTranslator implements IRuleElementTranslator<Rule> {
 				ValidationUtils.validateNotEmpty(OperatorTypeEnum.getTypeByName(((Condition)condition).getOperator()).getModifiedType()) ? FieldConditionTranslator.getInstance() : ConditionTranslator.getInstance();
 	}
 
-	private CopyActionTranslator getActionTranslator(BaseAction action) {
+	private ActionTranslator getActionTranslator(BaseAction action) {
 		ActionTypeEnum type = ActionTypeEnum.getTypeByName(action.getActionType());
-		if(ActionTypeEnum.COPY == type && ValidationUtils.validateNotEmpty(action.getRegexValue()))
+		if(ActionTypeEnum.COPY == type && ValidationUtils.validateNotEmpty(((BaseCopyAction)action).getRegexValue())) {
 			return RegexActionTranslator.getInstance();
-		return (CopyActionTranslator)RuleEditorElementType.getElementTypeByName(type.getType()).getTranslator();
+		}
+		return (ActionTranslator) RuleEditorElementType.getElementTypeByName(type.getType()).getTranslator();
 	}
 }

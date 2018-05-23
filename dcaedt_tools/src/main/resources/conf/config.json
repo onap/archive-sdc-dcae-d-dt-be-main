@@ -1,51 +1,207 @@
 {
 	"templateInfo": [{
-		"name": "SNMP Fault",
-		"description": "SNMP FM with Map-Supplement-Enrich",
-		"category": "Template",
-		"subCategory":"Base Monitoring Template",
-		"updateIfExist": "true",
-		"composition": [{
-			"type": "Map",
-			"alias": "mapper"
-		}, {
-			"type": "Supplement",
-			"alias": "sup"
-		}, {
-			"type": "Enrich",
-			"alias": "enrich"
-		}]
-	},
-		{
-			"name": "FOI",
-			"description": "FOI SFTP with FOI-Collector and Docker-Map",
-			"category": "Template",
-			"subCategory":"Base Monitoring Template",
-			"updateIfExist": "true",
-			"composition": [{
-				"type": "foi",
-				"alias": "collector"
-			}, {
-				"type": "DockerMap",
-				"alias": "map"
-			}],
-			"relations": [{
-				"fromComponent": "collector.foi",
-				"fromRequirement": "stream_publish_0",
-				"toComponent": "map.feed0",
-				"toCapability": "feed"
-			}]
-		},
-		{
-			"name": "Syslog non-VES Collector",
-			"description": "Syslog flow with Syslog Collector",
-			"category": "Template",
-			"subCategory": "Base Monitoring Template",
-			"updateIfExist": "true",
-			"composition": [{
-				"type": "Syslog",
-				"alias": "collector"
-			}]
-		}
-	]
+      "name": "Syslog Collector Template",
+      "flowType": "Syslog Collector",
+      "description": "Syslog Collector",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+          "type": "SyslogCollector",
+          "alias": "Syslog"
+      }, {
+          "type": "Existing Topic",
+          "alias": "eTopic"
+      }],
+      "relations": [{
+          "fromComponent": "Syslog.SyslogCollector",
+          "fromRequirement": "stream_publish_0",
+          "toComponent": "eTopic.topic",
+          "toCapability": "topic"
+      }],
+      "nodesToDelete": [
+          {
+              "type": "SyslogCollector",
+              "nodeName": "topic0"
+          }]
+	},{
+      "name": "Syslog MSEA Template",
+      "flowType": "Syslog MSEA",
+      "description": "Syslog MSEA",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+          "type": "Map",
+          "alias": "Map"
+      }, {
+          "type": "Supplement",
+          "alias": "Sup"
+      }, {
+          "type": "Enrich",
+          "alias": "Enr"
+      }, {
+          "type": "Alert",
+          "alias": "Ale"
+      }],
+      "relations": [{
+          "fromComponent": "Sup.Supplement",
+          "fromRequirement": "dependency",
+          "toComponent": "Map.Map",
+          "toCapability": "feature"
+      },{
+          "fromComponent": "Enr.Enrich",
+          "fromRequirement": "dependency",
+          "toComponent": "Sup.Supplement",
+          "toCapability": "feature"
+      },{
+          "fromComponent": "Ale.Alert",
+          "fromRequirement": "dependency",
+          "toComponent": "Enr.Enrich",
+          "toCapability": "feature"
+      }]
+    },{
+      "name": "Status Poller Collector Template",
+      "flowType": "Status Poller Collector",
+      "description": "Status Poller Collector",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "StatusPoller",
+        "alias": "sPoller"
+      }, {
+        "type": "Existing Topic",
+        "alias": "eTopic0"
+      }],
+      "relations": [{
+        "fromComponent": "sPoller.StatusPoller",
+        "fromRequirement": "stream_publish_0",
+        "toComponent": "eTopic0.topic",
+        "toCapability": "topic"
+      }],
+      "nodesToDelete": [
+        {
+          "type": "StatusPoller",
+          "nodeName": "topic0"
+        }]
+	}, {
+      "name": "Status Poller MSE Template",
+      "flowType": "Status Poller MSE",
+      "description": "Status Poller MSE",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "Map",
+        "alias": "Map"
+      }, {
+        "type": "Supplement",
+        "alias": "Sup"
+      }, {
+        "type": "Enrich",
+        "alias": "Enr"
+      }],
+      "relations": [{
+        "fromComponent": "Sup.Supplement",
+        "fromRequirement": "dependency",
+        "toComponent": "Map.Map",
+        "toCapability": "feature"
+      },{
+        "fromComponent": "Enr.Enrich",
+        "fromRequirement": "dependency",
+        "toComponent": "Sup.Supplement",
+        "toCapability": "feature"
+      }]
+    }, {
+      "name": "FOI Collector Template",
+      "flowType": "FOI Collector",
+      "description": "FOI Collector",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "FOICollector",
+        "alias": "fCollector"
+      }, {
+        "type": "Existing Feed",
+        "alias": "eFeed"
+      }],
+      "relations": [{
+        "fromComponent": "fCollector.FoiSftp",
+        "fromRequirement": "stream_publish_0",
+        "toComponent": "eFeed.feed",
+        "toCapability": "feed"
+      }],
+      "nodesToDelete": [
+        {
+          "type": "FOICollector",
+          "nodeName": "feed0"
+        }]
+    }, {
+      "name": "SNMP MSE Template",
+      "flowType": "SNMP MSE",
+      "description": "SNMP MSE",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "Map",
+        "alias": "Map"
+      }, {
+        "type": "Supplement",
+        "alias": "Sup"
+      }, {
+        "type": "Enrich",
+        "alias": "Enr"
+      }],
+      "relations": [{
+        "fromComponent": "Sup.Supplement",
+        "fromRequirement": "dependency",
+        "toComponent": "Map.Map",
+        "toCapability": "feature"
+      },{
+        "fromComponent": "Enr.Enrich",
+        "fromRequirement": "dependency",
+        "toComponent": "Sup.Supplement",
+        "toCapability": "feature"
+      }]
+    }, {
+      "name": "Docker Map Template",
+      "flowType": "Docker Map",
+      "description": "Docker Map",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "DockerMap",
+        "alias": "dMp"
+      }, {
+        "type": "Existing Feed",
+        "alias": "eFeed"
+      }, {
+        "type": "Existing Topic",
+        "alias": "eTopic"
+      }],
+      "relations": [{
+        "fromComponent": "dMp.DockerMap",
+        "fromRequirement": "stream_subscribe_0",
+        "toComponent": "eFeed.feed",
+        "toCapability": "feed"
+      }, {
+        "fromComponent": "dMp.DockerMap",
+        "fromRequirement": "stream_publish_0",
+        "toComponent": "eTopic.topic",
+        "toCapability": "topic"
+      }],
+      "nodesToDelete": [
+        {
+          "type": "DockerMap",
+          "nodeName": "feed0"
+        },
+        {
+          "type": "DockerMap",
+          "nodeName": "topic0"
+        }]
+    }]
 }

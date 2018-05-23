@@ -14,45 +14,33 @@ import java.util.regex.PatternSyntaxException;
 import com.google.common.collect.Table;
 import com.google.common.collect.HashBasedTable;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
-import org.onap.sdc.common.onaplog.OnapLoggerError;
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
 
 /*
  * String -- 'primitive tosca type' converters, used in verifying valuations
  */
 public class Data {
-	private static OnapLoggerError errLogger = OnapLoggerError.getInstance();
 	private static OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
 
 	private Data() {
 	}
-	
-	/*
-	 */
+
+
 	@FunctionalInterface
 	public static interface Evaluator {
-
 		public boolean eval(Object theExpr, Map theDef, Checker.CheckContext theCtx);	
 	}
 
 
   /* data type processing */
 
-	private static Map<String,Type>	typesByName = new HashMap<String,Type>();
+	private static Map<String,Type>	typesByName = new HashMap<>();
 	static {
-		//CoreType.String.toString();
-		//CoreFunction.concat.toString();
-		//Constraint.equal.toString();
 	}
-
 
 	public static Data.Type typeByName(String theName) {
 		return typesByName.getOrDefault(theName, userType);
 	}
-/*
-	public static Evaluator getTypeEvaluator(Type theType) {
-	}
-*/
 
 	/* Needs a better name ?? RValue?? 
 	 * This is not an rvalue (C def) per se but the construct who's instances
@@ -101,7 +89,7 @@ public class Data {
 					(expr,def,ctx) -> Data.valueOf(ctx, expr, Boolean.class),
 					Data::evalScalarConstraints),
  	  Null("null",
-					(expr,def,ctx) -> expr.equals("null"),
+					(expr,def,ctx) -> "null".equals(expr),
 					null),
    	Timestamp("timestamp",
 					(expr,def,ctx) -> timestampRegex.matcher(expr.toString()).matches(),
@@ -114,7 +102,7 @@ public class Data {
 		/* use a scanner and check that the upper bound is indeed greater than
 		 * the lower bound */
     Range("range",
-					(expr,def,ctx) -> { return rangeRegex.matcher(expr.toString()).matches();},
+					(expr,def,ctx) -> rangeRegex.matcher(expr.toString()).matches(),
 					null ),
     Size("scalar-unit.size",
 				 (expr,def,ctx) -> sizeRegex.matcher(expr.toString()).matches(),
@@ -128,20 +116,25 @@ public class Data {
 
 
 		private String 		toscaName;
-		private Evaluator	valueEvaluator,
-											constraintsEvaluator;
+		private Evaluator	valueEvaluator, constraintsEvaluator;
+
+
 
 		private CoreType(String theName, Evaluator theValueEvaluator, Evaluator theConstraintsEvaluator) {
 			this.toscaName = theName;
 			this.valueEvaluator = theValueEvaluator;
 			this.constraintsEvaluator = theConstraintsEvaluator;
 
-			if (typesByName == null)
+			if (typesByName == null) {
 				throw new RuntimeException("No type index available!");
+			}
 
 			typesByName.put(this.toscaName, this);
 		}
 
+
+
+		@Override
 		public String toString() {
 			return this.toscaName;
 		}
@@ -260,8 +253,9 @@ public class Data {
 																 				Checker.CheckContext theCtx) {
 		Data.Type entryType = null;
 		Map entryTypeDef = (Map)theDef.get("entry_schema");
-		if (null != entryTypeDef)
-			entryType = typeByName((String)entryTypeDef.get("type"));
+		if (null != entryTypeDef) {
+			entryType = typeByName((String) entryTypeDef.get("type"));
+		}
 
 		boolean res = true;
 		for (Object val: theVals) {
@@ -271,39 +265,32 @@ public class Data {
 					f.evaluator().eval(val, entryTypeDef, theCtx)) {
 				res = false;
 			}
-			else if (entryType != null &&
-							!entryType.evaluator().eval(val, entryTypeDef, theCtx)) {
-				res= false;
-				//the error should hav been reported by the particular evaluator
-				//theCtx.addError("Value " + val + " failed evaluation", null);
+			else if (entryType != null && !entryType.evaluator().eval(val, entryTypeDef, theCtx)) {
+				res = false;
 			}
 		}
 		return res;
 	}
 	
-	public static boolean evalListConstraints(Object theVal,
-																 						Map theDef,
-																 						Checker.CheckContext theCtx) {
+	public static boolean evalListConstraints(Object theVal, Map theDef, Checker.CheckContext theCtx) {
 		return evalCollectionConstraints((List)theVal, theDef, theCtx);
 	}
 	
-	public static boolean evalMapConstraints(Object theVal,
-																					 Map theDef,
-																					 Checker.CheckContext theCtx) {
+	public static boolean evalMapConstraints(Object theVal, Map theDef, Checker.CheckContext theCtx) {
 		return evalCollectionConstraints(((Map)theVal).values(), theDef, theCtx);
 	}
 
-	private static boolean evalCollectionConstraints(Collection theVals,
-																 									 Map theDef,
-																 									 Checker.CheckContext theCtx) {
+	private static boolean evalCollectionConstraints(Collection theVals, Map theDef, Checker.CheckContext theCtx) {
 		//should check overall constraints 
 
-		if (theVals == null)
+		if (theVals == null) {
 			return true;
+		}
 
 		Map entryTypeDef = (Map)theDef.get("entry_schema");
-		if (null == entryTypeDef)
+		if (null == entryTypeDef) {
 			return true;
+		}
 
 		String entryTypeName = (String)entryTypeDef.get("type");
 		Data.Type entryType = typeByName(entryTypeName);
@@ -311,11 +298,8 @@ public class Data {
 		boolean res = true;
 		for (Object val: theVals) {
 			Evaluator entryEvaluator = entryType.constraintsEvaluator();
-			if (entryEvaluator != null &&
-					!entryEvaluator.eval(val, entryTypeDef, theCtx)) {
+			if (entryEvaluator != null && !entryEvaluator.eval(val, entryTypeDef, theCtx)) {
 				res= false;
-				//the constraints evaluator should have already added an error, but it also adds some context 
-				//theCtx.addError("Value " + val + " failed evaluation", null);
 			}
 		}
 		return res;
@@ -371,16 +355,12 @@ public class Data {
 			if (propVal != null) {
 				Data.Type propType = typeByName((String)propDef.get("type"));
 
-				if (propType.constraintsEvaluator() != null &&
-						!propType.constraintsEvaluator().eval(propVal, propDef, theCtx)) {
+				if (propType.constraintsEvaluator() != null && !propType.constraintsEvaluator().eval(propVal, propDef, theCtx)) {
 					res= false;
-					//the constraints evaluator should have already added an error
-					//theCtx.addError("Property " + propEntry.getKey() + " failed evaluation for " + propVal, null);
 				}
 			}
 			else {
-				if (Boolean.TRUE == (Boolean)propDef.getOrDefault("required", Boolean.FALSE) &&
-						!propDef.containsKey("default")) {
+				if (Boolean.TRUE == propDef.getOrDefault("required", Boolean.FALSE) &&	!propDef.containsKey("default")) {
 					theCtx.addError("Property " + propEntry.getKey() + " failed 'required' constraint; definition is " + propDef, null);
 					res = false;
 				}
@@ -401,26 +381,6 @@ public class Data {
 		theCtx.addError("Expression " + theExpr + " as " + theExpr.getClass().getName() + " is not compatible with any of required types: " + Arrays.toString(theTypes), null);
 		return false;
 	}
-
-/*
-	private static boolean valueOf(Class theTarget,
-																 String theExpr,
-																 Checker.CheckContext theCtx) {
-		try {
-			theTarget.getMethod("valueOf", new Class[] {String.class})
-								.invoke(null, theExpr);
-			return true;
-		}
-		catch (InvocationTargetException itx) {
-			theCtx.addError("Failed to parse " + theExpr + " as a " + theTarget.getName(), itx.getCause());
-			return false;
-		}
-		catch (Exception x) {
-			theCtx.addError("Failed to valueOf " + theExpr + " as a " + theTarget.getName(), x);
-			return false;
-		}
-	}
-*/
 
 	/* 
 	 * Function e(valuation)
@@ -499,18 +459,15 @@ public class Data {
 		}
 	}
 
-	private static boolean evalConcat(
-						Object theVal, Map theDef, Checker.CheckContext theCtx) {
+	private static boolean evalConcat(Object theVal, Map theDef, Checker.CheckContext theCtx) {
 		return true;
 	}
 	
-	private static boolean evalToken(
-						Object theVal, Map theDef, Checker.CheckContext theCtx) {
+	private static boolean evalToken(Object theVal, Map theDef, Checker.CheckContext theCtx) {
 		return true;
 	}
 
-	private static boolean evalGetInput(
-						Object theVal, Map theDef, Checker.CheckContext theCtx) {
+	private static boolean evalGetInput(Object theVal, Map theDef, Checker.CheckContext theCtx) {
 		Map val = (Map)theVal;
 		Map.Entry entry = (Map.Entry)val.entrySet().iterator().next();
 
@@ -527,8 +484,9 @@ public class Data {
 			return false;
 		}
 
-		if (theDef == null)
+		if (theDef == null) {
 			return true;
+		}
 
 		//the output must be type compatible with the input
 		String targetType = (String)theDef.get("type");
@@ -554,24 +512,24 @@ public class Data {
 						Object theVal, Map theDef,
 						EnumSet<Facet> theFacets, Checker.CheckContext theCtx) {
 
-		Map val = (Map)theVal;
-		Map.Entry entry = (Map.Entry)val.entrySet().iterator().next();
+		Map val = (Map) theVal;
+		Map.Entry entry = (Map.Entry) val.entrySet().iterator().next();
 
 		if (!(entry.getValue() instanceof List)) {
-			theCtx.addError("get_property: argument must be a List" ,null);
+			theCtx.addError("get_property: argument must be a List", null);
 			return false;
 		}
 
-		List args = (List)entry.getValue();
+		List args = (List) entry.getValue();
 		if (args.size() < 2) {
 			theCtx.addError("'get_property' has at least 2 arguments", null);
 			return false;
 		}
 
 		//the first argument is a node or relationship template
-		String 		tmpl = (String)args.get(0);
-		Construct	tmplConstruct = null;
-		Map		 		tmplSpec = null;
+		String tmpl = (String) args.get(0);
+		Construct tmplConstruct;
+		Map tmplSpec;
 
 		if ("SELF".equals(tmpl)) {
 			tmpl = theCtx.enclosingConstruct(Construct.Node);
@@ -580,27 +538,23 @@ public class Data {
 				if (tmpl == null) {
 					theCtx.addError("'get_property' invalid SELF reference: no node or relationship template in scope at " + theCtx.getPath(), null);
 					return false;
-				}
-				else {
+				} else {
 					tmplConstruct = Construct.Relationship;
 				}
-			}
-			else {
+			} else {
 				tmplConstruct = Construct.Node;
 			}
 			tmplSpec = theCtx.catalog().getTemplate(theCtx.target(), tmplConstruct, tmpl);
-		}
-		else if ("SOURCE".equals("tmpl")) {
+		} else if ("SOURCE".equals("tmpl")) {
 			//we are in the scope of a relationship template and this is the source node template.
 			tmpl = theCtx.enclosingConstruct(Construct.Relationship);
 			if (tmpl == null) {
 				theCtx.addError("'get_property' invalid SOURCE reference: no relationship template in scope at " + theCtx.getPath(), null);
 				return false;
 			}
-			
+
 			return true;
-		}
-		else if ("TARGET".equals("tmpl")) {
+		} else if ("TARGET".equals("tmpl")) {
 			//we are in the scope of a relationship template and this is the target node template.
 			tmpl = theCtx.enclosingConstruct(Construct.Relationship);
 			if (tmpl == null) {
@@ -609,8 +563,7 @@ public class Data {
 			}
 
 			return true;
-		}
-		else if ("HOST".equals("tmpl")) {
+		} else if ("HOST".equals("tmpl")) {
 			tmpl = theCtx.enclosingConstruct(Construct.Node);
 			if (tmpl == null) {
 				theCtx.addError("'get_property' invalid HOST reference: no node template in scope at " + theCtx.getPath(), null);
@@ -618,8 +571,7 @@ public class Data {
 			}
 
 			return true;
-		}
-		else {
+		} else {
 			//try node template first
 			tmplSpec = theCtx.catalog().getTemplate(theCtx.target(), Construct.Node, tmpl);
 			if (tmplSpec == null) {
@@ -628,20 +580,18 @@ public class Data {
 				if (tmplSpec == null) {
 					theCtx.addError("'get_data' invalid template reference '" + tmpl + "': no node or relationship template with this name", null);
 					return false;
-				}
-				else {
+				} else {
 					tmplConstruct = Construct.Relationship;
 				}
-			}
-			else {
+			} else {
 				tmplConstruct = Construct.Node;
 			}
 		}
 
 		int facetNameIndex = 1;
 		Construct facetConstruct = tmplConstruct; //who's construct the facet is supposed to belong to
-		Map 			facetConstructSpec = null;
-		String 		facetConstructType = null;
+		Map facetConstructSpec = null;
+		String facetConstructType = null;
 
 		if (tmplConstruct.equals(Construct.Node) &&
 				args.size() > 2) {
@@ -654,61 +604,55 @@ public class Data {
 			//while the spec does not make it explicit this can only take place
 			//if the first argument turned out to be a node template (as relationship
 			//templates/types do not have capabilities/requirements
-			String secondArg = (String)args.get(1);
+			String secondArg = (String) args.get(1);
 			if ((facetConstructSpec = theCtx.catalog().getFacetDefinition(
-																						tmplConstruct,
-														 								(String)tmplSpec.get("type"),
-																						Facet.capabilities,
-																						secondArg)) != null) {
+					tmplConstruct,
+					(String) tmplSpec.get("type"),
+					Facet.capabilities,
+					secondArg)) != null) {
 				facetNameIndex = 2;
 				facetConstruct = Construct.Capability;
-				facetConstructType = (String)facetConstructSpec.get("type");
-			}
-			else if ((facetConstructSpec = theCtx.catalog().getRequirementDefinition(
-																							tmplConstruct,
-																							(String)tmplSpec.get("type"),
-																							secondArg)) != null) {	
+				facetConstructType = (String) facetConstructSpec.get("type");
+			} else if ((facetConstructSpec = theCtx.catalog().getRequirementDefinition(
+					tmplConstruct,
+					(String) tmplSpec.get("type"),
+					secondArg)) != null) {
 				facetNameIndex = 2;
 				facetConstruct = Construct.Capability;
-				
+
 				//find the specof the capability this requirement points to
 				//TODO: check, can the capability reference be anything else but a capability tyep?
-				facetConstructType = (String)facetConstructSpec.get("capability");
+				facetConstructType = (String) facetConstructSpec.get("capability");
 			}
-		}
-		else {
+		} else {
 			//we'll attempt to handle it as a property of the node template
 			facetConstruct = Construct.Node;
 			facetConstructSpec = tmplSpec;
-			facetConstructType = (String)facetConstructSpec.get("type");
+			facetConstructType = (String) facetConstructSpec.get("type");
 		}
-	
+
 		//validate the facet name
 		Map facetSpec = null;
-		{
-			String facetName = (String)args.get(facetNameIndex);
-			for (Facet facet: theFacets) {
-				facetSpec = theCtx.catalog()
-											.getFacetDefinition(
-														facetConstruct,
-														facetConstructType,
-										  			facet,
-														facetName);
-				if (facetSpec != null)
-					break;
-			}
 
-			if (facetSpec == null) {
+		String facetName = (String) args.get(facetNameIndex);
+		for (Facet facet : theFacets) {
+			facetSpec = theCtx.catalog()
+					.getFacetDefinition(
+							facetConstruct,
+							facetConstructType,
+							facet,
+							facetName);
+			if (facetSpec != null) {
+				break;
+			}
+		}
+
+		if (facetSpec == null) {
 //TODO: not the greatest message if the call strated with a requirement ..
-				theCtx.addError("'get_data' invalid reference, '" + facetConstruct + "' " + facetConstructType + " has no " + theFacets + " with name " + facetName, null);
-				return false;
-			}
+			theCtx.addError("'get_data' invalid reference, '" + facetConstruct + "' " + facetConstructType + " has no " + theFacets + " with name " + facetName, null);
+			return false;
 		}
 
-		//the rest of the arguments have to resolve to a field of the property's
-		//data type; the propertySpec contains the type specification
-		for (int i = facetNameIndex + 1; i < args.size(); i++)  {
-		}
 
 		return true;
 	}
@@ -777,13 +721,15 @@ public class Data {
 	private static Object getConstraintValue(Map theDef,
 																					 Constraint theConstraint) {
 		List<Map> constraints = (List<Map>)theDef.get("constraints");
-		if (null == constraints)
+		if (null == constraints) {
 			return null;
+		}
 
 		for(Map constraint: constraints) {
 			Object val = constraint.get(theConstraint.toString());
-			if (val != null)
+			if (val != null) {
 				return val;
+			}
 		}
 		return null;
 	}
@@ -802,24 +748,20 @@ public class Data {
 		pattern;
 	}
 
-
 	/* hold the constraint evaluators for pairs of type/constraint.
 	 * If a pair is not present than the given constraint does not apply
 	 * to the type.
 	 */
-	private static Table<Type,Constraint,Evaluator> typeConstraintEvaluator =null;
+	private static Table<Type,Constraint,Evaluator> typeConstraintEvaluator = null;
 
-	public static Evaluator
-						getTypeConstraintEvaluator(Type theType, Constraint theConstraint) {
+	public static Evaluator getTypeConstraintEvaluator(Type theType, Constraint theConstraint) {
 		if (typeConstraintEvaluator == null) {
 			typeConstraintEvaluator = HashBasedTable.create();
 
 			typeConstraintEvaluator.put(CoreType.String, Constraint.equal,
 				(val,def,ctx) -> val.equals(getConstraintValue(def,Constraint.equal)));
 			typeConstraintEvaluator.put(CoreType.String, Constraint.valid_values,
-				(val,def,ctx) -> {
-						return ((List)getConstraintValue(def,Constraint.valid_values)).contains(val);
-			  });
+				(val,def,ctx) -> ((List)getConstraintValue(def,Constraint.valid_values)).contains(val));
 			typeConstraintEvaluator.put(CoreType.String, Constraint.length,
 				(val,def,ctx) -> ((String)val).length() == ((Number)getConstraintValue(def,Constraint.length)).intValue());
 			typeConstraintEvaluator.put(CoreType.String, Constraint.min_length, 

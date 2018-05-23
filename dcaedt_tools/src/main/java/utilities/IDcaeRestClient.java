@@ -15,6 +15,8 @@ public interface IDcaeRestClient {
 
     List<ResourceDetailed> getAllVfcmts();
 
+    List<ResourceDetailed> getAllBaseVfcmts();
+
     ResourceDetailed createResource(CreateVFCMTRequest resource);
 
     ResourceDetailed checkoutVfcmt(String vfcmtUuid);

@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import json.response.ItemsResponse.Item;
 import json.templateInfo.Composition;
+import json.templateInfo.NodeToDelete;
 import json.templateInfo.Relation;
 import json.templateInfo.TemplateInfo;
 import org.apache.commons.lang3.StringUtils;
@@ -19,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class TemplateContainer {
     private static final String NODES = "nodes";
     private static final String RELATIONSHIP = "relationship";
+    public static final String ASSIGNMENT = "assignment";
     private static long nidCounter = 0;
     private final IReport report;
     private final IDcaeRestClient dcaeRestClient;
@@ -34,12 +36,12 @@ public class TemplateContainer {
         this.elementsByFolderNames = elementsByFolderNames;
     }
 
-    private List<Item> findTemplate(TemplateInfo templateInfo) {
-        AtomicReference<List<Item>> items = new AtomicReference<>();
+    private List<ItemAndAlias> findTemplate(TemplateInfo templateInfo) {
+        AtomicReference<List<ItemAndAlias>> items = new AtomicReference<>();
         items.set(new ArrayList<>());
         elementsByFolderNames.keySet().stream()
                 .forEach(folderName -> {
-                    List<Item> itemList = returnMatchedTemplate(folderName, templateInfo);
+                    List<ItemAndAlias> itemList = returnMatchedTemplate(folderName, templateInfo);
                     items.get().addAll(itemList);
                 });
         if (items.get().size() == templateInfo.getComposition().size()) {
@@ -48,13 +50,13 @@ public class TemplateContainer {
         return new ArrayList<>();
     }
 
-    private List<Item> returnMatchedTemplate(String folderName, TemplateInfo templateInfo) {
-        List<Item> items = new ArrayList<>();
+    private List<ItemAndAlias> returnMatchedTemplate(String folderName, TemplateInfo templateInfo) {
+        List<ItemAndAlias> items = new ArrayList<>();
         elementsByFolderNames.get(folderName).stream()
                 .forEach(item -> templateInfo.getComposition().stream().forEach(composition ->
                 {
                     if (composition.getType().equalsIgnoreCase(item.getName())) {
-                        items.add(item);
+                        items.add(new ItemAndAlias(item, composition.getAlias()));
                     }
                 }));
         return items;
@@ -64,7 +66,7 @@ public class TemplateContainer {
     public Map<TemplateInfo, JsonObject> getCdumps() {
         Map<TemplateInfo, JsonObject> templateInfoToJsonObjectMap = new HashMap<>();
         for (TemplateInfo templateInfo : templateInfos) {
-            List<Item> items = findTemplate(templateInfo);
+            List<ItemAndAlias> items = findTemplate(templateInfo);
             if (items == null || items.isEmpty()) {
                 report.addErrorMessage("vfcmt: " + templateInfo.getName() + ". DCAE Component not found");
                 continue;
@@ -74,37 +76,35 @@ public class TemplateContainer {
         return templateInfoToJsonObjectMap;
     }
 
-    private JsonObject getCdumpJsonObject(List<Item> items, TemplateInfo templateInfo) {
+    private JsonObject getCdumpJsonObject(List<ItemAndAlias> ItemsAndAlias, TemplateInfo templateInfo) {
         JsonObject cdumpJsonObject = generateCdumpInput(templateInfo);
-        Map<Item, Map<String, NodeData>> itemMapHashMap = new HashMap<>();
+        Map<ItemAndAlias, Map<String, NodeData>> itemMapHashMap = new HashMap<>();
         JsonArray relationsJsonArray = new JsonArray();
-        for (Item item : items) {
+        for (ItemAndAlias itemAndAlias : ItemsAndAlias) {
+            Item item = itemAndAlias.getItem();
             debugLogger.log("Creating cdump for item: " + item.getName());
             JsonArray jsonArrayNode = cdumpJsonObject.getAsJsonArray(NODES);
             JsonParser jsonParser = new JsonParser();
             JsonArray allNodeTemplates = jsonParser.parse(dcaeRestClient.getItemModel(item.getItemId())).getAsJsonObject().get("data").getAsJsonObject().get("model").getAsJsonObject().get(NODES).getAsJsonArray();
             Map<String, NodeData> stringRelationsDataMap = new HashMap<>();
             for (JsonElement nodeElement : allNodeTemplates) {
+                if (checkIfNeedToSkip(templateInfo.getNodesToDelete(), nodeElement, item.getName())) {
+                    continue;
+                }
                 JsonObject responseModelJson = nodeElement.getAsJsonObject();
                 JsonObject responseTypeInfoJson = jsonParser.parse(dcaeRestClient.getItemType(item.getItemId(), responseModelJson.get("type").getAsString())).getAsJsonObject().get("data").getAsJsonObject().get("type").getAsJsonObject();
-                JsonObject jsonObjectElement = newVfcmtJSON(responseModelJson.get("name").getAsString(), item.getModels().get(0).getItemId());
+                String nodeName = itemAndAlias.getAlias() + "." + responseModelJson.get("name").getAsString();
+                JsonObject jsonObjectElement = newNodeTemplate(nodeName, item.getModels().get(0).getItemId());
                 jsonObjectElement.addProperty("id", responseTypeInfoJson.get("itemId").getAsString().split("/")[0]);
                 String nid = "n." + new Date().getTime() + "." + nidCounter++;
                 jsonObjectElement.addProperty("nid", nid);
-                NodeData nodeData = createNodeData(responseModelJson, responseTypeInfoJson, responseModelJson.get("name").getAsString());
+                NodeData nodeData = createNodeData(responseModelJson, responseTypeInfoJson, responseModelJson.get("name").getAsString(), itemAndAlias.getAlias());
+                fillPropertiesValue(nodeData);
                 stringRelationsDataMap.put(nid, nodeData);
-                jsonObjectElement.add("capabilities", nodeData.getCapabilities());
-                jsonObjectElement.add("requirements", nodeData.getRequirements());
-                jsonObjectElement.add("properties", nodeData.getProperties());
-                jsonObjectElement.add("typeinfo", nodeData.getTypeInfo());
-                JsonObject typeJsonObject = new JsonObject();
-                typeJsonObject.addProperty("name", responseModelJson.get("type").getAsString());
-                jsonObjectElement.add("type", typeJsonObject);
-                JsonElement ndataElement = createNData(responseModelJson.get("name").getAsString(), nid);
-                jsonObjectElement.add("ndata", ndataElement);
+                addCdumpData(responseModelJson, jsonObjectElement, nid, nodeData);
                 jsonArrayNode.add(jsonObjectElement);
             }
-            itemMapHashMap.put(item, stringRelationsDataMap);
+            itemMapHashMap.put(itemAndAlias, stringRelationsDataMap);
         }
         JsonElement jsonElement = createTemplateInfoRelations(templateInfo, itemMapHashMap);
         if (jsonElement != null && jsonElement.isJsonArray()) {
@@ -123,6 +123,56 @@ public class TemplateContainer {
         return cdumpJsonObject;
     }
 
+    private void addCdumpData(JsonObject responseModelJson, JsonObject jsonObjectElement, String nid, NodeData nodeData) {
+        jsonObjectElement.add("capabilities", nodeData.getCapabilities());
+        jsonObjectElement.add("requirements", nodeData.getRequirements());
+        jsonObjectElement.add("properties", nodeData.getProperties());
+        jsonObjectElement.add("typeinfo", nodeData.getTypeInfo());
+        JsonObject typeJsonObject = new JsonObject();
+        typeJsonObject.addProperty("name", responseModelJson.get("type").getAsString());
+        jsonObjectElement.add("type", typeJsonObject);
+        JsonElement ndataElement = createNData(responseModelJson.get("name").getAsString(), nid);
+        jsonObjectElement.add("ndata", ndataElement);
+    }
+
+    private void fillPropertiesValue(NodeData nodeData) {
+        for (Iterator<JsonElement> iterator = nodeData.getProperties().iterator(); iterator.hasNext(); ) {
+            JsonElement property = iterator.next();
+            if (!property.isJsonObject()) {
+                continue;
+            }
+            if (property.getAsJsonObject().has("value")) {
+                continue;
+            }
+            JsonElement jsonElement = new JsonObject();
+            if (property.getAsJsonObject().has(ASSIGNMENT) &&
+                    property.getAsJsonObject().get(ASSIGNMENT).getAsJsonObject().has("value")) {
+                jsonElement = property.getAsJsonObject().get(ASSIGNMENT).getAsJsonObject().get("value");
+            } else if (property.getAsJsonObject().has("default")) {
+                jsonElement = property.getAsJsonObject().get("default");
+            } else if (property.getAsJsonObject().has(ASSIGNMENT) &&
+                    property.getAsJsonObject().get(ASSIGNMENT).getAsJsonObject().has("input") &&
+                    property.getAsJsonObject().get(ASSIGNMENT).getAsJsonObject().get("input").getAsJsonObject().has("default")) {
+                jsonElement = property.getAsJsonObject().get(ASSIGNMENT).getAsJsonObject().get("input").getAsJsonObject().get("default");
+            }
+            property.getAsJsonObject().add("value", jsonElement);
+        }
+
+    }
+
+    private boolean checkIfNeedToSkip(List<NodeToDelete> nodesToDelete, JsonElement nodeElement, String itemName) {
+        return nodesToDelete != null && nodesToDelete.stream().anyMatch(nodeToDelete -> {
+            if (nodeToDelete.getType().equalsIgnoreCase(itemName)) {
+                String nodeName = nodeElement.getAsJsonObject().get("name").toString().replace("\"", "");
+                if (nodeToDelete.getNodeName().equalsIgnoreCase(nodeName)) {
+                    debugLogger.log("Skipping node: " + nodeToDelete.getNodeName() + ", Item name: " + itemName);
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
     //We need it only for printing the relations (front end requirement)
     private JsonElement createNData(String name, String nid) {
         JsonObject ndataElement = new JsonObject();
@@ -138,9 +188,9 @@ public class TemplateContainer {
         return ndataElement;
     }
 
-    private JsonElement createSelfRelations(Map<Item, Map<String, NodeData>> nodeDataByNidByItem) {
+    private JsonElement createSelfRelations(Map<ItemAndAlias, Map<String, NodeData>> nodeDataByNidByItem) {
         JsonArray jsonArrayRelations = new JsonArray();
-        for (Item item : nodeDataByNidByItem.keySet()) {
+        for (ItemAndAlias item : nodeDataByNidByItem.keySet()) {
             Map<String, NodeData> nodeDataByNid = nodeDataByNidByItem.get(item);
             if (nodeDataByNid.size() < 2) {
                 continue;
@@ -173,12 +223,12 @@ public class TemplateContainer {
                     NodeData fromNode = nodeDataByNidByItem.get(item).get(nidListByRequirement.get(requirement));
                     relationElement.addProperty("rid", "ink." + nidListByRequirement.get(requirement) + "." + nidCounter++);
                     relationElement.addProperty("n1", nidListByRequirement.get(requirement));
-                    relationElement.addProperty("name1", fromNode.getName());
+                    relationElement.addProperty("name1", fromNode.getNameWithAlias());
                     JsonObject metaData = new JsonObject();
                     metaData.addProperty("n1", nidListByRequirement.get(requirement));
                     metaData.addProperty("p1", requirement.get("name").toString().replaceAll("\"", ""));
                     relationElement.addProperty("n2", toNId);
-                    relationElement.addProperty("name2", toNodeName);
+                    relationElement.addProperty("name2", fromNode.getAliasBelong() + "." + toNodeName);
                     metaData.addProperty("n2", toNId);
                     String capabilityFullName = requirement.get("capability").getAsJsonObject().get("name").toString();
                     String capabilityShortName = StringUtils.substringAfterLast(capabilityFullName, ".");
@@ -202,14 +252,14 @@ public class TemplateContainer {
         return jsonArrayRelations;
     }
 
-    private NodeData createNodeData(JsonObject responseModelJson, JsonObject responseTypeInfoJson, String nodeName) {
+    private NodeData createNodeData(JsonObject responseModelJson, JsonObject responseTypeInfoJson, String nodeName, String aliasBelong) {
         JsonArray capabilities = responseModelJson.get("capabilities").getAsJsonArray();
         JsonArray requirements = responseModelJson.get("requirements").getAsJsonArray();
         JsonArray properties = responseModelJson.get("properties").getAsJsonArray();
-        return new NodeData(capabilities, requirements, properties, responseTypeInfoJson, nodeName);
+        return new NodeData(capabilities, requirements, properties, responseTypeInfoJson, nodeName, aliasBelong);
     }
 
-    private JsonArray createTemplateInfoRelations(TemplateInfo templateInfo, Map<Item, Map<String, NodeData>> nodeDataByNidByItem) {
+    private JsonArray createTemplateInfoRelations(TemplateInfo templateInfo, Map<ItemAndAlias, Map<String, NodeData>> nodeDataByNidByItem) {
         JsonArray jsonArrayRelations = new JsonArray();
 
         if (templateInfo.getRelations() == null) {
@@ -226,19 +276,26 @@ public class TemplateContainer {
             String toComponentNodeName = StringUtils.substringAfterLast(toComponent, ".");
             boolean findTo = false;
             boolean findFrom = false;
-            for (Item item : nodeDataByNidByItem.keySet()) {
+            for (ItemAndAlias item : nodeDataByNidByItem.keySet()) {
                 Map<String, NodeData> nodeDataByNid = nodeDataByNidByItem.get(item);
                 for (String nid : nodeDataByNid.keySet()) {
                     NodeData currentNodeData = nodeDataByNid.get(nid);
 
                     Optional<Composition> isFoundComposition = templateInfo.getComposition().stream()
-                            .filter(element -> fromComponentAlias.equalsIgnoreCase(element.getAlias()) && element.getType().equalsIgnoreCase(item.getName()) && fromComponentNodeName.equalsIgnoreCase(currentNodeData.getName())).findAny();
+                            .filter(element -> fromComponentAlias.equalsIgnoreCase(element.getAlias())
+                                    && element.getAlias().equalsIgnoreCase(currentNodeData.getAliasBelong())
+                                    && element.getAlias().equalsIgnoreCase(item.getAlias())
+                                    && element.getType().equalsIgnoreCase(item.getItem().getName())
+                                    && fromComponentNodeName.equalsIgnoreCase(currentNodeData.getName())).findAny();
                     if (isFoundComposition.isPresent()) {
                         boolean isFound = findNode(relation.getFromRequirement(), currentNodeData.getRequirements());
                         if (isFound) {
+                            if (findFrom) {
+                                report.addErrorMessage("Found 2 match nodes, using the second one. from relation: " + relation.getFromRequirement());
+                            }
                             relationElement.addProperty("rid", "ink." + nid + "." + nidCounter++);
                             relationElement.addProperty("n1", nid);
-                            relationElement.addProperty("name1", currentNodeData.getName());
+                            relationElement.addProperty("name1", currentNodeData.getNameWithAlias());
                             metaData.addProperty("n1", nid);
                             metaData.addProperty("p1", relation.getFromRequirement());
                             JsonArray relationship = new JsonArray();
@@ -257,12 +314,19 @@ public class TemplateContainer {
                     }
 
                     isFoundComposition = templateInfo.getComposition().stream()
-                            .filter(element -> toComponentAlias.equalsIgnoreCase(element.getAlias()) && element.getType().equalsIgnoreCase(item.getName()) && toComponentNodeName.equalsIgnoreCase(currentNodeData.getName())).findAny();
+                            .filter(element -> toComponentAlias.equalsIgnoreCase(element.getAlias())
+                                    && element.getAlias().equalsIgnoreCase(currentNodeData.getAliasBelong())
+                                    && element.getAlias().equalsIgnoreCase(item.getAlias())
+                                    && element.getType().equalsIgnoreCase(item.getItem().getName())
+                                    && toComponentNodeName.equalsIgnoreCase(currentNodeData.getName())).findAny();
                     if (isFoundComposition.isPresent()) {
                         boolean isFound = findNode(relation.getToCapability(), currentNodeData.getCapabilities());
                         if (isFound) {
+                            if (findTo) {
+                                report.addErrorMessage("Found 2 match nodes, using the second one. to relation: " + relation.getToCapability());
+                            }
                             relationElement.addProperty("n2", nid);
-                            relationElement.addProperty("name2",  currentNodeData.getName());
+                            relationElement.addProperty("name2",  currentNodeData.getNameWithAlias());
                             metaData.addProperty("n2", nid);
                             metaData.addProperty("p2", relation.getToCapability());
                             findTo = true;
@@ -307,7 +371,7 @@ public class TemplateContainer {
         return false;
     }
 
-    private JsonObject newVfcmtJSON(String name, String description) {
+    private JsonObject newNodeTemplate(String name, String description) {
         JsonObject json = new JsonObject();
         json.addProperty("name", name);
         json.addProperty("description", description);
@@ -317,7 +381,7 @@ public class TemplateContainer {
     private JsonObject generateCdumpInput(TemplateInfo templateInfo) {
         JsonObject json = new JsonObject();
         json.addProperty("version", 0);
-        json.addProperty("flowType", templateInfo.getName());
+        json.addProperty("flowType", templateInfo.getFlowType());
         json.add(NODES, new JsonArray());
 
         json.add("inputs", new JsonArray());

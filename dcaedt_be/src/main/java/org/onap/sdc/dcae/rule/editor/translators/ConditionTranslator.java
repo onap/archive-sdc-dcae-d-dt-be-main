@@ -31,7 +31,7 @@ public class ConditionTranslator implements IRuleElementTranslator<Condition> {
 		}
 	}
 
-	public Translation translateToHpJson(Condition condition) {
+	public Object translateToHpJson(Condition condition) {
 		return 1 == condition.getRight().size() ? new StringFilterTranslation(condition) : new FiltersTranslation(ConditionTypeEnum.ANY.getFilterClass(), condition.getRight().stream()
 				.map(r -> new StringFilterTranslation(condition, r)).collect(Collectors.toList()));
 	}

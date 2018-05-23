@@ -31,8 +31,9 @@ public class RulesBusinessLogic {
 
 	public List<ServiceException> validateRule(Rule rule) {
 		List<ResponseFormat> errors = new ArrayList<>();
-		if(ruleValidator.validate(rule, errors))
+		if(ruleValidator.validate(rule, errors)) {
 			detectAndResolveActionDependencies(rule, errors);
+		}
 		return errors.stream().map(r -> r.getRequestError().getServiceException()).collect(Collectors.toList());
 	}
 
@@ -49,8 +50,9 @@ public class RulesBusinessLogic {
 
 	public boolean addOrEditRule(MappingRules rules, Rule rule) {
 		// in case the rule id is passed but the rule doesn't exist on the mapping rule file:
-		if(StringUtils.isNotBlank(rule.getUid()) && !rules.ruleExists(rule))
+		if(StringUtils.isNotBlank(rule.getUid()) && !rules.ruleExists(rule)) {
 			return false;
+		}
 		rules.addOrReplaceRule(rule);
 		return true;
 	}
@@ -72,8 +74,9 @@ public class RulesBusinessLogic {
 			List<T> resolvable = dependentItems.stream()
 					.filter(i -> !dependencyDetector.apply(i, dependentItems))
 					.collect(Collectors.toList());
-			if(CollectionUtils.isEmpty(resolvable))
+			if(CollectionUtils.isEmpty(resolvable)) {
 				break;
+			}
 			dependentItems.removeAll(resolvable);
 		}
 		return dependentItems;
@@ -98,7 +101,7 @@ public class RulesBusinessLogic {
 		if(!CollectionUtils.isEmpty(dependentActions)) {
 			List<BaseAction> nonResolvable = detectCircularDependenciesByDependencyDefinition(dependentActions, BaseAction::hasDependencies);
 			if (!CollectionUtils.isEmpty(nonResolvable)) {
-				errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.ACTION_DEPENDENCY, null, nonResolvable.stream().map(BaseAction::getTarget).collect(Collectors.joining(", "))));
+				errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.ACTION_DEPENDENCY, null, nonResolvable.stream().map(BaseAction::strippedTarget).collect(Collectors.joining(", "))));
 				return;
 			}
 			List<BaseAction> actions = reorderItemsByDependencyDefinition(rule.getActions(), BaseAction::referencesTarget);
@@ -128,14 +131,15 @@ public class RulesBusinessLogic {
 		List<BaseAction> allActions = dependentRules.stream().map(Rule::getActions).flatMap(List::stream).collect(Collectors.toList());
 		// option 1: circular dependency between actions
 		List<BaseAction> nonResolvable = detectCircularDependenciesByDependencyDefinition(allActions, BaseAction::hasDependencies);
-		if(CollectionUtils.isEmpty(nonResolvable))
+		if(CollectionUtils.isEmpty(nonResolvable)) {
 			// option 2: circular dependency between rules - collect dependent actions and condition dependencies
 			nonResolvable = dependentRules.stream()
 					.map(r -> r.findDependencies(dependentRules))
 					.flatMap(List::stream)
 					.collect(Collectors.toList());
+		}
 		return nonResolvable.stream()
-				.map(BaseAction::getTarget)
+				.map(BaseAction::strippedTarget)
 				.collect(Collectors.joining(", "));
 	}
 

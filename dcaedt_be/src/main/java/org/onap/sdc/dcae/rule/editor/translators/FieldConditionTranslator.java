@@ -37,7 +37,7 @@ public class FieldConditionTranslator implements IRuleElementTranslator<Conditio
 		}
 	}
 
-	public Translation translateToHpJson(Condition condition) {
+	public Object translateToHpJson(Condition condition) {
 		return 1 == condition.getRight().size() ? new FieldFilterTranslation(condition) : new MultiFieldFilterTranslation(condition);
 	}
 }

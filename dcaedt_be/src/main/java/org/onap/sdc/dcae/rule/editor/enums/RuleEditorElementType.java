@@ -2,34 +2,26 @@ package org.onap.sdc.dcae.rule.editor.enums;
 
 import java.util.Arrays;
 
-import org.onap.sdc.dcae.rule.editor.translators.ConditionGroupTranslator;
-import org.onap.sdc.dcae.rule.editor.translators.ConditionTranslator;
-import org.onap.sdc.dcae.rule.editor.translators.CopyActionTranslator;
-import org.onap.sdc.dcae.rule.editor.translators.DateFormatterTranslator;
-import org.onap.sdc.dcae.rule.editor.translators.FieldConditionTranslator;
-import org.onap.sdc.dcae.rule.editor.translators.IRuleElementTranslator;
-import org.onap.sdc.dcae.rule.editor.translators.MapActionTranslator;
-import org.onap.sdc.dcae.rule.editor.translators.MappingRulesTranslator;
-import org.onap.sdc.dcae.rule.editor.translators.RegexActionTranslator;
-import org.onap.sdc.dcae.rule.editor.translators.RuleTranslator;
-import org.onap.sdc.dcae.rule.editor.validators.ActionValidator;
-import org.onap.sdc.dcae.rule.editor.validators.ConcatActionValidator;
-import org.onap.sdc.dcae.rule.editor.validators.ConditionGroupValidator;
-import org.onap.sdc.dcae.rule.editor.validators.ConditionValidator;
-import org.onap.sdc.dcae.rule.editor.validators.DateFormatterValidator;
-import org.onap.sdc.dcae.rule.editor.validators.IRuleElementValidator;
-import org.onap.sdc.dcae.rule.editor.validators.MapActionValidator;
-import org.onap.sdc.dcae.rule.editor.validators.RuleValidator;
+import org.onap.sdc.dcae.composition.restmodels.ruleeditor.LogEventAction;
+import org.onap.sdc.dcae.rule.editor.translators.*;
+import org.onap.sdc.dcae.rule.editor.validators.*;
 
 public enum RuleEditorElementType {
-	COPY("Copy", ActionValidator.getInstance(), CopyActionTranslator.getInstance()),
+	COPY("Copy", CopyActionValidator.getInstance(), CopyActionTranslator.getInstance()),
 	CONCAT("Concat", ConcatActionValidator.getInstance(), CopyActionTranslator.getInstance()),
 	MAP("Map", MapActionValidator.getInstance(), MapActionTranslator.getInstance()),
-	REGEX("Regex", ActionValidator.getInstance(), RegexActionTranslator.getInstance()),
+	REGEX("Regex", CopyActionValidator.getInstance(), RegexActionTranslator.getInstance()),
 	DATE_FORMATTER("DateFormatter", DateFormatterValidator.getInstance(), DateFormatterTranslator.getInstance()),
+	//1806 US390049 additional hp processors support
+	CLEAR("Clear", ClearActionValidator.getInstance(), ClearActionTranslator.getInstance()),
+	REPLACE_TEXT("ReplaceText", ReplaceActionValidator.getInstance(), ReplaceActionTranslator.getInstance()),
+	LOG_EVENT("LogEvent", LogEventValidator.getInstance(), LogEventTranslator.getInstance()),
+	LOG_TEXT("LogText", LogTextValidator.getInstance(), LogTextTranslator.getInstance()),
+
 	CONDITION("Condition", ConditionValidator.getInstance(), ConditionTranslator.getInstance()),
 	FIELD_CONDITION("FieldCondition", ConditionValidator.getInstance(), FieldConditionTranslator.getInstance()),
 	CONDITION_GROUP("ConditionGroup", ConditionGroupValidator.getInstance(), ConditionGroupTranslator.getInstance()),
+
 	RULE("Rule", RuleValidator.getInstance(), RuleTranslator.getInstance()),
 	MAPPING_RULES("MappingRules", null, MappingRulesTranslator.getInstance());
 

@@ -19,10 +19,6 @@ public class Proxies {
 	public static <T> T build(Map theData, Class<T> theType) {
 		return builder.build(new JSONObject(theData), theType);
 	}
-	
-	public static <T> T build(Map theData, Map theContextData, Class<T> theType) {
-		return builder.build(new JSONObject(theData), theContextData, theType);
-	}
 
 	public static <T> T build(JSONObject theData, Class<T> theType) {
 		return builder.build(theData, theType);

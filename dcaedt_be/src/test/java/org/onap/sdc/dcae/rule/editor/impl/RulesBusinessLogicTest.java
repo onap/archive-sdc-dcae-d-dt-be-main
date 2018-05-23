@@ -201,6 +201,17 @@ public class RulesBusinessLogicTest {
 	}
 
 	@Test
+	public void missingLogTextFailureTest() {
+		Rule rule = new Rule();
+		rule.setDescription("description");
+		rule.setActions(new ArrayList<>());
+		rule.getActions().add(buildLogTextMissingTextAction());
+		List<ServiceException> errors = rulesBusinessLogic.validateRule(rule);
+		String expectedError = "Please fill the text field of Log Text action to ";
+		assertEquals(expectedError, errors.get(0).getFormattedErrorMessage());
+	}
+
+	@Test
 	public void reorderMappingRulesCircularDependencyFailureTest() {
 
 		MappingRules mr = new MappingRules(buildRuleWithMultipleCopyActions());
@@ -266,24 +277,31 @@ public class RulesBusinessLogicTest {
 		return rule;
 	}
 
-	private BaseAction buildCopyAction(String from, String to) {
-		BaseAction action = new BaseAction();
+	private BaseCopyAction buildCopyAction(String from, String to) {
+		BaseCopyAction action = new BaseCopyAction();
 		action.setActionType("copy");
 		action.setFrom(from);
 		action.setTarget(to);
 		return action;
 	}
 
-	private BaseAction buildConcatAction(List<String> from, String to) {
-		BaseAction action = new BaseAction();
+	private LogTextAction buildLogTextMissingTextAction(){
+		LogTextAction logTextAction = new LogTextAction();
+		logTextAction.setActionType("Log Text");
+		logTextAction.setLogText("a name", "a level", "");
+		return logTextAction;
+	}
+
+	private BaseCopyAction buildConcatAction(List<String> from, String to) {
+		BaseCopyAction action = new BaseCopyAction();
 		action.setActionType("concat");
 		action.setFrom(from);
 		action.setTarget(to);
 		return action;
 	}
 
-	private BaseAction buildRegexAction(String from, String to, String regex) {
-		BaseAction action = new BaseAction();
+	private BaseCopyAction buildRegexAction(String from, String to, String regex) {
+		BaseCopyAction action = new BaseCopyAction();
 		action.setActionType("copy");
 		action.setFrom(from, regex);
 		action.setTarget(to);

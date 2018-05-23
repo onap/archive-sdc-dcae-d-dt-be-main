@@ -61,11 +61,11 @@ public class Main {
 
             debugLogger.log( "VFCMT template deployment completed successfully");
         } catch (RuntimeException e) {
-            errLogger.log("ERROR - Template deployment failed with error " + e);
+            errLogger.log("ERROR - Template deployment failed with error " + e, e);
         } catch (ConnectException e) {
-            errLogger.log( "ERROR - Failed connection to server, are you on AT&T network? {}" + e);
+            errLogger.log( "ERROR - Failed connection to server, are you on AT&T network? {}" + e, e);
         } catch (IOException e) {
-            errLogger.log( "ERROR - Fatal Error! " + e);
+            errLogger.log( "ERROR - Fatal Error! " + e, e);
         } finally {
             debugLogger.log(report.toString());
         }

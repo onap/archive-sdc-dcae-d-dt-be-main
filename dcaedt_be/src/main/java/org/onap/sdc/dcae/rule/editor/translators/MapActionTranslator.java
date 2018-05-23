@@ -2,14 +2,11 @@ package org.onap.sdc.dcae.rule.editor.translators;
 
 import com.google.gson.annotations.SerializedName;
 
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
-
-import java.util.List;
 import java.util.Map;
 
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.MapAction;
 
-public class MapActionTranslator extends CopyActionTranslator<MapAction> {
+public class MapActionTranslator extends ActionTranslator<MapAction> {
 
 	private static MapActionTranslator mapActionTranslator = new MapActionTranslator();
 
@@ -36,15 +33,8 @@ public class MapActionTranslator extends CopyActionTranslator<MapAction> {
 		}
 	}
 
-	@Override
-	public Translation translateToHpJson(MapAction action) {
+	public Object translateToHpJson(MapAction action) {
 		return new MapActionTranslation(action);
 	}
 
-	@Override
-	public boolean addToHpJsonProcessors(MapAction action, List<Translation> processors, boolean asNewProcessor) {
-		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Translating map action");
-		addToHpJsonProcessors(action, processors);
-		return true;
-	}
 }

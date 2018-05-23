@@ -8,6 +8,6 @@ package kwalify;
  * interface to have default value
  */
 public interface Defaultable {
-    Object getDefault();
-    void setDefault(Object value);
+    Rule getDefault();
+    void setDefault(Rule value);
 }

@@ -10,7 +10,6 @@ import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.dcae.catalog.commons.Action;
 import org.onap.sdc.dcae.catalog.commons.Future;
 import org.onap.sdc.dcae.catalog.commons.Http;
-import org.json.JSONArray;
 
 import org.springframework.util.Base64Utils;
 
@@ -26,51 +25,41 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Scope("singleton")
 @ConfigurationProperties(prefix="blueprinter")
 public class Blueprinter {
+    private URI	serviceUri;
+    private OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
 
+    public void setUri(URI theUri) {
+        this.serviceUri = theUri;
+    }
 
-	private URI	serviceUri;
-	private OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
+    public BlueprintAction generateBlueprint() {
+        return new BlueprintAction();
+    }
 
+    public class BlueprintAction implements Action<String> {
 
-	public Blueprinter() {
-	}
+        private JSONObject	body = new JSONObject();
 
-	public void setUri(URI theUri) {
-		this.serviceUri = theUri;
-	}
+        protected BlueprintAction() {
+        }
 
-	public BlueprintAction generateBlueprint() {
-		return new BlueprintAction();
-	}
+        public BlueprintAction withModelInfo(JSONObject theModelInfo) {
+            body.append("models", theModelInfo);
+            return this;
+        }
 
-	public class BlueprintAction implements Action<String> {
+        public BlueprintAction withTemplateData(byte[] theData) {
+            body.put("template", Base64Utils.encodeToString(theData));
+            return this;
+        }
 
-		private JSONObject	body = new JSONObject();
+        public Future<String> execute() {
 
-
-		protected BlueprintAction() {
-		}
-
-		public BlueprintAction withModelData(byte[] theSchema, byte[] theTemplate, byte[] theTranslation) {
-			return this;
-		}
-
-		public BlueprintAction withModelInfo(JSONObject theModelInfo) {
-			body.append("models", theModelInfo);
-			return this;
-		}
-
-		public BlueprintAction withTemplateData(byte[] theData) {
-			body.put("template", Base64Utils.encodeToString(theData));
-			return this;
-		}
-
-		public Future<String> execute() {
-			debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Blueprinter::execute() | PAYLOAD to TOSCA_LAB={}", body.toString());
-			HttpHeaders headers = new HttpHeaders();
- 			headers.setContentType(MediaType.APPLICATION_JSON);
-			headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-			return Http.exchange(serviceUri.toString(), HttpMethod.POST, new HttpEntity<String>(body.toString(), headers), String.class);
-		}
-	}
+            debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Blueprinter::execute() | PAYLOAD to TOSCA_LAB={}", body.toString());
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+            return Http.exchange(serviceUri.toString(), HttpMethod.POST, new HttpEntity<>(body.toString(), headers), String.class);
+        }
+    }
 }

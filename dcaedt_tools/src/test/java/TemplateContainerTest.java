@@ -2,6 +2,7 @@ import com.google.gson.JsonObject;
 import json.response.ItemsResponse.Item;
 import json.response.ItemsResponse.Model;
 import json.templateInfo.Composition;
+import json.templateInfo.NodeToDelete;
 import json.templateInfo.Relation;
 import json.templateInfo.TemplateInfo;
 import org.junit.Assert;
@@ -28,6 +29,7 @@ public class TemplateContainerTest extends BaseTest {
         templateInfos = new ArrayList<>();
         TemplateInfo templateInfo = new TemplateInfo();
         templateInfo.setName(TEMPLATE_INFO_NAME);
+        templateInfo.setFlowType(TEMPLATE_INFO_FLOWTYPE);
         Composition composition = new Composition();
         composition.setType(ELEMENT_NAME3);
         composition.setAlias(ALIAS_NAME3);
@@ -84,10 +86,28 @@ public class TemplateContainerTest extends BaseTest {
     }
 
     @Test
+    public void getCdumpsWithDeleteNode_returnOneCdumpWithDeletedNode() {
+        NodeToDelete nodeToDelete = new NodeToDelete();
+        nodeToDelete.setNodeName("SomeNameFromRequirement");
+        nodeToDelete.setType("my element3");
+        templateInfos.get(0).setNodesToDelete(Collections.singletonList(nodeToDelete));
+        templateContainer = new TemplateContainer(report, dcaeRestClient, templateInfos, elementsByFolderNames);
+
+        Map<TemplateInfo, JsonObject> templateInfoJsonObjectMap = templateContainer.getCdumps();
+        JsonObject jsonObject = templateInfoJsonObjectMap.get(templateInfos.get(0));
+        String result = jsonObject.toString();
+
+        verifyDeletedNodeCdump(result);
+        verify(report, times(0)).addErrorMessage(anyString());
+        Assert.assertTrue(templateInfoJsonObjectMap.size() == 1);
+    }
+
+    @Test
     public void getChumps_returnOneChumpWithRelations() {
         templateInfos = new ArrayList<>();
         TemplateInfo templateInfo = new TemplateInfo();
         templateInfo.setName(TEMPLATE_INFO_NAME);
+        templateInfo.setFlowType(TEMPLATE_INFO_FLOWTYPE);
         List<Composition> compositionList = new ArrayList<>();
         Composition composition = new Composition();
         composition.setType(ELEMENT_NAME3);
@@ -141,17 +161,23 @@ public class TemplateContainerTest extends BaseTest {
         Assert.assertTrue(result.contains("\"relationship\":["));
         Assert.assertTrue(result.contains("\"n1\":\"n."));
         Assert.assertTrue(result.contains("\"relations\":[{"));
-        Assert.assertTrue(result.contains("\"name1\":\"SomeNameFromRequirement\""));
+        Assert.assertTrue(result.contains(",\"name2\":\"my alias2.SomeNameToCapability\","));
+        Assert.assertTrue(result.contains(",\"name1\":\"my alias3.SomeNameFromRequirement\","));
         Assert.assertTrue(result.contains("\"n2\":\"n."));
         Assert.assertTrue(result.contains("\"p1\":\"SomeNameFromRequirement\""));
     }
 
     private void verifyCdump(String result) {
-        String expectedResultStart = "{\"version\":0,\"flowType\":\"templateInfoName\",\"nodes\":[{\"name\":\"SomeNameFromRequirement\",\"description\":\"\",\"id\":\"e45ec9d7-01df-4cb1-896f-aff2a6ca5a8b\",\"nid\":\"n.";
-        String expectedResultMid =  "\",\"capabilities\":[{\"name\":\"SomeNameToCapability\"}],\"requirements\":[{\"name\":\"SomeNameFromRequirement\"}],\"properties\":[{}],\"typeinfo\":{\"itemId\":\"e45ec9d7-01df-4cb1-896f-aff2a6ca5a8b/tosca.dcae.nodes.cdapApp.Map\",\"typeinfo\":\"typeInfo\"},\"type\":{\"name\":\"type\"},\"ndata\":{\"name\":\"n.";
+        String expectedResultStart = "{\"version\":0,\"flowType\":\"templateInfoFlowType\",\"nodes\":[{\"name\":\"my alias3.SomeNameFromRequirement\",\"description\":\"\",\"id\":\"e45ec9d7-01df-4cb1-896f-aff2a6ca5a8b\",\"nid\":\"n.";
+        String expectedResultMid =  "\",\"capabilities\":[{\"name\":\"SomeNameToCapability\"}],\"requirements\":[{\"name\":\"SomeNameFromRequirement\"}],\"properties\":[{\"value\":{}}],\"typeinfo\":{\"itemId\":\"e45ec9d7-01df-4cb1-896f-aff2a6ca5a8b/tosca.dcae.nodes.cdapApp.Map\",\"typeinfo\":\"typeInfo\"},\"type\":{\"name\":\"type\"},\"ndata\":{\"name\":\"n.";
         String expectedResultEnd = "\",\"label\":\"SomeNameFromRequirement\",\"x\":438,\"y\":435,\"px\":437,\"py\":434,\"ports\":[],\"radius\":30}}],\"inputs\":[],\"outputs\":[],\"relations\":[]}";
         Assert.assertTrue(result.startsWith(expectedResultStart));
         Assert.assertTrue(result.contains(expectedResultMid));
         Assert.assertTrue(result.endsWith(expectedResultEnd));
+    }
+
+    private void verifyDeletedNodeCdump(String result) {
+        String expectedResult = "{\"version\":0,\"flowType\":\"templateInfoFlowType\",\"nodes\":[],\"inputs\":[],\"outputs\":[],\"relations\":[]}";
+        Assert.assertEquals(expectedResult, result);
     }
 }

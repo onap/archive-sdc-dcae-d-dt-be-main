@@ -12,7 +12,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.onap.sdc.dcae.catalog.asdc.ASDCCatalog;
-import org.onap.sdc.dcae.catalog.asdc.ASDCCatalog.FolderAction;
+import org.onap.sdc.dcae.catalog.asdc.ASDCCatalog.CatalogFolderAction;
 import org.onap.sdc.dcae.catalog.asdc.ASDCCatalog.Resource;
 
 import static org.mockito.Mockito.*;
@@ -23,17 +23,17 @@ public class ASDCCatalogTest {
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
 	
-	private static FolderAction getTarget() {
+	private static CatalogFolderAction getTarget() {
 		ASDCCatalog catalog = mock(ASDCCatalog.class);
 		when(catalog.folder("test")).thenCallRealMethod();
-		FolderAction target = catalog.folder("test");
+		CatalogFolderAction target = catalog.folder("test");
 		return target;
 	}
 	
 	@Test
 	public void filterLatestVersion_null_throwIllegalArgumentException() {
 		// arrange
-		FolderAction target = getTarget();
+		CatalogFolderAction target = getTarget();
 		// assert
 		thrown.expect(IllegalArgumentException.class);
 		// act
@@ -43,7 +43,7 @@ public class ASDCCatalogTest {
 	@Test
 	public void filterLatestVersion_emptyItemsList_emptyItemsList() throws URISyntaxException {
 		// arrange
-		FolderAction target = getTarget();
+		CatalogFolderAction target = getTarget();
 		// act
 		Collection<Resource> result = target.filterLatestVersion(new ArrayList<>());
 		// assert
@@ -53,7 +53,7 @@ public class ASDCCatalogTest {
 	@Test
 	public void filterLatestVersion_itemWithTwoVersions_itemWithLatestVersion() {
 		// arrange
-		FolderAction target = getTarget();
+		CatalogFolderAction target = getTarget();
 		
 		UUID invariantUUID = UUID.randomUUID();
 		Resource r1v1 = mock(Resource.class);
@@ -72,7 +72,7 @@ public class ASDCCatalogTest {
 	@Test
 	public void filterLatestVersion_2distinctItems_2distinctItems() {
 		// arrange
-		FolderAction target = getTarget();
+		CatalogFolderAction target = getTarget();
 		
 		Resource r1 = mock(Resource.class);
 		Resource r2 = mock(Resource.class);

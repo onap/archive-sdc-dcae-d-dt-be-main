@@ -138,26 +138,26 @@ public class Recycler {
             }
         }
         String type = (String)theSpec.get("type");
-        if (value != null && type != null) {
+        if (value != null && type != null && !"string".equals(type)) {
 			value = getValueByType(value, type);
 		}
         return value;
     }
 
 	private Object getValueByType(Object value, String type) {
-    	Object returnValue = null;
+
 		try {
             if ("map".equals(type) && !(value instanceof Map)) {
-				returnValue = new ObjectMapper().readValue(value.toString(), new TypeReference<Map>(){});
+				return new ObjectMapper().readValue(value.toString(), new TypeReference<Map>(){});
             }
-            else if ("list".equals(type) && !(value instanceof List)) {
-				returnValue = new ObjectMapper().readValue(value.toString(), new TypeReference<List>(){});
+            if ("list".equals(type) && !(value instanceof List)) {
+				return new ObjectMapper().readValue(value.toString(), new TypeReference<List>(){});
             }
-            else if ("integer".equals(type) && (value instanceof String)) {
-				returnValue = Integer.valueOf((String)value);
+            if ("integer".equals(type) && (value instanceof String)) {
+				return Integer.valueOf((String)value);
             }
-            else if ("float".equals(type) && (value instanceof String)) {
-				returnValue = Double.valueOf((String)value); //double because that's how the yaml parser would encode it
+            if ("float".equals(type) && (value instanceof String)) {
+				return Double.valueOf((String)value); //double because that's how the yaml parser would encode it
             }
         }
         catch (NumberFormatException nfx) {
@@ -166,7 +166,7 @@ public class Recycler {
         catch (IOException iox) {
             debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Failed to process {} representation of a collection: {}", value.getClass().getName(), iox);
         }
-		return returnValue;
+		return value;
 	}
 
 	/* */

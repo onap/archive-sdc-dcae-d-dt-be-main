@@ -29,10 +29,18 @@ public class DeployTemplate {
     }
 
     public void deploy(Map<TemplateInfo, JsonObject> templateInfoToJsonObjectMap) {
-        List<ResourceDetailed> vfcmtList = dcaeRestClient.getAllVfcmts();
+        ArrayList<ResourceDetailed> vfcmtList = new ArrayList();
+        List<ResourceDetailed> regularVfcmtList = dcaeRestClient.getAllVfcmts();
+        if (regularVfcmtList != null) {
+            vfcmtList.addAll(regularVfcmtList);
+        }
+        List<ResourceDetailed> baseVfcmtList = dcaeRestClient.getAllBaseVfcmts();
+        if (baseVfcmtList != null) {
+            vfcmtList.addAll(baseVfcmtList);
+        }
 
         List<TemplateInfo> updatedTemplateInfos = new ArrayList<>();
-        vfcmtList.stream().forEach(vfcmt ->
+        vfcmtList.forEach(vfcmt ->
                 templateInfoToJsonObjectMap.keySet().stream().filter(templateInfo -> templateInfo.getName().equalsIgnoreCase(vfcmt.getName())).forEach(templateInfo -> {
                     update(vfcmt, templateInfo, templateInfoToJsonObjectMap.get(templateInfo));
                     updatedTemplateInfos.add(templateInfo);
@@ -47,9 +55,17 @@ public class DeployTemplate {
     private void verify(Map<TemplateInfo, JsonObject> templateInfoToJsonObjectMap) {
         AtomicInteger foundCount = new AtomicInteger();
         debugLogger.log("Starting verify deployment");
-        List<ResourceDetailed> vfcmtList = dcaeRestClient.getAllVfcmts();
+        ArrayList<ResourceDetailed> vfcmtList = new ArrayList();
+        List<ResourceDetailed> regularVfcmtList = dcaeRestClient.getAllVfcmts();
+        if (regularVfcmtList != null) {
+            vfcmtList.addAll(regularVfcmtList);
+        }
+        List<ResourceDetailed> baseVfcmtList = dcaeRestClient.getAllBaseVfcmts();
+        if (baseVfcmtList != null) {
+            vfcmtList.addAll(baseVfcmtList);
+        }
 
-        templateInfoToJsonObjectMap.keySet().stream()
+        templateInfoToJsonObjectMap.keySet()
                 .forEach(templateInfo -> vfcmtList.stream()
                         .filter(vfcmt -> vfcmt.getName().equalsIgnoreCase(templateInfo.getName()))
                         .forEach(vfcmt -> foundCount.getAndIncrement()));
@@ -73,8 +89,6 @@ public class DeployTemplate {
             createVFCMTRequest.setCategory(templateInfo.getCategory());
             ResourceDetailed vfcmt = dcaeRestClient.createResource(createVFCMTRequest);
 
-            jsonObject.addProperty("cid", vfcmt.getUuid());
-
             saveAndCertify(jsonObject, vfcmt);
 
         } catch (HttpServerErrorException e) {
@@ -87,13 +101,13 @@ public class DeployTemplate {
     private void update(ResourceDetailed vfcmt, TemplateInfo templateInfo, JsonObject jsonObject) {
         ResourceDetailed checkedoutVfcmt = vfcmt;
         try {
-            Boolean checkoutChecking = checkUserIfResourceCheckedOut(dcaeRestClient.getUserId(), vfcmt);
-            if (checkoutChecking != null && checkoutChecking) {
+            boolean vfcmtIsCheckedOut = isCheckedOut(vfcmt);
+            if (vfcmtIsCheckedOut && differentUserCannotCheckout(dcaeRestClient.getUserId(), vfcmt)){
                 report.addErrorMessage(FAILED_UPDATE_VFCMT + vfcmt.getName() + ", cannot checkout vfcmt");
                 return;
             }
             if (templateInfo.getUpdateIfExist()) {
-                if (checkoutChecking == null) {
+                if (!vfcmtIsCheckedOut) {
                     checkedoutVfcmt = dcaeRestClient.checkoutVfcmt(vfcmt.getUuid());
                 }
                 if (checkedoutVfcmt != null) {
@@ -114,6 +128,7 @@ public class DeployTemplate {
     }
 
     private void saveAndCertify(JsonObject jsonObject, ResourceDetailed checkedoutVfcmt) {
+		jsonObject.addProperty("cid", checkedoutVfcmt.getUuid());
         if (saveCompositionAndCertify(checkedoutVfcmt, jsonObject)) {
             report.addUpdatedMessage("vfcmt: " + checkedoutVfcmt.getName() + " updated successfully");
         } else {
@@ -140,18 +155,19 @@ public class DeployTemplate {
         return true;
     }
 
-    private Boolean checkUserIfResourceCheckedOut(String userId, ResourceDetailed asset) {
-        if (DcaeBeConstants.LifecycleStateEnum.NOT_CERTIFIED_CHECKOUT == DcaeBeConstants.LifecycleStateEnum.findState(asset.getLifecycleState())) {
-            String lastUpdaterUserId = asset.getLastUpdaterUserId();
-            if (lastUpdaterUserId != null && !lastUpdaterUserId.equals(userId)) {
-                String msg = "User conflicts. Operation not allowed for user "+userId+" on resource checked out by "+lastUpdaterUserId;
-                report.addErrorMessage(msg);
-                errLogger.log(msg);
-                return true;
-            } else {
-                return false;
-            }
+    private boolean isCheckedOut(ResourceDetailed asset) {
+        return DcaeBeConstants.LifecycleStateEnum.NOT_CERTIFIED_CHECKOUT == DcaeBeConstants.LifecycleStateEnum.findState(asset.getLifecycleState());
+    }
+
+    private Boolean differentUserCannotCheckout(String userId, ResourceDetailed asset) {
+        String lastUpdaterUserId = asset.getLastUpdaterUserId();
+        if (lastUpdaterUserId != null && !lastUpdaterUserId.equals(userId)) {
+            String msg = "User conflicts. Operation not allowed for user "+userId+" on resource checked out by "+lastUpdaterUserId;
+            report.addErrorMessage(msg);
+            errLogger.log(msg);
+            return true;
+        } else {
+            return false;
         }
-        return null;
     }
 }

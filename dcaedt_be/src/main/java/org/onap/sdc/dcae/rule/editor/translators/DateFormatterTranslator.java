@@ -1,11 +1,8 @@
 package org.onap.sdc.dcae.rule.editor.translators;
 
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
-import java.util.List;
-
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.DateFormatterAction;
 
-public class DateFormatterTranslator extends CopyActionTranslator<DateFormatterAction> {
+public class DateFormatterTranslator extends ActionTranslator<DateFormatterAction> {
 
 	private static DateFormatterTranslator dateFormatterTranslator = new DateFormatterTranslator();
 
@@ -34,15 +31,7 @@ public class DateFormatterTranslator extends CopyActionTranslator<DateFormatterA
 		}
 	}
 
-	@Override
-	public boolean addToHpJsonProcessors(DateFormatterAction action, List<Translation> processors, boolean asNewProcessor) {
-		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Translating date formatter action");
-		addToHpJsonProcessors(action, processors);
-		return true;
-	}
-
-	@Override
-	public Translation translateToHpJson(DateFormatterAction action){
+	public Object translateToHpJson(DateFormatterAction action){
 		return new DateFormatterTranslation(action);
 	}
 

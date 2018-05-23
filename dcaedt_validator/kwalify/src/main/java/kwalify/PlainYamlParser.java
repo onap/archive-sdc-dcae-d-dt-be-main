@@ -85,17 +85,13 @@ public class PlainYamlParser implements Parser {
         seq.set(index, value);
     }
 
-    Map createMapping() {
-        return new DefaultableHashMap();
-    }
-
     private void setMappingValueWith(Map map, Object key, Object value) {
         map.put(key, value);
     }
 
     void setMappingDefault(Map map, Object value) {
         if (map instanceof Defaultable) {
-            ((Defaultable)map).setDefault(value);
+            ((Defaultable)map).setDefault((Rule)value);
         }
     }
 
@@ -316,14 +312,14 @@ public class PlainYamlParser implements Parser {
 
     private Map parseFlowMapping(int depth) throws SyntaxException {
         assert currentChar() == '{';
-        Map map = createMapping();
+        Map map = new DefaultableHashMap();
         int ch = getChar();
         if (ch != '}') {
             Object[] pair = parseFlowMappingItem(depth + 1);
             Object key   = pair[0];
             Object value = pair[1];
             setMappingValueWith(map, key, value);
-            while ((ch = currentChar()) == ',') {
+            while ((currentChar()) == ',') {
                 ch = getChar();
                 if (ch == '}') {
                     throw syntaxError("mapping item required (or last comman is extra.");
@@ -368,7 +364,8 @@ public class PlainYamlParser implements Parser {
             scalar = sb.toString();
         } else {
             sb.append((char)ch);
-            while ((ch = getCurrentCharacter()) >= 0 && ch != ':' && ch != ',' && ch != ']' && ch != '}') {
+            String lookup = ":,]}";
+            while ((ch = getCurrentCharacter()) >= 0 && lookup.indexOf(ch) == -1) {
                 sb.append((char)ch);
             }
             scalar = toScalar(sb.toString().trim());
@@ -543,15 +540,7 @@ public class PlainYamlParser implements Parser {
                 } else if (slen < indent) {
                     throw syntaxError("invalid indent in block text.");
                 } else {
-                    if (n > 0) {
-                        if (blockChar == '>' && sb.length() > 0) {
-                            sb.deleteCharAt(sb.length() - 1);
-                        }
-                        for (int i = 0; i < n; i++) {
-                            sb.append('\n');
-                        }
-                        n = 0;
-                    }
+                    n = indentHandler(blockChar, sb, n);
                     str = currentLine.substring(indent);
                 }
             }
@@ -563,6 +552,11 @@ public class PlainYamlParser implements Parser {
         if (currentLine != null && Util.matches(currentLine, "^ *#")) {
             getLine();
         }
+        processIndicator(blockChar, indicator, sep, sb, n);
+        return createScalar(text + sb.toString());
+    }
+
+    private void processIndicator(char blockChar, char indicator, char sep, StringBuilder sb, int n) {
         switch (indicator) {
         case '+':
             handlePlus(blockChar, sb, n);
@@ -575,7 +569,19 @@ public class PlainYamlParser implements Parser {
                 sb.setCharAt(sb.length() - 1, '\n');
             }
         }
-        return createScalar(text + sb.toString());
+    }
+
+    private int indentHandler(char blockChar, StringBuilder sb, int indent) {
+        if (indent > 0) {
+            if (blockChar == '>' && sb.length() > 0) {
+                sb.deleteCharAt(sb.length() - 1);
+            }
+            for (int i = 0; i < indent; i++) {
+                sb.append('\n');
+            }
+            return 0;
+        }
+        return indent;
     }
 
     private void handleMinus(char sep, StringBuilder sb) {
@@ -637,7 +643,7 @@ public class PlainYamlParser implements Parser {
 
     private Map parseMapping(int column, String value) throws SyntaxException {
         assert Util.matches(value, REGEXP2);
-        Map map = createMapping();
+        Map map = new DefaultableHashMap();
         while (true) {
             Matcher m = Util.matcher(value, REGEXP2);
             if (! m.find()) {
@@ -670,14 +676,21 @@ public class PlainYamlParser implements Parser {
             Matcher m2 = Util.matcher(currentLine, REGEXP1);
             m2.find();
             int indent = m2.group(1).length();
-            if (indent < column) {
+            if (checkIndent(column, indent)) {
                 break;
-            } else if (indent > column) {
-                throw syntaxError("invalid indent of mapping.");
             }
             value = m2.group(2);
         }
         return map;
+    }
+
+    private boolean checkIndent(int column, int indent) throws SyntaxException {
+        if (indent < column) {
+            return true;
+        } else if (indent > column) {
+            throw syntaxError("invalid indent of mapping.");
+        }
+        return false;
     }
 
 
@@ -690,38 +703,66 @@ public class PlainYamlParser implements Parser {
 
     private Object toScalar(String value) {
         Matcher m;
-        if ((m = Util.matcher(value, "^\"(.*)\"([ \t]*#.*$)?")).find()) {
+        m = Util.matcher(value, "^\"(.*)\"([ \t]*#.*$)?");
+        if (m.find()) {
             return m.group(1);
-        } else if ((m = Util.matcher(value, "^'(.*)'([ \t]*#.*$)?")).find()) {
+        }
+
+        m = Util.matcher(value, "^'(.*)'([ \t]*#.*$)?");
+        if (m.find()) {
             return m.group(1);
-        } else if ((m = Util.matcher(value, "^(.*\\S)[ \t]*#")).find()) {
+        }
+
+        m = Util.matcher(value, "^(.*\\S)[ \t]*#");
+        if (m.find()) {
             value = m.group(1);
         }
 
         if (Util.matches(value, "^-?0x\\d+$")) {
             return Integer.parseInt(value, 16);
-        } else if (Util.matches(value, "^-?0\\d+$")) {
+        }
+
+        if (Util.matches(value, "^-?0\\d+$")) {
             return Integer.parseInt(value, 8);
-        } else if (Util.matches(value, "^-?\\d+$")) {
+        }
+
+        if (Util.matches(value, "^-?\\d+$")) {
             return Integer.parseInt(value, 10);
-        } else if (Util.matches(value, "^-?\\d+\\.\\d+$")) {
+        }
+
+        if (Util.matches(value, "^-?\\d+\\.\\d+$")) {
             return Double.parseDouble(value);
-        } else if (Util.matches(value, "^(true|yes|on)$")) {
+        }
+
+        if (Util.matches(value, "^(true|yes|on)$")) {
             return Boolean.TRUE;
-        } else if (Util.matches(value, "^(false|no|off)$")) {
+        }
+
+        if (Util.matches(value, "^(false|no|off)$")) {
             return Boolean.FALSE;
-        } else if (Util.matches(value, "^(null|~)$")){
+        }
+
+        if (Util.matches(value, "^(null|~)$")){
             return null;
-        } else if (Util.matches(value, "^:(\\w+)$"))       {
+        }
+
+        if (Util.matches(value, "^:(\\w+)$"))       {
             return value;
-        } else if ((m = Util.matcher(value, "^(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d)$")).find()) {
+        }
+
+        m = Util.matcher(value, "^(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d)$");
+        if (m.find()) {
             int year  = Integer.parseInt(m.group(1));
             int month = Integer.parseInt(m.group(2));
             int day   = Integer.parseInt(m.group(3));
             Calendar cal = Calendar.getInstance();
+            //noinspection MagicConstant
             cal.set(year, month, day, 0, 0, 0);
             return cal.getTime();
-        } else if ((m = Util.matcher(value, "^(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d)(?:[Tt]|[ \t]+)(\\d\\d?):(\\d\\d):(\\d\\d)(\\.\\d*)?(?:Z|[ \t]*([-+]\\d\\d?)(?::(\\d\\d))?)?$")).find()) {
+        }
+
+        m = Util.matcher(value, "^(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d)(?:[Tt]|[ \t]+)(\\d\\d?):(\\d\\d):(\\d\\d)(\\.\\d*)?(?:Z|[ \t]*([-+]\\d\\d?)(?::(\\d\\d))?)?$");
+        if (m.find()) {
             int year    = Integer.parseInt(m.group(1));
             int month   = Integer.parseInt(m.group(2));
             int day     = Integer.parseInt(m.group(3));
@@ -731,12 +772,13 @@ public class PlainYamlParser implements Parser {
 
             String timezone = "GMT" + m.group(8) + ":" + m.group(9);
             Calendar cal = Calendar.getInstance();
+            //noinspection MagicConstant
             cal.set(year, month, day, hour, min, sec);
             cal.setTimeZone(TimeZone.getTimeZone(timezone));
             return cal.getTime();
-        } else {
-            return value;
         }
+
+        return value;
     }
 
 }

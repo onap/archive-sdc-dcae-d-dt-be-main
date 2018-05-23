@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 abstract class BaseTest {
     static final String USER_ID = "userId";
     static final String TEMPLATE_INFO_NAME = "templateInfoName";
+    static final String TEMPLATE_INFO_FLOWTYPE = "templateInfoFlowType";
     static final String VFCMT_NAME1 = "my vfcmt1";
     static final String UUID1 = "my uuid1";
     static final String VFCMT_NAME2 = "my vfcmt2";
@@ -127,25 +128,26 @@ abstract class BaseTest {
         resourceDetailed.setUuid(UUID3);
         resourceDetaileds.add(resourceDetailed);
 
-        List<ResourceDetailed> resourceDetaileds2 = new ArrayList<>();
+        List<ResourceDetailed> resourceDetailed2 = new ArrayList<>();
         resourceDetailed = new ResourceDetailed();
         resourceDetailed.setName(VFCMT_NAME1);
         resourceDetailed.setUuid(UUID1);
         resourceDetailed.setLifecycleState("NOT_CERTIFIED_CHECKOUT");
         resourceDetailed.setLastUpdaterUserId(USER_ID);
-        resourceDetaileds2.add(resourceDetailed);
+        resourceDetailed2.add(resourceDetailed);
         resourceDetailed = new ResourceDetailed();
         resourceDetailed.setName(VFCMT_NAME2);
         resourceDetailed.setUuid(UUID2);
-        resourceDetaileds2.add(resourceDetailed);
+        resourceDetailed2.add(resourceDetailed);
         resourceDetailed = new ResourceDetailed();
         resourceDetailed.setName(VFCMT_NAME3);
         resourceDetailed.setUuid(UUID3);
-        resourceDetaileds2.add(resourceDetailed);
+        resourceDetailed2.add(resourceDetailed);
         resourceDetailed = new ResourceDetailed();
         resourceDetailed.setName(TEMPLATE_INFO_NAME);
         resourceDetailed.setUuid(UUID3);
-        resourceDetaileds2.add(resourceDetailed);
-        when(dcaeRestClient.getAllVfcmts()).thenReturn(resourceDetaileds, resourceDetaileds2);
+        resourceDetailed2.add(resourceDetailed);
+        when(dcaeRestClient.getAllVfcmts()).thenReturn(resourceDetaileds, resourceDetailed2);
+        when(dcaeRestClient.getAllBaseVfcmts()).thenReturn(new ArrayList<>());
     }
 }

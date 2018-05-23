@@ -5,12 +5,7 @@
 package kwalify;
 
 import java.io.Serializable;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.regex.PatternSyntaxException;
@@ -88,32 +83,32 @@ public class Rule implements Serializable{
     private static final String UNIQUE3 = "unique:   ";
     private static final String ENUM2 = "enum:\n";
     private static final String RANGE3 = "range:     { ";
-    private static final String NAME = "name";
-    private static final String DESC = "desc";
+    private static final String NAME_CONSTANT = "name";
+    private static final String DESC_CONSTANT = "desc";
     private static final String SHORT = "short";
-    private static final String REQUIRED = "required";
+    private static final String REQUIRED_CONSTANT = "required";
     private static final String TYPE = "type";
-    private static final String PATTERN = "pattern";
-    private static final String SEQUENCE = "sequence";
+    private static final String PATTERN_CONSTANT = "pattern";
+    private static final String SEQUENCE_CONSTANT = "sequence";
     private static final String MAPPING = "mapping";
     private static final String ASSERT = "assert";
-    private static final String RANGE = "range";
-    private static final String LENGTH = "length";
-    private static final String IDENT = "ident";
-    private static final String UNIQUE = "unique";
+    private static final String RANGE_CONSTANT = "range";
+    private static final String LENGTH_CONSTANT = "length";
+    private static final String IDENT_CONSTANT = "ident";
+    private static final String UNIQUE_CONSTANT = "unique";
     private static final String ENUM = "enum:";
     private static final String ENUM1 = "/enum";
-    public static final String MAX = "max";
-    public static final String MIN = "min";
+    private static final String MAX = "max";
+    private static final String MIN = "min";
 
     private static OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
 
     private Rule parent;
     private String name = null;
     private String desc = null;
-    private String  _short = null; //added by jora: only used for map types
+    private String shortValue = null; //added by jora: only used for map types
     private boolean required = false;
-    private String _type = null;
+    private String typeValue = null;
     private Class typeClass = null;
     private String pattern = null;
     private Pattern patternRegexp = null;
@@ -126,20 +121,20 @@ public class Rule implements Serializable{
     private boolean ident = false;
     private boolean unique = false;
 
-    private static final int CODE_NAME     = NAME.hashCode();
-    private static final int CODE_DESC     = DESC.hashCode();
+    private static final int CODE_NAME     = NAME_CONSTANT.hashCode();
+    private static final int CODE_DESC     = DESC_CONSTANT.hashCode();
     private static final int CODE_SHORT    = SHORT.hashCode();
-    private static final int CODE_REQUIRED = REQUIRED.hashCode();
+    private static final int CODE_REQUIRED = REQUIRED_CONSTANT.hashCode();
     private static final int CODE_TYPE     = TYPE.hashCode();
-    private static final int CODE_PATTERN  = PATTERN.hashCode();
-    private static final int CODE_LENGTH   = LENGTH.hashCode();
-    private static final int CODE_RANGE    = RANGE.hashCode();
+    private static final int CODE_PATTERN  = PATTERN_CONSTANT.hashCode();
+    private static final int CODE_LENGTH   = LENGTH_CONSTANT.hashCode();
+    private static final int CODE_RANGE    = RANGE_CONSTANT.hashCode();
     private static final int CODE_ASSERT   = ASSERT.hashCode();
-    private static final int CODE_IDENT    = IDENT.hashCode();
-    private static final int CODE_UNIQUE   = UNIQUE.hashCode();
+    private static final int CODE_IDENT    = IDENT_CONSTANT.hashCode();
+    private static final int CODE_UNIQUE   = UNIQUE_CONSTANT.hashCode();
     private static final int CODE_ENUM     = ENUM.hashCode();
     private static final int CODE_MAPPING  = MAPPING.hashCode();
-    private static final int CODE_SEQUENCE = SEQUENCE.hashCode();
+    private static final int CODE_SEQUENCE = SEQUENCE_CONSTANT.hashCode();
 
     public Rule(Object schema, Rule parent) {
         if (schema != null) {
@@ -175,21 +170,23 @@ public class Rule implements Serializable{
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    public String getShort() { return _short; }
-    public void setShort(String key) { _short = key; }
+    public String getShort() { return shortValue; }
+    public void setShort(String key) { shortValue = key; }
 
     public boolean isRequired() { return required; }
     public void setRequired(boolean required) { this.required = required; }
 
-    public String getType() { return _type; }
-    public void setType(String type) { this._type = type; }
+    public String getType() { return typeValue; }
+    public void setType(String type) { this.typeValue = type; }
 
     public String getPattern() { return pattern; }
     public void setPattern(String pattern) { this.pattern = pattern; }
 
     public Pattern getPatternRegexp() { return patternRegexp; }
 
-    public List getEnum() { return enumList; }
+    public List getEnum() {
+    	return enumList;
+    }
     public void setEnum(List enumList) { this.enumList = enumList; }
 
     public List getSequence() { return sequence; }
@@ -245,29 +242,29 @@ public class Rule implements Serializable{
 
             if (code == CODE_TYPE && key.equals(TYPE)) {
                 // done
-            } else if (code == CODE_NAME && key.equals(NAME)) {
+            } else if (code == CODE_NAME && key.equals(NAME_CONSTANT)) {
                 initNameValue(value);
-            } else if (code == CODE_DESC && key.equals(DESC)) {
+            } else if (code == CODE_DESC && key.equals(DESC_CONSTANT)) {
                 initDescValue(value);
             } else if (code == CODE_SHORT && key.equals(SHORT)) {
                 initShortValue(value, rule, path);
-            } else if (code == CODE_REQUIRED && key.equals(REQUIRED)) {
+            } else if (code == CODE_REQUIRED && key.equals(REQUIRED_CONSTANT)) {
                 initRequiredValue(value, rule, path);
-            } else if (code == CODE_PATTERN && key.equals(PATTERN)) {
+            } else if (code == CODE_PATTERN && key.equals(PATTERN_CONSTANT)) {
                 initPatternValue(value, rule, path);
             } else if (code == CODE_ENUM && key.equals(ENUM)) {
                 initEnumValue(value, rule, path);
             } else if (code == CODE_ASSERT && key.equals(ASSERT)) {
                 initAssertValue(value, rule, path);
-            } else if (code == CODE_RANGE && key.equals(RANGE)) {
+            } else if (code == CODE_RANGE && key.equals(RANGE_CONSTANT)) {
                 initRangeValue(value, rule, path);
-            } else if (code == CODE_LENGTH && key.equals(LENGTH)) {
+            } else if (code == CODE_LENGTH && key.equals(LENGTH_CONSTANT)) {
                 initLengthValue(value, rule, path);
-            } else if (code == CODE_IDENT && key.equals(IDENT)) {
+            } else if (code == CODE_IDENT && key.equals(IDENT_CONSTANT)) {
                 initIdentValue(value, rule, path);
-            } else if (code == CODE_UNIQUE && key.equals(UNIQUE)) {
+            } else if (code == CODE_UNIQUE && key.equals(UNIQUE_CONSTANT)) {
                 initUniqueValue(value, rule, path);
-            } else if (code == CODE_SEQUENCE && key.equals(SEQUENCE)) {
+            } else if (code == CODE_SEQUENCE && key.equals(SEQUENCE_CONSTANT)) {
                 rule = initSequenceValue(value, rule, path, ruleTable);
             } else if (code == CODE_MAPPING && key.equals(MAPPING)) {
                 rule = initMappingValue(value, rule, path, ruleTable);
@@ -282,12 +279,12 @@ public class Rule implements Serializable{
             value = Types.getDefaultType();
         }
         if (! (value instanceof String)) {
-            throw schemaError(TYPE_NOTSTR, rule, path + TYPE1, _type, null);
+            throw schemaError(TYPE_NOTSTR, rule, path + TYPE1, typeValue, null);
         }
-        _type = (String)value;
-        typeClass = Types.typeClass(_type);
-        if (! Types.isBuiltinType(_type)) {
-            throw schemaError(TYPE_UNKNOWN, rule, path + TYPE1, _type, null);
+        typeValue = (String)value;
+        typeClass = Types.typeClass(typeValue);
+        if (! Types.isBuiltinType(typeValue)) {
+            throw schemaError(TYPE_UNKNOWN, rule, path + TYPE1, typeValue, null);
         }
     }
 
@@ -305,12 +302,12 @@ public class Rule implements Serializable{
 
         //the short form specification is to be interpreted as key if the type is a map or as an
         //index if the target is a sequence (as index 0 actually)  
-        if (!Types.isCollectionType(_type)) {
+        if (!Types.isCollectionType(typeValue)) {
             throw schemaError("range.notcollection", rule, path + "/short", value, null);
         }
         //we should also verify that it points to a declared key of the mapping .. not really, as it would
                 //fail the overall grammar
-        _short = value.toString();
+        shortValue = value.toString();
     }
 
     private void initRequiredValue(Object value, Rule rule, String path) {
@@ -353,14 +350,14 @@ public class Rule implements Serializable{
             throw schemaError("enum.notseq", rule, path + ENUM1, value, null);
         }
         enumList = (List)value;
-        if (Types.isCollectionType(_type)) {
+        if (Types.isCollectionType(typeValue)) {
             throw schemaError("enum.notscalar", rule, path, ENUM, null);
         }
         Map elemTable = new HashMap();
         for (Iterator it = enumList.iterator(); it.hasNext(); ) {
             Object elem = it.next();
             if (! Util.isInstanceOf(elem, typeClass)) {
-                throw schemaError("enum.type.unmatch", rule, path + ENUM1, elem, new Object[] { Types.typeName(_type) });
+                throw schemaError("enum.type.unmatch", rule, path + ENUM1, elem, new Object[] { Types.typeName(typeValue) });
             }
             if (elemTable.containsKey(elem)) {
                 throw schemaError("enum.duplicate", rule, path + ENUM1, elem, null);
@@ -385,7 +382,7 @@ public class Rule implements Serializable{
         if (! (value instanceof Map)) {
             throw schemaError("range.notmap", rule, path + RANGE1, value, null);
         }
-        if (Types.isCollectionType(_type) || "bool".equals(_type)) {
+        if (Types.isCollectionType(typeValue) || "bool".equals(typeValue)) {
             throw schemaError("range.notscalar", rule, path, RANGE2, null);
         }
         range = (Map)value;
@@ -394,7 +391,7 @@ public class Rule implements Serializable{
             Object rval = range.get(rkey);
             if (MAX.equals(rkey) || MIN.equals(rkey) || rkey.equals(MAX_EX) || rkey.equals(MIN_EX)) {
                 if (! Util.isInstanceOf(rval, typeClass)) {
-                    String typename = Types.typeName(_type);
+                    String typename = Types.typeName(typeValue);
                     throw schemaError("range.type.unmatch", rule, path + "/range/" + rkey, rval, new Object[] { typename });
                 }
             } else {
@@ -439,7 +436,7 @@ public class Rule implements Serializable{
             throw schemaError("length.notmap", rule, path + LENGTH1, value, null);
         }
         length = (Map)value;
-        if (! ("str".equals(_type) || "text".equals(_type))) {
+        if (! ("str".equals(typeValue) || "text".equals(typeValue))) {
             throw schemaError("length.nottext", rule, path, LENGTH2, null);
         }
         for (String k : length.keySet()) {
@@ -490,7 +487,7 @@ public class Rule implements Serializable{
         }
         ident = (Boolean) value;
         required = true;
-        if (Types.isCollectionType(_type)) {
+        if (Types.isCollectionType(typeValue)) {
             throw schemaError(IDENT_NOTSCALAR, rule, path, IDENT1, null);
         }
         if (EMPTY_STRING.equals(path)) {
@@ -507,7 +504,7 @@ public class Rule implements Serializable{
             throw schemaError(UNIQUE_NOTBOOL, rule, path + UNIQUE2, value, null);
         }
         unique = (Boolean) value;
-        if (Types.isCollectionType(_type)) {
+        if (Types.isCollectionType(typeValue)) {
             throw schemaError(UNIQUE_NOTSCALAR, rule, path, UNIQUE1, null);
         }
         if (path.equals(EMPTY_STRING)) {
@@ -557,6 +554,7 @@ public class Rule implements Serializable{
         }
         // create hash of rule
         _mapping = new DefaultableHashMap();
+
         if (defaultValue != null) {
             rule = (Rule)ruleTable.get(defaultValue);
             if (rule == null) {
@@ -565,15 +563,20 @@ public class Rule implements Serializable{
             }
             _mapping.setDefault(rule);
         }
+
         // put rules into _mapping
-        Map map = (Map)value;
-        for (Iterator it = map.keySet().iterator(); it.hasNext(); ) {
-            Object k  = it.next();
-            Object v = map.get(k);  // DefaultableHashMap
+        rule = putRulesIntoMap((Map) value, rule, path, ruleTable);
+        return rule;
+    }
+
+    private Rule putRulesIntoMap(Map value, Rule rule, String path, Map ruleTable) {
+        Map map = value;
+        for (Object k : map.keySet()) {
+            Object v = map.get(k);
             if (v == null) {
                 v = new DefaultableHashMap();
             }
-            rule = (Rule)ruleTable.get(v);
+            rule = (Rule) ruleTable.get(v);
             if (rule == null) {
                 rule = new Rule(null, this);
                 rule.init(v, path + MAPPING4 + k, ruleTable);
@@ -589,8 +592,8 @@ public class Rule implements Serializable{
 
 
     private void checkConfliction(Map hash, Rule rule, String path) {
-        if ("seq".equals(_type)) {
-            if (! hash.containsKey(SEQUENCE)) {
+        if ("seq".equals(typeValue)) {
+            if (! hash.containsKey(SEQUENCE_CONSTANT)) {
                 throw schemaError("seq.nosequence", rule, path, null, null);
             }
             if (enumList != null) {
@@ -608,7 +611,7 @@ public class Rule implements Serializable{
             if (length != null) {
                 throw schemaError(SEQ_CONFLICT, rule, path, LENGTH2,  null);
             }
-        } else if (_type.equals(MAP)) {
+        } else if (typeValue.equals(MAP)) {
             if (! hash.containsKey(MAPPING)) {
                 throw schemaError("map.nomapping", rule, path, null, null);
             }
@@ -665,8 +668,8 @@ public class Rule implements Serializable{
         if (desc != null) {
             sb.append(indent).append(DESC1).append(desc).append("\n");
         }
-        if (_type != null) {
-            sb.append(indent).append(TYPE2).append(_type).append("\n");
+        if (typeValue != null) {
+            sb.append(indent).append(TYPE2).append(typeValue).append("\n");
         }
         if (required) {
             sb.append(indent).append(REQUIRED2).append(required).append("\n");

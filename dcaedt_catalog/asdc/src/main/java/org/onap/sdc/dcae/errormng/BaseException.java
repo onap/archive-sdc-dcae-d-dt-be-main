@@ -7,55 +7,53 @@ import org.springframework.web.client.HttpClientErrorException;
 
 public class BaseException extends HttpClientErrorException {
 
-	private static Gson gson = new Gson();
+    private static final Gson gson = new Gson();
 
-	protected RequestError requestError;
+    protected final transient RequestError requestError;
 
-	public RequestError getRequestError() {
-		return requestError;
-	}
+    public BaseException(HttpClientErrorException theError) {
+        super(theError.getStatusCode());
+        String body = theError.getResponseBodyAsString();
+        if (body != null) {
+            requestError = extractRequestError(body);
+        } else {
+            requestError = null;
+        }
+    }
 
-	public void setRequestError(RequestError requestError) {
-		this.requestError = requestError;
-	}
+    public BaseException(HttpStatus status, RequestError re){
+        super(status);
+        requestError = re;
+    }
 
-	public BaseException(HttpClientErrorException theError) {
-		super(theError.getStatusCode());
-		String body = theError.getResponseBodyAsString();
-		if (body != null) {
-			requestError = extractRequestError(body);
-		}
-	}
+    public RequestError getRequestError() {
+        return requestError;
+    }
 
-	public BaseException(HttpStatus status, RequestError re){
-		super(status);
-		requestError = re;
-	}
+    private RequestError extractRequestError(String error) {
+        ResponseFormat responseFormat = gson.fromJson(error, ResponseFormat.class);
+        return responseFormat.getRequestError();
+    }
 
-	private RequestError extractRequestError(String error) {
-		ResponseFormat responseFormat = gson.fromJson(error, ResponseFormat.class);
-		return responseFormat.getRequestError();
-	}
+    @JsonIgnore
+    public String getMessageId() {
+        return requestError.getMessageId();
+    }
 
-	@JsonIgnore
-	public String getMessageId() {
-		return requestError.getMessageId();
-	}
+    @JsonIgnore
+    public String[] getVariables() {
+        return requestError.getVariables();
+    }
 
-	@JsonIgnore
-	public String[] getVariables() {
-		return requestError.getVariables();
-	}
+    @JsonIgnore
+    public String getText(){
+        return requestError.getText();
+    }
 
-	@JsonIgnore
-	public String getText(){
-		return requestError.getText();
-	}
-
-	@Override
-	@JsonIgnore
-	public String getMessage() {
-		return requestError.getFormattedMessage();
-	}
+    @Override
+    @JsonIgnore
+    public String getMessage() {
+        return requestError.getFormattedMessage();
+    }
 
 }

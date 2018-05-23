@@ -7,10 +7,8 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.onap.sdc.dcae.catalog.asdc.ASDCException;
 import org.onap.sdc.dcae.client.ISdcClient;
-import org.onap.sdc.dcae.client.SdcRestClient;
 import org.onap.sdc.dcae.composition.restmodels.CreateVFCMTRequest;
 import org.onap.sdc.dcae.composition.restmodels.ImportVFCMTRequest;
-import org.onap.sdc.dcae.composition.restmodels.MonitoringComponent;
 import org.onap.sdc.dcae.composition.restmodels.VfcmtData;
 import org.onap.sdc.dcae.composition.restmodels.sdc.Artifact;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ExternalReferencesMap;
@@ -23,20 +21,20 @@ import org.onap.sdc.dcae.errormng.RequestError;
 import org.onap.sdc.dcae.errormng.ResponseFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.HttpClientErrorException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 import static org.onap.sdc.dcae.composition.util.DcaeBeConstants.LifecycleStateEnum.CERTIFIED;
 import static org.onap.sdc.dcae.composition.util.DcaeBeConstants.LifecycleStateEnum.NOT_CERTIFIED_CHECKOUT;
 
 public class VfcmtBusinessLogicTest {
 
-	private ISdcClient sdcClientMock = Mockito.mock(SdcRestClient.class);
+	private ISdcClient sdcClientMock = Mockito.mock(ISdcClient.class);
 	private ResourceDetailed templateMC = Mockito.mock(ResourceDetailed.class);
 
 	private VfcmtBusinessLogic vfcmtBusinessLogic = new VfcmtBusinessLogic();
@@ -60,7 +58,7 @@ public class VfcmtBusinessLogicTest {
 	}
 
 	@Test
-	public void sdcIsDown_creatingVfcmt_gotResponseWithError500() throws Exception{
+	public void sdcIsDown_creatingVfcmt_gotResponseWithError500() {
 		RequestError requestError = new RequestError();
 		requestError.setPolicyException(new PolicyException("POL5000", "Error: Internal Server Error. Please try again later.", null));
 		when(sdcClientMock.createResource(userId,request,requestId)).thenThrow(new ASDCException(HttpStatus.INTERNAL_SERVER_ERROR, requestError));
@@ -77,7 +75,6 @@ public class VfcmtBusinessLogicTest {
 		requestError.setPolicyException(new PolicyException("POL5000", "Error: Internal Server Error. Please try again later.", null));
 		when(sdcClientMock.createResourceArtifact(anyString(),anyString(),any(),anyString())).thenThrow(new ASDCException(HttpStatus.INTERNAL_SERVER_ERROR, requestError));
 		when(sdcClientMock.createResource(userId,request,requestId)).thenReturn(templateMC);
-		when(sdcClientMock.getResourceArtifact(anyString(), anyString(), anyString())).thenReturn("{\"flowType\":\"don't override\"");
 		when(templateMC.getUuid()).thenReturn("3");
         when(sdcClientMock.getResource(anyString(),anyString())).thenReturn(templateMC);
         emulateListOfArtifactsWithCompositionYml();
@@ -113,7 +110,6 @@ public class VfcmtBusinessLogicTest {
 	@Test
 	public void successfulImportAndAttachmentOfVfcmtAlreadyConnectedWithoutEditDoCheckin() throws Exception {
 		when(sdcClientMock.getResource(anyString(),anyString())).thenReturn(templateMC);
-		when(sdcClientMock.getResourceArtifact(anyString(),anyString(),anyString())).thenReturn("{\"flowType\":\"don't override\"}");
 		when(templateMC.getLifecycleState()).thenReturn("NOT_CERTIFIED_CHECKOUT");
 		emulateListOfArtifactsWithCompositionYmlAndSvcRef();
 		request.setCloneVFCMT(false);
@@ -136,7 +132,6 @@ public class VfcmtBusinessLogicTest {
 		when(templateMC.getUuid()).thenReturn("3");
 		when(sdcClientMock.changeResourceLifecycleState(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(templateMC);
 		when(sdcClientMock.updateResourceArtifact(anyString(), anyString(), any(), anyString())).thenReturn(new Artifact());
-		when(sdcClientMock.getResourceArtifact(anyString(),anyString(),anyString())).thenReturn("{\"cid\":\"xsssdaerrwr\"}");
 		when(templateMC.getLifecycleState()).thenReturn("NOT_CERTIFIED_CHECKIN").thenReturn("NOT_CERTIFIED_CHECKOUT");
 		emulateListOfArtifactsWithCompositionYmlAndSvcRef();
 		request.setCloneVFCMT(false);
@@ -154,46 +149,69 @@ public class VfcmtBusinessLogicTest {
 
 
 	@Test
-	public void successfulFetchVfcmtDataFull() throws Exception {
+	public void invalidateMCRequestFields_returnError() {
+		ResponseEntity response = vfcmtBusinessLogic.importMC(userId, new ImportVFCMTRequest(), requestId);
+		Assert.assertEquals(response.getStatusCodeValue(), 400);
+	}
+
+    @Test
+    public void cloneVfcmt_missingToscaFile_returnError() {
+        when(sdcClientMock.getResource(anyString(),anyString())).thenReturn(templateMC);
+        request.setCloneVFCMT(true);
+        ResponseEntity response = vfcmtBusinessLogic.importMC(userId, request, requestId);
+        Assert.assertEquals(response.getStatusCodeValue(), 404);
+    }
+
+    @Test
+    public void checkCatchingSdcExceptions_returnError() {
+	    RequestError requestError = new RequestError();
+        requestError.setPolicyException(new PolicyException("POL5000", "Error: Internal Server Error. Please try again later.", null));
+        when(sdcClientMock.getResource(request.getTemplateUuid(), requestId)).thenThrow(new ASDCException(HttpStatus.INTERNAL_SERVER_ERROR, requestError));
+        request.setCloneVFCMT(false);
+        request.setUpdateFlowType(true);
+        ResponseEntity response = vfcmtBusinessLogic.importMC(userId, request, requestId);
+        Assert.assertEquals(response.getStatusCodeValue(), 500);
+    }
+
+
+	@Test
+	public void successfulFetchVfcmtDataFull() {
 		String templateUuid = "3";
 		when(templateMC.getUuid()).thenReturn(templateUuid);
 		when(sdcClientMock.getResource(anyString(),anyString())).thenReturn(templateMC);
 		emulateListOfArtifactsWithCompositionYmlAndSvcRef();
 		when(sdcClientMock.getResourceArtifact(templateUuid, "svcRefArtifactUuid", requestId)).thenReturn("thisIsTheServiceId/resources/thisIsTheVfiName");
-		when(sdcClientMock.getResourceArtifact(templateUuid, "compositionArtifactUuid", requestId)).thenReturn("\"flowType\":\"Syslog\"");
 		ResponseEntity<VfcmtData> result = vfcmtBusinessLogic.getVfcmtReferenceData(templateUuid, requestId);
 		verify(sdcClientMock).getResource(anyString(),anyString());
 		verify(sdcClientMock,times(2)).getResourceArtifact(anyString(),anyString(),anyString());
 		Assert.assertEquals(200, result.getStatusCodeValue());
-		Assert.assertEquals("Syslog", result.getBody().getFlowType());
+		Assert.assertEquals("don't override", result.getBody().getFlowType());
 		Assert.assertEquals("thisIsTheServiceId", result.getBody().getServiceUuid());
 		Assert.assertEquals("thisIsTheVfiName", result.getBody().getVfiName());
 	}
 
 	@Test
-	public void successfulFetchVfcmtDataPartial() throws Exception {
+	public void successfulFetchVfcmtDataPartial() {
 		String templateUuid = "3";
 		when(templateMC.getUuid()).thenReturn(templateUuid);
 		when(sdcClientMock.getResource(anyString(),anyString())).thenReturn(templateMC);
 		emulateListOfArtifactsWithCompositionYml();
-		when(sdcClientMock.getResourceArtifact(templateUuid, "compositionArtifactUuid", requestId)).thenReturn("\"flowType\":\"Syslog\"");
 		ResponseEntity<VfcmtData> result = vfcmtBusinessLogic.getVfcmtReferenceData(templateUuid, requestId);
 		verify(sdcClientMock).getResource(anyString(),anyString());
 		verify(sdcClientMock,times(1)).getResourceArtifact(anyString(),anyString(),anyString());
 		Assert.assertEquals(200, result.getStatusCodeValue());
-		Assert.assertEquals("Syslog", result.getBody().getFlowType());
+		Assert.assertEquals("don't override", result.getBody().getFlowType());
 		Assert.assertEquals(null, result.getBody().getServiceUuid());
 		Assert.assertEquals(null, result.getBody().getVfiName());
 	}
 
 	@Test
-	public void successfulFetchVfcmtDataEmpty() throws Exception {
+	public void successfulFetchVfcmtDataEmpty() {
 
 		String templateUuid = "3";
 		when(templateMC.getUuid()).thenReturn(templateUuid);
 		when(sdcClientMock.getResource(anyString(),anyString())).thenReturn(templateMC);
-		emulateListOfArtifactsWithCompositionYml();
-		when(sdcClientMock.getResourceArtifact(templateUuid, "compositionArtifactUuid", requestId)).thenReturn("");
+		emulateCdumpArtifactWithoutFlowtype();
 		ResponseEntity<VfcmtData> result = vfcmtBusinessLogic.getVfcmtReferenceData(templateUuid, requestId);
 		verify(sdcClientMock).getResource(anyString(),anyString());
 		verify(sdcClientMock,times(1)).getResourceArtifact(anyString(),anyString(),anyString());
@@ -204,7 +222,7 @@ public class VfcmtBusinessLogicTest {
 	}
 
 	@Test
-	public void fetchVfcmtDataNoCompositionFound() throws Exception {
+	public void fetchVfcmtDataNoCompositionFound() {
 
 		String templateUuid = "3";
 		when(templateMC.getUuid()).thenReturn(templateUuid);
@@ -219,7 +237,7 @@ public class VfcmtBusinessLogicTest {
 	}
 
 	@Test
-	public void getVfcmtsForMigration() throws Exception {
+	public void getVfcmtsForMigration() {
 		ExternalReferencesMap connectedVfcmts = new ExternalReferencesMap();
 		connectedVfcmts.put("11",Arrays.asList("Red", "Blue", "Yellow"));
 		connectedVfcmts.put("22",Arrays.asList("Ibiza", "Bora Bora", "Mykonos"));
@@ -281,6 +299,17 @@ public class VfcmtBusinessLogicTest {
 		when(templateMC.getArtifacts()).thenReturn(listOfArtifactCompositionYml);
 	}
 
+
+	private void emulateCdumpArtifactWithoutFlowtype() {
+		List<Artifact> listOfArtifactCompositionYml = new ArrayList<>();
+		Artifact compositionArtifact = Mockito.mock(Artifact.class);
+		when(compositionArtifact.getArtifactName()).thenReturn(DcaeBeConstants.Composition.fileNames.COMPOSITION_YML);
+		when(compositionArtifact.getArtifactUUID()).thenReturn("compositionArtifactUuid");
+		when(compositionArtifact.getPayloadData()).thenReturn("{\"cid\":\"xsssdaerrwr\"}\"");
+		listOfArtifactCompositionYml.add(compositionArtifact);
+		when(templateMC.getArtifacts()).thenReturn(listOfArtifactCompositionYml);
+	}
+
 	private void emulateListOfArtifactsWithCompositionYmlAndSvcRef() {
 		List<Artifact> listOfArtifactCompositionYml = new ArrayList<>();
 		Artifact compositionArtifact = Mockito.mock(Artifact.class);
@@ -296,7 +325,7 @@ public class VfcmtBusinessLogicTest {
 	}
 
 	@Test
-	public void uiHasABug_creatingVfcmtWithBadRequestNoServiceUuid_gotResponseWithError400() throws Exception{
+	public void uiHasABug_creatingVfcmtWithBadRequestNoServiceUuid_gotResponseWithError400() {
 		RequestError requestError = new RequestError();
 		requestError.setPolicyException(new PolicyException("POL5000", "Error: Internal Server Error. Please try again later.", null));
 		when(sdcClientMock.createResource(userId,request,requestId)).thenThrow(new ASDCException(HttpStatus.INTERNAL_SERVER_ERROR, requestError));

@@ -1,13 +1,9 @@
 package org.onap.sdc.dcae.rule.editor.validators;
 
-import org.onap.sdc.dcae.composition.restmodels.ruleeditor.ActionTypeEnum;
-import org.onap.sdc.dcae.composition.restmodels.ruleeditor.BaseAction;
-import org.onap.sdc.dcae.composition.restmodels.ruleeditor.BaseCondition;
-import org.onap.sdc.dcae.composition.restmodels.ruleeditor.Rule;
+import org.onap.sdc.dcae.composition.restmodels.ruleeditor.*;
 import org.onap.sdc.dcae.errormng.ActionStatus;
 import org.onap.sdc.dcae.errormng.ErrConfMgr;
 import org.onap.sdc.dcae.errormng.ResponseFormat;
-import org.onap.sdc.dcae.errormng.ServiceException;
 import org.onap.sdc.dcae.rule.editor.enums.RuleEditorElementType;
 import org.onap.sdc.dcae.rule.editor.utils.ValidationUtils;
 import org.springframework.util.CollectionUtils;

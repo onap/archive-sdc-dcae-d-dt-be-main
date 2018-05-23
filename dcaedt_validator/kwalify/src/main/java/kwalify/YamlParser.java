@@ -94,7 +94,7 @@ public class YamlParser extends PlainYamlParser {
     }
 
     protected Map createMapping() {
-        Map map = super.createMapping();
+        Map map = new DefaultableHashMap();
         linenumsTable.put(map, new HashMap());
         return map;
     }

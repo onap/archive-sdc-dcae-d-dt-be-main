@@ -19,7 +19,7 @@ public class ConditionGroupTranslator implements IRuleElementTranslator<Conditio
 
 	private ConditionGroupTranslator(){}
 
-	public Translation translateToHpJson(ConditionGroup conditionGroup) {
+	public Object translateToHpJson(ConditionGroup conditionGroup) {
 		String clazz = ConditionTypeEnum.getTypeByName(conditionGroup.getType()).getFilterClass();
 		FiltersTranslation translation = new FiltersTranslation(clazz, conditionGroup.getChildren().stream()
 				.map(this::getTranslation)
@@ -34,12 +34,12 @@ public class ConditionGroupTranslator implements IRuleElementTranslator<Conditio
 				ValidationUtils.validateNotEmpty(OperatorTypeEnum.getTypeByName(((Condition)condition).getOperator()).getModifiedType()) ? FieldConditionTranslator.getInstance() : ConditionTranslator.getInstance();
 	}
 
-	private Translation getTranslation(BaseCondition condition) {
+	private Object getTranslation(BaseCondition condition) {
 		return getConditionTranslator(condition).translateToHpJson(condition);
 	}
 
 	private void flattenNestedFilters(FiltersTranslation filtersTranslation, String clazz) {
-		Map<Boolean, List<Translation>> partitioned = filtersTranslation.filters.stream().collect(Collectors.partitioningBy(f -> clazz.equals(((ProcessorTranslation) f).clazz)));
+		Map<Boolean, List<Object>> partitioned = filtersTranslation.filters.stream().collect(Collectors.partitioningBy(f -> clazz.equals(((ProcessorTranslation) f).clazz)));
 		filtersTranslation.filters.removeAll(partitioned.get(Boolean.TRUE));
 		filtersTranslation.filters.addAll(partitioned.get(Boolean.TRUE).stream().map(f -> ((FiltersTranslation) f).filters).flatMap(List::stream).collect(Collectors.toList()));
 	}

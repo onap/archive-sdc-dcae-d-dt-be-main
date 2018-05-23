@@ -8,9 +8,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
-import org.onap.sdc.common.onaplog.OnapLoggerError;
-import org.onap.sdc.dcae.catalog.commons.Future;
-import org.onap.sdc.dcae.catalog.commons.FutureHandler;
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
 
 
@@ -196,16 +193,13 @@ public class Futures<T> {
 			return this;
 		}
 	}
-	
-	/** */
+
 	public static class Accumulator<T>	extends BasicFuture<List<T>>		
 																				implements Future<List<T>> {
 
-		protected List<Future<T>> 			futures = new LinkedList<Future<T>>();
-		//protected	List<T>								results = new LinkedList<T>();
-		protected BasicHandler<T>				handler = null;
+		protected List<Future<T>> futures = new LinkedList<Future<T>>();
+		protected BasicHandler<T> accumulatorHandler = null;
 
-		private static OnapLoggerError errLogger = OnapLoggerError.getInstance();
 		private static OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
 
 		public Accumulator() {
@@ -228,7 +222,7 @@ public class Futures<T> {
 
 		public Future<List<T>> accumulate() {
 			this.futures = Collections.unmodifiableList(this.futures);
-			this.handler = new BasicHandler<T>(new CountDownLatch(this.futures.size())) {
+			this.accumulatorHandler = new BasicHandler<T>(new CountDownLatch(this.futures.size())) {
 												protected void process(Future<T> theResult) {
 													if (theResult.failed()) {
 														Accumulator.this.cause = theResult.cause();
@@ -246,7 +240,7 @@ public class Futures<T> {
 												}
 										 };
 			futures.stream()
-							.forEach(f -> f.setHandler(this.handler));
+							.forEach(f -> f.setHandler(this.accumulatorHandler));
 
 			return this;
 		}
