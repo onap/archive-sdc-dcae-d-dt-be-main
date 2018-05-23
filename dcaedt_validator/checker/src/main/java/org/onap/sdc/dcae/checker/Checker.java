@@ -87,6 +87,7 @@ public class Checker {
     private static final String WAS_DEFINED_FOR_THE_NODE_TYPE = " was defined for the node type ";
     private static final String UNKNOWN = "Unknown ";
     private static final String TYPE = " type ";
+    public static final String IMPORTED_FROM = "',imported from ";
 
     private Target target = null; //what we're validating at the moment
 
@@ -2404,9 +2405,7 @@ public class Checker {
             return false;
         }
 
-        for (Iterator<Map.Entry<String, Map>> ai = augs.entrySet().iterator(); ai.hasNext(); ) {
-            Map.Entry<String, Map> ae = ai.next();
-
+        for (Map.Entry<String, Map> ae : augs.entrySet()) {
             //make sure it was declared by the type
             Map facetDef = catalog.getFacetDefinition(theConstruct, theSpecType, theFacet, ae.getKey());
             if (facetDef == null) {
@@ -2715,7 +2714,7 @@ public class Checker {
 
     private String patchWhitespaces(String thePath) {
         String[] elems = thePath.split("/");
-        StringBuffer path = new StringBuffer();
+        StringBuilder path = new StringBuilder();
         for (int i = 0; i < elems.length; i++) {
             if (spacePattern.matcher(elems[i]).find()) {
                 path.append("[@name='")
@@ -2836,7 +2835,7 @@ public class Checker {
             hookHandler = Invokable.from(m);
         } catch (NoSuchMethodException nsmx) {
             //that's ok, not every rule has to have a handler
-            debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), getClass().getName(), "That's ok, not every rule has to have a handler. Method name =", theHookName);
+            debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), getClass().getName(), "That's ok, not every rule has to have a handler. Method name is:{}. Exception:{}", theHookName,nsmx);
         }
 
         if (hookHandler != null) {
@@ -3120,7 +3119,7 @@ substitute the canonical form for the short form so that checking does not have 
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), getClass().getName(), "entering range_definition {}",
 				theContext.getPath());
 
-		assert theRule.getType().equals("seq");
+		assert "seq".equals(theRule.getType());
 		List bounds = (List) theValue;
 
 		if (bounds.size() != 2) {
@@ -3148,10 +3147,10 @@ substitute the canonical form for the short form so that checking does not have 
 	 * early processing (validation time) of the imports allows us to catalog
 	 * their types before those declared in the main document.
 	 */
-	protected void imports_post_validation_handler(Object theValue, Rule theRule,
-			Validator.ValidationContext theContext) {
+	protected void imports_post_validation_handler(Object theValue, Rule theRule, Validator.ValidationContext theContext) {
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "entering imports {}", theContext.getPath());
-		assert theRule.getType().equals("seq");
+
+        assert "seq".equals(theRule.getType());
 
 		Target tgt = ((TOSCAValidator) theContext.getValidator()).getTarget();
 
@@ -3179,8 +3178,9 @@ substitute the canonical form for the short form so that checking does not have 
 				try {
 
 					List<Target> tgtis = parseTarget(tgti);
-					if (tgtis.isEmpty())
-						continue;
+					if (tgtis.isEmpty()) {
+                        continue;
+                    }
 
 					if (tgtis.size() > 1) {
 						theContext.addError(
@@ -3191,21 +3191,20 @@ substitute the canonical form for the short form so that checking does not have 
 
 					tgti = tgtis.get(0);
 
-					// tgti = parseTarget(tgti);
 					if (tgt.getReport().hasErrors()) {
-						theContext.addError("Failure parsing import '" + tgti + "',imported from " + tgt, theRule, null,
+						theContext.addError("Failure parsing import '" + tgti + IMPORTED_FROM + tgt, theRule, null,
 								null);
 						continue;
 					}
 
 					validateTarget(tgti);
 					if (tgt.getReport().hasErrors()) {
-						theContext.addError("Failure validating import '" + tgti + "',imported from " + tgt, theRule,
+						theContext.addError("Failure validating import '" + tgti + IMPORTED_FROM + tgt, theRule,
 								null, null);
 						continue;
 					}
 				} catch (CheckerException cx) {
-					theContext.addError("Failure validating import '" + tgti + "',imported from " + tgt, theRule, cx,
+					theContext.addError("Failure validating import '" + tgti + IMPORTED_FROM + tgt, theRule, cx,
 							null);
 				}
 			}
@@ -3222,7 +3221,7 @@ substitute the canonical form for the short form so that checking does not have 
 			Validator.ValidationContext theContext) {
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "entering node_templates_post_validation_handler {}",
 				theContext.getPath());
-		assert theRule.getType().equals("map");
+		assert "map".equals(theRule.getType());
 		Map<String, Map> nodeTemplates = (Map<String, Map>) theValue;
 		for (Iterator<Map.Entry<String, Map>> i = nodeTemplates.entrySet().iterator(); i.hasNext();) {
 			Map.Entry<String, Map> node = i.next();
@@ -3267,17 +3266,18 @@ substitute the canonical form for the short form so that checking does not have 
 	private void process(String theProcessorSpec) throws CheckerException {
 
 		String[] spec = theProcessorSpec.split(" ");
-		if (spec.length == 0)
-			throw new IllegalArgumentException("Incomplete processor specification");
+		if (spec.length == 0) {
+            throw new IllegalArgumentException("Incomplete processor specification");
+        }
 
-		Class processorClass = null;
+		Class processorClass;
 		try {
 			processorClass = Class.forName(spec[0]);
 		} catch (ClassNotFoundException cnfx) {
 			throw new CheckerException("Cannot find processor implementation", cnfx);
 		}
 
-		Processor proc = null;
+		Processor proc;
 		try {
 			proc = (Processor) ConstructorUtils.invokeConstructor(processorClass,
 					Arrays.copyOfRange(spec, 1, spec.length));
@@ -3296,8 +3296,9 @@ substitute the canonical form for the short form so that checking does not have 
 				return;
 			}
 			// check artifact type
-			if (!checkType(Construct.Artifact, theDef, theContext))
-				return;
+			if (!checkType(Construct.Artifact, theDef, theContext)) {
+                return;
+            }
 		} finally {
 			theContext.exit();
 		}
@@ -3312,8 +3313,8 @@ substitute the canonical form for the short form so that checking does not have 
 				return;
 			}
 
-			if (theDefinition.containsKey("properties")) {
-				check_properties((Map<String, Map>) theDefinition.get("properties"), theContext);
+			if (theDefinition.containsKey(PROPERTIES)) {
+				check_properties((Map<String, Map>) theDefinition.get(PROPERTIES), theContext);
 				checkTypeConstructFacet(Construct.Policy, theName, theDefinition, Facet.properties, theContext);
 			}
 
@@ -3347,8 +3348,8 @@ substitute the canonical form for the short form so that checking does not have 
 				return;
 			}
 
-			if (theDefinition.containsKey("properties")) {
-				check_properties((Map<String, Map>) theDefinition.get("properties"), theContext);
+			if (theDefinition.containsKey(PROPERTIES)) {
+				check_properties((Map<String, Map>) theDefinition.get(PROPERTIES), theContext);
 				checkTypeConstructFacet(Construct.Group, theName, theDefinition, Facet.properties, theContext);
 			}
 
@@ -3385,8 +3386,8 @@ substitute the canonical form for the short form so that checking does not have 
 				return;
 			}
 
-			if (theDefinition.containsKey("properties")) {
-				check_properties((Map<String, Map>) theDefinition.get("properties"), theContext);
+			if (theDefinition.containsKey(PROPERTIES)) {
+				check_properties((Map<String, Map>) theDefinition.get(PROPERTIES), theContext);
 				checkTypeConstructFacet(Construct.Node, theName, theDefinition, Facet.properties, theContext);
 			}
 
@@ -3401,8 +3402,8 @@ substitute the canonical form for the short form so that checking does not have 
 			}
 
 			// capabilities
-			if (theDefinition.containsKey("capabilities")) {
-				check_capabilities((Map<String, Map>) theDefinition.get("capabilities"), theContext);
+			if (theDefinition.containsKey(CAPABILITIES)) {
+				check_capabilities((Map<String, Map>) theDefinition.get(CAPABILITIES), theContext);
 			}
 
 			// interfaces:
@@ -3470,8 +3471,8 @@ substitute the canonical form for the short form so that checking does not have 
 				return;
 			}
 
-			if (theDefinition.containsKey("properties")) {
-				check_properties((Map<String, Map>) theDefinition.get("properties"), theContext);
+			if (theDefinition.containsKey(PROPERTIES)) {
+				check_properties((Map<String, Map>) theDefinition.get(PROPERTIES), theContext);
 				checkTypeConstructFacet(Construct.Relationship, theName, theDefinition, Facet.properties, theContext);
 			}
 
@@ -3490,9 +3491,9 @@ substitute the canonical form for the short form so that checking does not have 
 				theContext.exit();
 			}
 
-			if (theDefinition.containsKey("valid_target_types")) {
+			if (theDefinition.containsKey(VALID_TARGET_TYPES)) {
 				checkTypeReference(Construct.Capability, theContext,
-						((List<String>) theDefinition.get("valid_target_types")).toArray(EMPTY_STRING_ARRAY));
+						((List<String>) theDefinition.get(VALID_TARGET_TYPES)).toArray(EMPTY_STRING_ARRAY));
 			}
 		} finally {
 			theContext.exit();
@@ -3508,8 +3509,8 @@ substitute the canonical form for the short form so that checking does not have 
 				return;
 			}
 
-			if (theDefinition.containsKey("properties")) {
-				check_properties((Map<String, Map>) theDefinition.get("properties"), theContext);
+			if (theDefinition.containsKey(PROPERTIES)) {
+				check_properties((Map<String, Map>) theDefinition.get(PROPERTIES), theContext);
 				checkTypeConstructFacet(Construct.Capability, theName, theDefinition, Facet.properties, theContext);
 			}
 
@@ -3539,8 +3540,8 @@ substitute the canonical form for the short form so that checking does not have 
 				return;
 			}
 
-			if (theDefinition.containsKey("properties")) {
-				check_properties((Map<String, Map>) theDefinition.get("properties"), theContext);
+			if (theDefinition.containsKey(PROPERTIES)) {
+				check_properties((Map<String, Map>) theDefinition.get(PROPERTIES), theContext);
 				checkTypeConstructFacet(Construct.Data, theName, theDefinition, Facet.properties, theContext);
 			}
 		} finally {
@@ -3594,8 +3595,9 @@ substitute the canonical form for the short form so that checking does not have 
 	public void check_attributes(Map<String, Map> theDefinitions, CheckContext theContext) {
 		theContext.enter("attributes");
 		try {
-			if (!checkDefinition("attributes", theDefinitions, theContext))
-				return;
+			if (!checkDefinition("attributes", theDefinitions, theContext)) {
+                return;
+            }
 
 			for (Iterator<Map.Entry<String, Map>> i = theDefinitions.entrySet().iterator(); i.hasNext();) {
 				Map.Entry<String, Map> e = i.next();
@@ -3625,10 +3627,11 @@ substitute the canonical form for the short form so that checking does not have 
 	}
 
 	public void check_properties(Map<String, Map> theDefinitions, CheckContext theContext) {
-		theContext.enter("properties");
+		theContext.enter(PROPERTIES);
 		try {
-			if (!checkDefinition("properties", theDefinitions, theContext))
-				return;
+			if (!checkDefinition(PROPERTIES, theDefinitions, theContext)) {
+                return;
+            }
 
 			for (Iterator<Map.Entry<String, Map>> i = theDefinitions.entrySet().iterator(); i.hasNext();) {
 				Map.Entry<String, Map> e = i.next();

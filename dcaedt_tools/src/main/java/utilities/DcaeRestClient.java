@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -70,6 +71,12 @@ public class DcaeRestClient implements IDcaeRestClient {
     @Override
     public List<ResourceDetailed> getAllVfcmts() {
         String url = buildRequestPath(GET_RESOURCES_BY_CATEGORY);
+        return Arrays.asList(client.getForObject(url, ResourceDetailed[].class));
+    }
+
+    @Override
+    public List<ResourceDetailed> getAllBaseVfcmts() {
+        String url = buildRequestPath("/getResourcesByMonitoringTemplateCategory");
         return Arrays.asList(client.getForObject(url, ResourceDetailed[].class));
     }
 

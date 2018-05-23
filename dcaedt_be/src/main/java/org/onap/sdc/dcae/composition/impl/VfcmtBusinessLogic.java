@@ -1,15 +1,19 @@
 package org.onap.sdc.dcae.composition.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang.StringUtils;
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
-import org.onap.sdc.dcae.composition.restmodels.*;
+import org.onap.sdc.dcae.composition.restmodels.CreateVFCMTRequest;
+import org.onap.sdc.dcae.composition.restmodels.ImportVFCMTRequest;
+import org.onap.sdc.dcae.composition.restmodels.ReferenceUUID;
+import org.onap.sdc.dcae.composition.restmodels.VfcmtData;
 import org.onap.sdc.dcae.composition.restmodels.sdc.Artifact;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ExternalReferencesMap;
 import org.onap.sdc.dcae.composition.restmodels.sdc.Resource;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
 import org.onap.sdc.dcae.composition.util.DcaeBeConstants;
 import org.onap.sdc.dcae.enums.ArtifactType;
+import org.onap.sdc.dcae.enums.AssetType;
 import org.onap.sdc.dcae.enums.LifecycleOperationType;
 import org.onap.sdc.dcae.errormng.ActionStatus;
 import org.onap.sdc.dcae.errormng.ErrConfMgr;
@@ -20,7 +24,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Base64Utils;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,7 +34,6 @@ import static org.onap.sdc.dcae.composition.util.DcaeBeConstants.LifecycleStateE
 @Component
 public class VfcmtBusinessLogic extends BaseBusinessLogic {
 
-    private static final String VFCMT = "VFCMT";
     private static final String TEMPLATE = "Template";
     private static final String MONITORING_TEMPLATE = "Monitoring Template";
     private static final String DEFAULTICON = "defaulticon";
@@ -42,21 +45,20 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
             errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Missing information");
             return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.INVALID_CONTENT);
         }
-        return cloneMcAndAddServiceReference(userId, request, requestId);
+        return cloneMcAndAddServiceReference(userId, request, requestId, false);
     }
 
     //1806 US388513 collect existing VFCMT data - flowType from cdump artifact and external reference from svc_reference artifact. If cdump not found - return error
-
-    public ResponseEntity getVfcmtReferenceData(String vfcmtUuid, String requestId) throws Exception {
-        ResourceDetailed vfcmt = sdcRestClient.getResource(vfcmtUuid, requestId);
-        Artifact artifactData = findCdumpArtifactData(vfcmt);
+    public ResponseEntity getVfcmtReferenceData(String vfcmtUuid, String requestId) {
+        ResourceDetailed vfcmt = getSdcRestClient().getResource(vfcmtUuid, requestId);
+        Artifact artifactData = fetchCdump(vfcmt, requestId);
         if(null == artifactData) {
             debugLogger.log(LogLevel.DEBUG, this.getClass().getName(),"No composition found on vfcmt {}", vfcmtUuid);
             return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.MISSING_TOSCA_FILE, "", vfcmt.getName());
         }
         VfcmtData vfcmtData = new VfcmtData(vfcmt);
         //fetch cdump payload
-        String payload = getSdcRestClient().getResourceArtifact(vfcmtUuid, artifactData.getArtifactUUID(), requestId);
+        String payload = artifactData.getPayloadData();
         //extract and set flowType from cdump payload
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(),"Looking for flowType definition in cdump");
         vfcmtData.setFlowType(StringUtils.substringBetween(payload,"\"flowType\":\"","\""));
@@ -74,7 +76,6 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
         return new ResponseEntity<>(vfcmtData, HttpStatus.OK);
     }
 
-
     //1806 US388525 import or clone VFCMT - always pass the flowType - update will only take place if missing from cdump
     public ResponseEntity importMC(String userId, ImportVFCMTRequest request, String requestId) {
         if(!validateMCRequestFields(request)) {
@@ -83,7 +84,7 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
         }
         // option 1 - clone
         if(request.isCloneVFCMT()) {
-            return cloneMcAndAddServiceReference(userId, request, requestId);
+            return cloneMcAndAddServiceReference(userId, request, requestId, request.isUpdateFlowType());
         }
 
         ResourceDetailed vfcmt = null;
@@ -91,11 +92,12 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
         // fetch vfcmt and cdump
         try {
             vfcmt = sdcRestClient.getResource(request.getTemplateUuid(), requestId);
-            Artifact cdumpArtifactData = fetchCdumpAndSetFlowType(vfcmt, request.getFlowType(), requestId);
+            Artifact cdumpArtifactData = fetchCdump(vfcmt, requestId);
             if (null == cdumpArtifactData) {
                 errLogger.log(LogLevel.ERROR, this.getClass().getName(), "No cdump found for monitoring component {}", vfcmt.getUuid());
                 return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.MISSING_TOSCA_FILE, "", vfcmt.getName());
             }
+
             String cdumpPayload = cdumpArtifactData.getPayloadData();
 
             // option 2 - edit original cdump - requires check out
@@ -104,7 +106,9 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
                     vfcmt = sdcRestClient.changeResourceLifecycleState(userId, vfcmt.getUuid(), LifecycleOperationType.CHECKOUT.name(), "checking out VFCMT", requestId);
                     undoCheckoutOnFailure = true;
                 }
+
                 cdumpArtifactData.setDescription("updating flowType on cdump");
+                cdumpPayload = cdumpArtifactData.getPayloadData().replaceFirst("\\{", "{\"flowType\":\"" + request.getFlowType() + "\",");
                 cdumpArtifactData.setPayloadData(Base64Utils.encodeToString(cdumpPayload.getBytes()));
                 sdcRestClient.updateResourceArtifact(userId, vfcmt.getUuid(), cdumpArtifactData, requestId);
             }
@@ -114,7 +118,7 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
                 // this will not throw an exception
                 checkinVfcmtAfterClone(userId, vfcmt, requestId);
             }
-            return new ResponseEntity<>(buildVfcmtAndCdumpResponse(vfcmt, request.getVfiName(), request.getFlowType(), cdumpPayload), HttpStatus.OK);
+            return new ResponseEntity<>(buildVfcmtAndCdumpResponse(new VfcmtData(vfcmt, request.getVfiName(), extractFlowTypeFromCdump(cdumpPayload)), cdumpPayload), HttpStatus.OK);
         } catch (Exception e) {
             errLogger.log(LogLevel.ERROR,this.getClass().getName(),"Failed updating Monitoring Component:{}", e.getMessage());
             if(undoCheckoutOnFailure) {
@@ -122,7 +126,6 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
             }
             return ErrConfMgr.INSTANCE.handleException(e, ErrConfMgr.ApiType.CREATE_NEW_VFCMT);
         }
-
     }
 
     private boolean validateMCRequestFields(CreateVFCMTRequest request) {
@@ -140,25 +143,15 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
 
     }
 
-    private void rollBack(String userId, ResourceDetailed newVfcmt, String requestId) {
-        if (null != newVfcmt) {
-            try {
-                getSdcRestClient().changeResourceLifecycleState(userId, newVfcmt.getUuid(), LifecycleOperationType.UNDO_CHECKOUT.getValue(), "DCAE rollback", requestId);
-            } catch (Exception e) {
-                errLogger.log(LogLevel.ERROR,this.getClass().getName(),"Failed rolling back Monitoring Component. ID:{}", newVfcmt.getUuid());
-                debugLogger.log(LogLevel.ERROR,this.getClass().getName(),"Failed rolling back Monitoring Component:{}", e);
-            }
-        }
-    }
 
-    private ResponseEntity cloneMcAndAddServiceReference(String userId, CreateVFCMTRequest request, String requestId) {
+    private ResponseEntity cloneMcAndAddServiceReference(String userId, CreateVFCMTRequest request, String requestId, boolean updateFlowType) {
         addSdcMandatoryFields(request, userId);
         ResourceDetailed newVfcmt = null;
         try {
             // Retrieve the Template VFCMT from SDC - use the template UUID provided from UI
             ResourceDetailed templateMC = sdcRestClient.getResource(request.getTemplateUuid(), requestId);
             // Download the CDUMP file from the template VFCMT
-            Artifact cdumpArtifactData = fetchCdumpAndSetFlowType(templateMC, request.getFlowType(), requestId);
+            Artifact cdumpArtifactData = updateFlowType ? fetchCdumpAndSetFlowType(templateMC, request.getFlowType(), requestId) : fetchCdump(templateMC, requestId);
             if (null == cdumpArtifactData) {
                 errLogger.log(LogLevel.ERROR,this.getClass().getName(),"No cdump found for template {} while creating monitoring component", templateMC.getUuid());
                 return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.MISSING_TOSCA_FILE, "", templateMC.getName());
@@ -176,7 +169,7 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
 
             // this will not throw an exception
             checkinVfcmtAfterClone(userId, newVfcmt, requestId);
-            return new ResponseEntity<>(buildVfcmtAndCdumpResponse(newVfcmt, request.getVfiName(), request.getFlowType(), cdumpPayload), HttpStatus.OK);
+            return new ResponseEntity<>(buildVfcmtAndCdumpResponse(new VfcmtData(newVfcmt, request.getVfiName(), extractFlowTypeFromCdump(cdumpPayload)), cdumpPayload), HttpStatus.OK);
         } catch (Exception e) {
             errLogger.log(LogLevel.ERROR,this.getClass().getName(),"Failed creating Monitoring Component:{}", e.getMessage());
             rollBack(userId, newVfcmt, requestId);
@@ -184,9 +177,6 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
         }
     }
 
-    private CreateMcResponse buildVfcmtAndCdumpResponse(ResourceDetailed vfcmt, String vfiName, String flowType, String cdumpPayload) throws IOException {
-        return new CreateMcResponse(new VfcmtData(vfcmt, vfiName, flowType), new ObjectMapper().readValue(cdumpPayload, Object.class));
-    }
 
     private void checkinVfcmtAfterClone(String userId, ResourceDetailed vfcmt, String requestId) {
         try {
@@ -196,12 +186,7 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
         }
     }
 
-
-    private Artifact findCdumpArtifactData(ResourceDetailed vfcmt) {
-        return findArtifactDataByArtifactName(vfcmt, DcaeBeConstants.Composition.fileNames.COMPOSITION_YML);
-    }
-
-    private void cloneRuleArtifacts(String userId, ResourceDetailed templateMC, String newVfcmtUuid, String requestId) throws Exception {
+    private void cloneRuleArtifacts(String userId, ResourceDetailed templateMC, String newVfcmtUuid, String requestId) throws JsonProcessingException {
         // handle rule artifacts using java 7 for-loop - exception propagation to calling method
         for(Artifact artifact : templateMC.getArtifacts()) {
             if(artifact.getArtifactName().endsWith(DcaeBeConstants.Composition.fileNames.MAPPING_RULE_POSTFIX)) {
@@ -211,21 +196,17 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
     }
 
     // fetch the vfcmt cdump artifact payload and insert the flowType. Return the artifact with updated payload or null (artifact doesn't exist)
-    private Artifact fetchCdumpAndSetFlowType(ResourceDetailed vfcmt, String flowType, String requestId) throws Exception {
-        Artifact cdumpArtifactData = findCdumpArtifactData(vfcmt);
-        if (null != cdumpArtifactData) {
-            String cdumpPayload = sdcRestClient.getResourceArtifact(vfcmt.getUuid(), cdumpArtifactData.getArtifactUUID(), requestId);
-            // Add flowType data to cdump if provided
-            if(!cdumpPayload.contains("\"flowType\":\"") && StringUtils.isNotBlank(flowType)) {
-                cdumpPayload = cdumpPayload.replaceFirst("\\{", "{\"flowType\":\"" + flowType + "\",");
-            }
+    private Artifact fetchCdumpAndSetFlowType(ResourceDetailed vfcmt, String flowType, String requestId) throws IOException {
+        Artifact cdumpArtifactData = fetchCdump(vfcmt, requestId);
+        if (null != cdumpArtifactData && null != cdumpArtifactData.getPayloadData() && !cdumpArtifactData.getPayloadData().contains("\"flowType\":\"")) {
+            String cdumpPayload = cdumpArtifactData.getPayloadData().replaceFirst("\\{", "{\"flowType\":\"" + flowType + "\",");
             cdumpArtifactData.setPayloadData(cdumpPayload);
         }
         return cdumpArtifactData;
     }
 
     // backward compatibility (very backward)
-    private void createReferenceArtifact(String userId, CreateVFCMTRequest request, String newVfcmtUuid, String requestId) throws Exception {
+    private void createReferenceArtifact(String userId, CreateVFCMTRequest request, String newVfcmtUuid, String requestId) throws JsonProcessingException {
         String referencePayload = request.getServiceUuid() + "/resources/" + request.getVfiName();
         Artifact refArtifact = SdcRestClientUtils.generateDeploymentArtifact("createReferenceArtifact", DcaeBeConstants.Composition.fileNames.SVC_REF, ArtifactType.DCAE_TOSCA.name(), "servicereference", referencePayload.getBytes());
         sdcRestClient.createResourceArtifact(userId, newVfcmtUuid, refArtifact, requestId);
@@ -238,7 +219,7 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
         ExternalReferencesMap connectedVfcmts;
         try {
             connectedVfcmts = getSdcRestClient().getMonitoringReferences(contextType, uuid, version, requestId);
-            resources = getSdcRestClient().getResources(VFCMT, TEMPLATE, MONITORING_TEMPLATE, requestId);
+            resources = getSdcRestClient().getResources(AssetType.VFCMT.name(), TEMPLATE, MONITORING_TEMPLATE, requestId);
         } catch (Exception e) {
             errLogger.log(LogLevel.ERROR,this.getClass().getName(),"Exception getVfcmtsForMigration {}", e);
             debugLogger.log(LogLevel.DEBUG,this.getClass().getName(),"Exception getVfcmtsForMigration {}", e);
@@ -268,7 +249,7 @@ public class VfcmtBusinessLogic extends BaseBusinessLogic {
     public void addSdcMandatoryFields(CreateVFCMTRequest createRequest, String user) {
         createRequest.setContactId(user);
         createRequest.setIcon(DEFAULTICON);
-        createRequest.setResourceType(VFCMT);
+        createRequest.setResourceType(AssetType.VFCMT.name());
         createRequest.setVendorName(VENDOR_NAME);
         createRequest.setVendorRelease(VENDOR_RELEASE);
         if (StringUtils.isBlank(createRequest.getCategory())) {

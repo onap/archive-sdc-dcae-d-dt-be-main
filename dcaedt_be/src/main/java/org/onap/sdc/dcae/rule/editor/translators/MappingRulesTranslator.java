@@ -18,19 +18,19 @@ public class MappingRulesTranslator implements IRuleElementTranslator<MappingRul
 
 	private RuleTranslator ruleTranslator = RuleTranslator.getInstance();
 
-	public Translation translateToHpJson(MappingRules mappingRules) {
+	public Object translateToHpJson(MappingRules mappingRules) {
 		return new MappingRulesTranslation(mappingRules);
 	}
 
-	public Translation translateToHpJson(MappingRules mappingRules, String entryPointPhaseName, String lastPhaseName, String runPhase) {
+	public Object translateToHpJson(MappingRules mappingRules, String entryPointPhaseName, String lastPhaseName, String runPhase) {
 		// 1806 US349308 assign Vfcmt name as rule phaseName
 		mappingRules.getRules().forEach((k,v) -> v.setPhase(runPhase));
 		return new MappingRulesTranslation(mappingRules, entryPointPhaseName, lastPhaseName, runPhase);
 	}
 
-	private class MappingRulesTranslation extends Translation {
+	private class MappingRulesTranslation {
 
-		private List<Translation> processing;
+		private List<Object> processing;
 
 		private MappingRulesTranslation(MappingRules mappingRules) {
 			processing = mappingRules.getRules().values().stream().map(ruleTranslator::translateToHpJson).collect(Collectors.toList());
@@ -49,8 +49,9 @@ public class MappingRulesTranslator implements IRuleElementTranslator<MappingRul
 
 		private RunPhaseRuleTranslation(String phaseName, String runPhase) {
 			phase = phaseName;
-			if ("snmp_map".equals(phaseName))
+			if("snmp_map".equals(phaseName)) {
 				processors.add(new SnmpConvertor());
+			}
 			processors.add(new RunPhaseProcessorsTranslation(runPhase));
 		}
 	}

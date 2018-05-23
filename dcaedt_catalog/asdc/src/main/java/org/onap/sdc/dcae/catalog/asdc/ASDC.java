@@ -38,13 +38,11 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.http.converter.HttpMessageConverter;
 
 import org.springframework.util.Base64Utils;
-//import org.springframework.util.DigestUtils;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
@@ -57,8 +55,6 @@ import org.onap.sdc.dcae.catalog.commons.Action;
 import org.onap.sdc.dcae.catalog.commons.Future;
 import org.onap.sdc.dcae.catalog.commons.Futures;
 import org.onap.sdc.dcae.catalog.commons.JSONHttpMessageConverter;
-import org.onap.sdc.dcae.composition.util.DcaeBeConstants;
-import org.onap.sdc.dcae.composition.util.SystemProperties;
 import org.json.JSONArray;
 
 import org.apache.commons.cli.BasicParser;
@@ -69,82 +65,68 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-
 @Component("asdc")
 @Scope("singleton")
-//@ConfigurationProperties(prefix="asdc")
 public class ASDC {
 
-	public static enum AssetType {
+	private static final String TARGET = "target";
+	private static final String ACTION = "action";
+	private static final String ASSET_TYPE = "assetType";
+	private static final String USER_ID = "USER_ID";
+	public static final String ASSET_ID = "assetId";
+	public static final String ARTIFACT_ID = "artifactId";
+	public static final String LIST_FILTER = "listFilter";
+
+	public enum AssetType {
 		resource,
 		service,
 		product
 	}
 
-//	public static enum ArtifactType {
-//		DCAE_TOSCA,
-//		DCAE_JSON,
-//		DCAE_POLICY,
-//		DCAE_DOC,
-//		DCAE_EVENT,
-//		DCAE_INVENTORY_TOSCA,
-//		DCAE_INVENTORY_JSON,
-//		DCAE_INVENTORY_POLICY,
-//		DCAE_INVENTORY_DOC,
-//		DCAE_INVENTORY_BLUEPRINT,
-//		DCAE_INVENTORY_EVENT,
-//		HEAT,
-//		HEAT_VOL,
-//		HEAT_NET,
-//		HEAT_NESTED,
-//		HEAT_ARTIFACT,
-//		HEAT_ENV,
-//		OTHER
-//	}
-
-//	public static enum ArtifactGroupType {
-//		DEPLOYMENT,
-//		INFORMATIONAL
-//	}
-
-	public static enum LifecycleState {
+	public enum LifecycleState {
 		Checkin,
 		Checkout,
 		Certify,
 		undocheckout
 	}
 
-	
-//	@Retention(RetentionPolicy.RUNTIME)
-//	@Target(ElementType.METHOD)
-//	public @interface Mandatory {
-//	}
 
 	protected static OnapLoggerError errLogger = OnapLoggerError.getInstance();
 	protected static OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
-	
-	@Autowired
-	private SystemProperties systemProperties;
 
-	private URI			rootUri;
-	private String	rootPath = "/sdc/v1/catalog/";
-	private String	user,
-									passwd;
-	private String	instanceId;
+	private static final String ARTIFACT_TYPE = "artifactType";
+	private static final String ARTIFACT_GROUP_TYPE = "artifactGroupType";
+	private static final String ARTIFACT_LABEL = "artifactLabel";
+	private static final String ARTIFACT_NAME = "artifactName";
+	private static final String DESCRIPTION = "description";
+	private static final String PAYLOAD_DATA = "payloadData";
 
+	private static final String[] artifactMandatoryEntries = new String[] {};
+
+	private static final String[] updateMandatoryEntries = new String[] {ARTIFACT_NAME,
+			ARTIFACT_TYPE, ARTIFACT_GROUP_TYPE, ARTIFACT_LABEL, DESCRIPTION, PAYLOAD_DATA};
+
+	private static final String[] uploadMandatoryEntries = new String[] {ARTIFACT_NAME,
+			ARTIFACT_TYPE, ARTIFACT_GROUP_TYPE, ARTIFACT_LABEL, DESCRIPTION, PAYLOAD_DATA};
+
+	private URI rootUri;
+	private String rootPath = "/sdc/v1/catalog/";
+	private String user, passwd;
+	private String instanceId;
 
 	public void setUri(URI theUri) {
-		//theUri = URI.create(systemProperties.getProperties().getProperty(SystemProperties.ASDC_CATALOG_URL));
 		String userInfo = theUri.getUserInfo();
 		if (userInfo != null) {
 			String[] userInfoParts = userInfo.split(":");
 			setUser(userInfoParts[0]);
-			if (userInfoParts.length > 1)
+			if (userInfoParts.length > 1) {
 				setPassword(userInfoParts[1]);
+			}
 		}
 		String fragment = theUri.getFragment();
-		if (fragment == null)
+		if (fragment == null) {
 			throw new IllegalArgumentException("The URI must contain a fragment specification, to be used as ASDC instance id");
+		}
 		setInstanceId(fragment);
 
 		try {
@@ -179,24 +161,14 @@ public class ASDC {
 		this.instanceId = theId;
 	}
 
-	public String getInstanceId() {
-		return this.instanceId;
-	}
-	
-	public void setRootPath(String thePath) {
-		this.rootPath = systemProperties.getProperties().getProperty(DcaeBeConstants.Config.ASDC_ROOTPATH);
-	}
-
-	public String getRootPath() {
-		return systemProperties.getProperties().getProperty(DcaeBeConstants.Config.ASDC_ROOTPATH);
-	}
-
     @Scheduled(fixedRateString = "${beans.context.scripts.updateCheckFrequency?:60000}")
-	public void checkForUpdates() { 
+	public void checkForUpdates() {
+		// ffu
 	}
 
 	@PostConstruct
 	public void initASDC() {
+		// ffu
 	}
 
 	public <T> Future<T> getResources(Class<T> theType) {
@@ -236,7 +208,7 @@ public class ASDC {
 	}
 	
 	public <T> Action<T> getAssetsAction(AssetType theAssetType, Class<T> theType) {
-		return (() -> fetch(refAssets(theAssetType), theType));
+		return () -> fetch(refAssets(theAssetType), theType);
 	}
 	
 	public <T> Future<T> getAssets(AssetType theAssetType, Class<T> theType,
@@ -251,7 +223,7 @@ public class ASDC {
 	
 	public <T> Action<T> getAssetsAction(AssetType theAssetType, Class<T> theType,
 																 			 String theCategory, String theSubCategory, String theResourceType) {
-		return (() -> fetch(refAssets(theAssetType) + filter(theCategory, theSubCategory, theResourceType), theType));
+		return () -> fetch(refAssets(theAssetType) + filter(theCategory, theSubCategory, theResourceType), theType);
 	}
 	
 	protected String refAssets(AssetType theAssetType) {
@@ -306,7 +278,7 @@ public class ASDC {
 	}
 	
 	public <T> Action<T> getAssetAction(AssetType theAssetType, UUID theId, Class<T> theType) {
-		return (() -> fetch(refAsset(theAssetType, theId) + "/metadata", theType));
+		return () -> fetch(refAsset(theAssetType, theId) + "/metadata", theType);
 	}
 
 	public Future<byte[]> getResourceArchive(UUID theId) {
@@ -322,7 +294,7 @@ public class ASDC {
 	}
 
 	public Action<byte[]> getAssetArchiveAction(AssetType theAssetType, UUID theId) {
-		return (() -> fetch(refAsset(theAssetType, theId) + "/toscaModel", byte[].class));
+		return () -> fetch(refAsset(theAssetType, theId) + "/toscaModel", byte[].class);
 	}
 
 	public Future<JSONObject> checkinResource(UUID theId, String theUser, String theMessage) {
@@ -354,9 +326,7 @@ public class ASDC {
 	public Future<JSONObject> cycleAsset(AssetType theAssetType, UUID theId, LifecycleState theState,
 																			 String theUser, String theMessage) {
 		return post(refAsset(theAssetType, theId)	+ "/lifecycleState/" + theState,
-							  (headers) -> prepareHeaders(headers)
-															.header("USER_ID", theUser),
-								new JSONObject().putOpt("userRemarks", theMessage));
+				headers -> prepareHeaders(headers).header(USER_ID, theUser), new JSONObject().putOpt("userRemarks", theMessage));
 	}
 
 	protected String refAssetInstanceArtifact(AssetType theAssetType, UUID theAssetId, String theAssetInstance, UUID theArtifactId) {
@@ -388,7 +358,7 @@ public class ASDC {
 	}
 	
 	public <T> Action<T> getAssetArtifactAction(AssetType theAssetType, UUID theAssetId, UUID theArtifactId, Class<T> theType) {
-		return (() -> fetch(refAssetArtifact(theAssetType, theAssetId, theArtifactId), theType));
+		return () -> fetch(refAssetArtifact(theAssetType, theAssetId, theArtifactId), theType);
 	}
 	
 	public <T> Future<T> getAssetInstanceArtifact(AssetType theAssetType, UUID theAssetId, String theInstance, UUID theArtifactId, Class<T> theType) {
@@ -396,7 +366,7 @@ public class ASDC {
 	}
 	
 	public <T> Action<T> getAssetInstanceArtifactAction(AssetType theAssetType, UUID theAssetId, String theInstance, UUID theArtifactId, Class<T> theType) {
-		return (() -> fetch(refAssetInstanceArtifact(theAssetType, theAssetId, theInstance, theArtifactId), theType));
+		return () -> fetch(refAssetInstanceArtifact(theAssetType, theAssetId, theInstance, theArtifactId), theType);
 	}
 	
 	public ArtifactUploadAction createResourceArtifact(UUID theAssetId) {
@@ -518,8 +488,9 @@ public class ASDC {
 
 		protected void checkMandatoryInfo() {
 			for (String field: mandatoryInfoEntries()) {
-				if (!info.has(field))			
+				if (!info.has(field)) {
 					throw new IllegalStateException("No '" + field + "' was provided");
+				}
 			}
 		}
 		
@@ -529,10 +500,9 @@ public class ASDC {
 		}
 	}
 
-	protected static final String[] artifactMandatoryEntries = new String[] {};
 
 	/**
-   * We use teh same API to operate on artifacts attached to assets or to their instances
+     * We use teh same API to operate on artifacts attached to assets or to their instances
 	 */
 	public abstract class ASDCArtifactAction<A extends ASDCArtifactAction<A>> extends ASDCAction<A, JSONObject> {
 
@@ -570,17 +540,12 @@ public class ASDC {
 								refAssetArtifact(this.assetType, this.assetId, theArtifactId) :
 								refAssetInstanceArtifact(this.assetType, this.assetId, normalizeInstanceName(this.assetInstance), theArtifactId);
 		}
-	} 
-
-	protected static final String[] uploadMandatoryEntries = new String[] { "artifactName",
-																																					 "artifactType",
-																																					 "artifactGroupType", 
-																																					 "artifactLabel",
-																																					 "description",
-																																					 "payloadData" };
+	}
 
 	public class ArtifactUploadAction extends ASDCArtifactAction<ArtifactUploadAction> {
-		
+
+		public static final String PAYLOAD_DATA = ASDC.PAYLOAD_DATA;
+
 		protected ArtifactUploadAction() {
 			super(new JSONObject());
 		}
@@ -590,7 +555,7 @@ public class ASDC {
 		}
 		
 		public ArtifactUploadAction withContent(byte[] theContent) {
-			return with("payloadData", Base64Utils.encodeToString(theContent));
+			return with(PAYLOAD_DATA, Base64Utils.encodeToString(theContent));
 		}
 
 		public ArtifactUploadAction withContent(File theFile) throws IOException {
@@ -598,11 +563,11 @@ public class ASDC {
 		}
 
 		public ArtifactUploadAction withLabel(String theLabel) {
-			return with("artifactLabel", theLabel);
+			return with(ARTIFACT_LABEL, theLabel);
 		}
 		
 		public ArtifactUploadAction withName(String theName) {
-			return with("artifactName", theName);
+			return with(ARTIFACT_NAME, theName);
 		}
 		
 		public ArtifactUploadAction withDisplayName(String theName) {
@@ -610,17 +575,18 @@ public class ASDC {
 		}
 
 		public ArtifactUploadAction withType(ArtifactType theType) {
-			return with("artifactType", theType.toString());
+			return with(ARTIFACT_TYPE, theType.toString());
 		}
 
 		public ArtifactUploadAction withGroupType(ArtifactGroupType theGroupType) {
-			return with("artifactGroupType", theGroupType.toString());
+			return with(ARTIFACT_GROUP_TYPE, theGroupType.toString());
 		}
 
 		public ArtifactUploadAction withDescription(String theDescription) {
-			return with("description", theDescription);
+			return with(DESCRIPTION, theDescription);
 		}
-		
+
+		@Override
 		protected String[] mandatoryInfoEntries() {
 			return ASDC.this.uploadMandatoryEntries;
 		}
@@ -628,18 +594,11 @@ public class ASDC {
 		public Future<JSONObject> execute() {
 			checkMandatory();
 			return ASDC.this.post(ref(null),
-														(headers) -> prepareHeaders(headers)
-																					.header("USER_ID", this.operatorId),
-														this.info);
+					headers -> prepareHeaders(headers).header(USER_ID, this.operatorId), this.info);
 		}
 	}
 
-	protected static final String[] updateMandatoryEntries = new String[] { "artifactName",
-																																					 "artifactType",
-																																					 "artifactGroupType", 
-																																					 "artifactLabel",
-																																					 "description",
-																																					 "payloadData" };
+
 
 	/**
 	 * In its current form the update relies on a previous artifact retrieval. One cannot build an update from scratch.
@@ -657,7 +616,7 @@ public class ASDC {
 		}
 		
 		public ArtifactUpdateAction withContent(byte[] theContent) {
-			return with("payloadData", Base64Utils.encodeToString(theContent));
+			return with(PAYLOAD_DATA, Base64Utils.encodeToString(theContent));
 		}
 
 		public ArtifactUpdateAction withContent(File theFile) throws IOException {
@@ -665,13 +624,14 @@ public class ASDC {
 		}
 
 		public ArtifactUpdateAction withDescription(String theDescription) {
-			return with("description", theDescription);
+			return with(DESCRIPTION, theDescription);
 		}
 		
 		public ArtifactUpdateAction withName(String theName) {
-			return with("artifactName", theName);
+			return with(ARTIFACT_NAME, theName);
 		}
-		
+
+		@Override
 		protected String[] mandatoryInfoEntries() {
 			return ASDC.this.updateMandatoryEntries;
 		}
@@ -690,9 +650,7 @@ public class ASDC {
 			checkMandatory();
 			cleanupInfoEntries();
 			return ASDC.this.post(ref(artifactUUID),
-														(headers) -> prepareHeaders(headers)
-																					.header("USER_ID", this.operatorId),
-														this.info);
+					headers -> prepareHeaders(headers).header(USER_ID, this.operatorId),this.info);
 		}
 	}
 
@@ -712,25 +670,24 @@ public class ASDC {
 		public Future<JSONObject> execute() {
 			checkMandatory();
 			return ASDC.this.delete(ref(this.artifactId),
-														  (headers) -> prepareHeaders(headers)
-																					.header("USER_ID", this.operatorId));
+					headers -> prepareHeaders(headers).header(USER_ID, this.operatorId));
 		}
 	}
 
 
 
 
-	public VFCMTCreateAction createVFCMT() {
+	private VFCMTCreateAction createVFCMT() {
 		return new VFCMTCreateAction();
 	}
-	
-	protected static final String[] vfcmtMandatoryEntries = new String[] { "name",
-																																				 "vendorName",
-																																	 			 "vendorRelease",
-																																				 "contactId" };
+
+
 
 
 	public class VFCMTCreateAction extends ASDCAction<VFCMTCreateAction, JSONObject> {
+
+		private static final String CONTACT_ID = "contactId";
+		private final String[] vfcmtMandatoryEntries = new String[] { "name", "vendorName", "vendorRelease", CONTACT_ID};
 
 		protected VFCMTCreateAction() {
 
@@ -751,7 +708,7 @@ public class ASDC {
 		}
 
 		public VFCMTCreateAction withDescription(String theDescription) {
-			return with("description", theDescription);
+			return with(DESCRIPTION, theDescription);
 		}
 		
 		public VFCMTCreateAction withVendorName(String theVendorName) {
@@ -763,8 +720,9 @@ public class ASDC {
 		}
 		
 		public VFCMTCreateAction withTags(String... theTags) {
-			for (String tag: theTags)
+			for (String tag: theTags) {
 				this.info.append("tags", tag);
+			}
 			return this;			
 		}
 		
@@ -773,30 +731,29 @@ public class ASDC {
 		}
 		
 		protected String[] mandatoryInfoEntries() {
-			return ASDC.this.vfcmtMandatoryEntries;
+			return vfcmtMandatoryEntries;
 		}
 		
 		public VFCMTCreateAction withContact(String theContact) {
-			return with("contactId", theContact);
+			return with(CONTACT_ID, theContact);
 		}
 		
 		public Future<JSONObject> execute() {
 		
-			this.info.putOnce("contactId", this.operatorId);	
+			this.info.putOnce(CONTACT_ID, this.operatorId);
 			this.info.append("tags", info.optString("name"));
 			checkMandatory();
 			return ASDC.this.post(refAssets(AssetType.resource),
-														(headers) -> prepareHeaders(headers)
-																					.header("USER_ID", this.operatorId),
-														this.info);
+					headers -> prepareHeaders(headers).header(USER_ID, this.operatorId), this.info);
 		}
 
 	}
 
 	public static JSONObject merge(JSONObject theOriginal, JSONObject thePatch) {
 		for (String key: (Set<String>)thePatch.keySet()) {
-			if (!theOriginal.has(key))
+			if (!theOriginal.has(key)) {
 				theOriginal.put(key, thePatch.get(key));
+			}
 		}
 		return theOriginal;
 	}
@@ -883,18 +840,7 @@ public class ASDC {
 
 
 
-	public class ASDCFuture<T>
-										extends Futures.BasicFuture<T> {
-
-		private boolean http404toEmpty = false;
-
-		ASDCFuture() {
-		}
-
-		public ASDCFuture setHttp404ToEmpty(boolean doEmpty) {
-			this.http404toEmpty = doEmpty;
-			return this;
-		}
+	public class ASDCFuture<T> extends Futures.BasicFuture<T> {
 
 		ListenableFutureCallback<ResponseEntity<T>> callback = new ListenableFutureCallback<ResponseEntity<T>>() {
 
@@ -904,9 +850,6 @@ public class ASDC {
 
 			public void	onFailure(Throwable theError) {
 				if (theError instanceof HttpClientErrorException) {
-				//	if (theError.getRawStatusCode() == 404 && this.http404toEmpty)
-				//		ASDCFuture.this.result(); //th eresult is of type T ...
-				//	else
 						ASDCFuture.this.cause(new ASDCException((HttpClientErrorException)theError));
 				}
 				else {
@@ -918,70 +861,66 @@ public class ASDC {
 	}
 
 	public class ContentMD5Interceptor implements AsyncClientHttpRequestInterceptor {
-
-    @Override
-    public ListenableFuture<ClientHttpResponse> intercept(
-            HttpRequest theRequest, byte[] theBody, AsyncClientHttpRequestExecution theExecution)
-            																																					throws IOException {
-				if (HttpMethod.POST == theRequest.getMethod()) {
-	        HttpHeaders headers = theRequest.getHeaders();
-  	      headers.add("Content-MD5", Base64Utils.encodeToString(
-																				//DigestUtils.md5Digest(theBody)));
-																				DigestUtils.md5Hex(theBody).getBytes()));
-																					
-				}
-    	  return theExecution.executeAsync(theRequest, theBody);
-    }
+		@Override
+		public ListenableFuture<ClientHttpResponse> intercept(
+				HttpRequest theRequest, byte[] theBody, AsyncClientHttpRequestExecution theExecution)
+				throws IOException {
+			if (HttpMethod.POST == theRequest.getMethod()) {
+				HttpHeaders headers = theRequest.getHeaders();
+				headers.add("Content-MD5", Base64Utils.encodeToString(DigestUtils.md5Hex(theBody).getBytes()));
+			}
+			return theExecution.executeAsync(theRequest, theBody);
+		}
 	}
 
 	public static void main(String[] theArgs) throws Exception {
 
 		CommandLineParser parser = new BasicParser();
 		
-		String user_id = "jh0003";
+		String userId = "jh0003";
 		
 		Options options = new Options();
 		options.addOption(OptionBuilder
-														  .withArgName("target")
-															.withLongOpt("target")
+														  .withArgName(TARGET)
+															.withLongOpt(TARGET)
                                .withDescription("target asdc system")
 															.hasArg()
 															.isRequired()
 															.create('t') );
 			
 		options.addOption(OptionBuilder
-														  .withArgName("action")
-															.withLongOpt("action")
+														  .withArgName(ACTION)
+															.withLongOpt(ACTION)
                               .withDescription("one of: list, get, getartifact, checkin, checkout")
 															.hasArg()
 															.isRequired()
 															.create('a') );
 
 		options.addOption(OptionBuilder
-														  .withArgName("assetType")
-															.withLongOpt("assetType")
+														  .withArgName(ASSET_TYPE)
+															.withLongOpt(ASSET_TYPE)
                                .withDescription("one of resource, service, product")
 															.hasArg()
 															.isRequired()
 															.create('k') ); //k for 'kind' ..
 
 		options.addOption(OptionBuilder
-														  .withArgName("assetId")
-															.withLongOpt("assetId")
+														  .withArgName(ASSET_ID)
+															.withLongOpt(ASSET_ID)
                                .withDescription("asset uuid")
 															.hasArg()
 															.create('u') ); //u for 'uuid'
 
 		options.addOption(OptionBuilder
-														  .withArgName("artifactId")
-															.withLongOpt("artifactId")
+														  .withArgName(ARTIFACT_ID)
+															.withLongOpt(ARTIFACT_ID)
                                .withDescription("artifact uuid")
 															.hasArg()
 															.create('s') ); //s for 'stuff'
 
 		options.addOption(OptionBuilder
-														  .withArgName("listFilter")
-															.withLongOpt("listFilter")
+														  .withArgName(LIST_FILTER)
+															.withLongOpt(LIST_FILTER)
                                .withDescription("filter for list operations")
 															.hasArg()
 															.create('f') ); //u for 'uuid'
@@ -997,86 +936,67 @@ public class ASDC {
 		}
 
 		ASDC asdc = new ASDC();
-		asdc.setUri(new URI(line.getOptionValue("target")));
+		asdc.setUri(new URI(line.getOptionValue(TARGET)));
 
-		String action = line.getOptionValue("action");
-		if (action.equals("list")) {
+		String action = line.getOptionValue(ACTION);
+		if ("list".equals(action)) {
 			JSONObject filterInfo = new JSONObject(
-																			line.hasOption("listFilter") ?
-																				line.getOptionValue("listFilter") : "{}");
+																			line.hasOption(LIST_FILTER) ?
+																				line.getOptionValue(LIST_FILTER) : "{}");
 			JSONArray assets = 
-				asdc.getAssets(ASDC.AssetType.valueOf(line.getOptionValue("assetType")), JSONArray.class,
+				asdc.getAssets(ASDC.AssetType.valueOf(line.getOptionValue(ASSET_TYPE)), JSONArray.class,
 											 filterInfo.optString("category", null), filterInfo.optString("subCategory", null))
 						.waitForResult();
 			for (int i = 0; i < assets.length(); i++) {
 				debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),"> {}", assets.getJSONObject(i).toString(2));
 			}
 		}
-		else if (action.equals("get")) {
+		else if ("get".equals(action)) {
 			debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),
-					asdc.getAsset(ASDC.AssetType.valueOf(line.getOptionValue("assetType")),
-											UUID.fromString(line.getOptionValue("assetId")),
+					asdc.getAsset(ASDC.AssetType.valueOf(line.getOptionValue(ASSET_TYPE)),
+											UUID.fromString(line.getOptionValue(ASSET_ID)),
 											JSONObject.class)
 						.waitForResult()
 						.toString(2)
 			);
 		}
-		else if (action.equals("getartifact")) {
+		else if ("getartifact".equals(action)) {
 			debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),
-					asdc.getAssetArtifact(ASDC.AssetType.valueOf(line.getOptionValue("assetType")),
-															UUID.fromString(line.getOptionValue("assetId")),
-															UUID.fromString(line.getOptionValue("artifactId")),
+					asdc.getAssetArtifact(ASDC.AssetType.valueOf(line.getOptionValue(ASSET_TYPE)),
+															UUID.fromString(line.getOptionValue(ASSET_ID)),
+															UUID.fromString(line.getOptionValue(ARTIFACT_ID)),
 															String.class)
 						.waitForResult()
 			);
 		}
-		else if (action.equals("checkin")) {
+		else if ("checkin".equals(action)) {
 			debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),
-					asdc.cycleAsset(ASDC.AssetType.valueOf(line.getOptionValue("assetType")),
-													UUID.fromString(line.getOptionValue("assetId")),
+					asdc.cycleAsset(ASDC.AssetType.valueOf(line.getOptionValue(ASSET_TYPE)),
+													UUID.fromString(line.getOptionValue(ASSET_ID)),
 													ASDC.LifecycleState.Checkin,
-													user_id,
+													userId,
 													"cli op")
 							.waitForResult()
 							.toString()
 			);
 		}
-		else if (action.equals("checkout")) {
+		else if ("checkout".equals(action)) {
 			debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),
-					asdc.cycleAsset(ASDC.AssetType.valueOf(line.getOptionValue("assetType")),
-													UUID.fromString(line.getOptionValue("assetId")),
+					asdc.cycleAsset(ASDC.AssetType.valueOf(line.getOptionValue(ASSET_TYPE)),
+													UUID.fromString(line.getOptionValue(ASSET_ID)),
 													ASDC.LifecycleState.Checkout,
-													user_id,
+													userId,
 													"cli op")
 							.waitForResult()
 							.toString()
 			);
 		}
-		else if (action.equals("cleanup")) {
+		else if ("cleanup".equals(action)) {
 			JSONArray resources = asdc.getResources()
 																	.waitForResult();
 			debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),"Got {} resources", resources.length());
 
-			// vfcmt cleanup 
-			for (int i = 0; i < resources.length(); i++) {
-
-				JSONObject resource = resources.getJSONObject(i);
-
-				if (resource.getString("resourceType").equals("VFCMT") &&
-						resource.getString("name").contains("test")) {
-
-					debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),"undocheckout for {}", resource.getString("uuid"));
-
-					try {
-						asdc.cycleAsset(AssetType.resource, UUID.fromString(resource.getString("uuid")), LifecycleState.undocheckout, user_id, null)
-							.waitForResult();
-					}
-					catch (Exception x) {
-						debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),"** {}", x);
-					}
-				}
-			}
-
+			vfcmtCleanup(userId, asdc, resources);
 		}
 		else {
 			try {
@@ -1087,7 +1007,7 @@ public class ASDC {
 							.withVendorName("CloneInc")
 							.withVendorRelease("1.0")
 							.withTags("clone")
-							.withOperator(user_id)
+							.withOperator(userId)
 							.execute()
 							.waitForResult()
 							.toString()
@@ -1097,5 +1017,26 @@ public class ASDC {
 				debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),"Failed to create VFCMT: {}", x);
 			}
 		}
+	}
+
+	private static void vfcmtCleanup(String userId, ASDC asdc, JSONArray resources) {
+		for (int i = 0; i < resources.length(); i++) {
+
+            JSONObject resource = resources.getJSONObject(i);
+
+            if ("VFCMT".equals(resource.getString("resourceType")) &&
+                    resource.getString("name").contains("test")) {
+
+                debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),"undocheckout for {}", resource.getString("uuid"));
+
+                try {
+                    asdc.cycleAsset(AssetType.resource, UUID.fromString(resource.getString("uuid")), LifecycleState.undocheckout, userId, null)
+                        .waitForResult();
+                }
+                catch (Exception x) {
+                    debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),"** {}", x);
+                }
+            }
+        }
 	}
 }

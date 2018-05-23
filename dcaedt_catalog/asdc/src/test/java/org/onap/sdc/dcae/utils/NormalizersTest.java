@@ -1,11 +1,7 @@
 package org.onap.sdc.dcae.utils;
 
-import static org.assertj.core.api.Assertions.*;
-
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
-import org.onap.sdc.dcae.utils.Normalizers;
-
 
 public class NormalizersTest {
 

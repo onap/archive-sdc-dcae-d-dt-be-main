@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+@SuppressWarnings("ALL")
 public class ASDCCatalog implements Catalog {
 
     private
@@ -87,10 +88,10 @@ public class ASDCCatalog implements Catalog {
     private String[] folderFields = new String[] {ID, ITEM_ID, NAME};
 
     private ProxyBuilder proxies;
-    private Map<Target, JXPathContext> contexts = new HashMap<Target, JXPathContext>();
+    private Map<Target, JXPathContext> contexts = new HashMap<>();
 
     // resource and its catalog
-    private Map<UUID, org.onap.sdc.dcae.checker.Catalog> catalogs = new HashMap<UUID, org.onap.sdc.dcae.checker.Catalog>();
+    private Map<UUID, org.onap.sdc.dcae.checker.Catalog> catalogs = new HashMap<>();
 
     public ASDCCatalog(URI theURI) {
 
@@ -171,7 +172,6 @@ public class ASDCCatalog implements Catalog {
         return Futures.succeededFuture(roots);
     }
 
-    /** */
     public Future<Mixels> lookup(JSONObject theSelector) {
         return Futures.succeededFuture(new Mixels());
     }
@@ -180,66 +180,48 @@ public class ASDCCatalog implements Catalog {
         return Futures.succeededFuture(new Mixels());
     }
 
-    /** */
     public ItemAction item(String theItemId) {
         return new ResourceAction(UUID.fromString(theItemId));
     }
 
-    /** */
-    public FolderAction folder(String theFolderId) {
-        return new FolderAction(theFolderId);
+    public CatalogFolderAction folder(String theFolderId) {
+        return new CatalogFolderAction(theFolderId);
     }
 
-    public TemplateAction template(String theId) {
-        return new TemplateAction(theId);
+    public CatalogTemplateAction template(String theId) {
+        return new CatalogTemplateAction(theId);
     }
 
-    public TypeAction type(String theItemId, String theName) {
-        return new TypeAction(UUID.fromString(theItemId), theName);
+    public CatalogTypeAction type(String theItemId, String theName) {
+        return new CatalogTypeAction(UUID.fromString(theItemId), theName);
     }
 
-    protected static String resolveTargetName(Target theTarget) {
-        return (String) ((Map) ((Map) theTarget.getTarget()).get("metadata")).get("template_name");
-    }
-
-    protected Object resolve(Target theTarget, String thePath) {
+    private Object resolve(Target theTarget, String thePath) {
         try {
             return contexts.get(theTarget).getValue(thePath);
         } catch (JXPathNotFoundException pnfx) {
-            debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "JXPathNotFoundException {}", pnfx);
+            debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), JXPATH_NOT_FOUND_EXCEPTION, pnfx);
             return null;
         }
     }
 
     // covers common TOSCA pattern of single entry maps
-    public Map.Entry<String, Map> toEntry(Object theValue) {
+    private Map.Entry<String, Map> toEntry(Object theValue) {
         return (Map.Entry<String, Map>) ((Map) theValue).entrySet().iterator().next();
     }
 
-    protected Map selectEntries(Map theOriginal, String... theKeys) {
+    private Map selectEntries(Map theOriginal, String... theKeys) {
         Arrays.sort(theKeys);
-        Map selection = ((Set<Map.Entry>) theOriginal.entrySet()).stream()
+        return ((Set<Map.Entry>) theOriginal.entrySet()).stream()
                 .filter(e -> Arrays.binarySearch(theKeys, e.getKey().toString()) >= 0)
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-        return selection;
     }
 
-    protected Map evictEntries(Map theOriginal, String... theKeys) {
+    private Map evictEntries(Map theOriginal, String... theKeys) {
         Arrays.sort(theKeys);
-        Map selection = ((Set<Map.Entry>) theOriginal.entrySet()).stream()
+        return ((Set<Map.Entry>) theOriginal.entrySet()).stream()
                 .filter(e -> Arrays.binarySearch(theKeys, e.getKey().toString()) < 0)
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-        return selection;
-    }
-
-    protected MapBuilder renderEntry(Map.Entry theEntry, String... theKeys) {
-        MapBuilder out = new MapBuilder();
-        out.put(NAME, theEntry.getKey());
-
-        for (String key : theKeys) {
-            out.put(key, ((Map) theEntry.getValue()).get(key));
-        }
-        return out;
     }
 
     protected <T> Stream<T> stream(Iterator<T> theSource) {
@@ -277,18 +259,17 @@ public class ASDCCatalog implements Catalog {
     }
 
     private static void dumpTargets(String theDirName, Collection<Target> theTargets) {
-        try {
-            File targetDir = new File(theDirName);
-            if (!targetDir.exists() && !targetDir.mkdirs()) {
-                throw new IllegalStateException("Couldn't create dir: " + theDirName);
-            }
-            for (Target t : theTargets) {
-                FileWriter dump = new FileWriter(new File(theDirName, t.getName()));
+        File targetDir = new File(theDirName);
+        if (!targetDir.exists() && !targetDir.mkdirs()) {
+            throw new IllegalStateException("Couldn't create dir: " + theDirName);
+        }
+        for (Target t : theTargets) {
+            try (FileWriter dump = new FileWriter(new File(theDirName, t.getName()))) {
                 IOUtils.copy(t.open(), dump);
                 dump.close();
+            } catch (IOException e) {
+                debugLogger.log(LogLevel.DEBUG, "ASDCCatalog", "IOException {}", e);
             }
-        } catch (IOException iox) {
-            debugLogger.log(LogLevel.DEBUG,"ASDCCatalog", "IOException {}", iox);
         }
     }
 
@@ -365,50 +346,50 @@ public class ASDCCatalog implements Catalog {
         }
     }
 
-    public class FolderAction implements Catalog.FolderAction {
+    public class CatalogFolderAction implements Catalog.FolderAction {
 
         private boolean doItemModels;
         private String folderName;
 
         // use the id/UUID of the folder ??
-        private FolderAction(String theFolderName) {
+        private CatalogFolderAction(String theFolderName) {
             this.folderName = theFolderName;
         }
 
-        public FolderAction withAnnotations() {
+        public CatalogFolderAction withAnnotations() {
             return this;
         }
 
-        public FolderAction withAnnotations(String theSelector) {
+        public CatalogFolderAction withAnnotations(String theSelector) {
             return this;
         }
 
-        public FolderAction withItems() {
+        public CatalogFolderAction withItems() {
             return this;
         }
 
-        public FolderAction withItemAnnotations() {
+        public CatalogFolderAction withItemAnnotations() {
             return this;
         }
 
-        public FolderAction withItemAnnotations(String theSelector) {
+        public CatalogFolderAction withItemAnnotations(String theSelector) {
             return this;
         }
 
-        public FolderAction withItemModels() {
+        public CatalogFolderAction withItemModels() {
             doItemModels = true;
             return this;
         }
 
-        public FolderAction withParts() {
+        public CatalogFolderAction withParts() {
             return this;
         }
 
-        public FolderAction withPartAnnotations() {
+        public CatalogFolderAction withPartAnnotations() {
             return this;
         }
 
-        public FolderAction withPartAnnotations(String theSelector) {
+        public CatalogFolderAction withPartAnnotations(String theSelector) {
             return this;
         }
 
@@ -425,7 +406,7 @@ public class ASDCCatalog implements Catalog {
             return Futures.advance(asdc.getResources(JSONArray.class, "DCAE Component", this.folderName),
                     resourcesData -> {
 
-                        Actions.CompoundAction<Resource> itemsAction = new Actions.BasicCompoundAction<Resource>();
+                        Actions.CompoundAction<Resource> itemsAction = new Actions.BasicCompoundAction<>();
                         for (int i = 0; i < resourcesData.length(); i++) {
                             JSONObject resource = resourcesData.getJSONObject(i);
 
@@ -453,7 +434,7 @@ public class ASDCCatalog implements Catalog {
                     }, resourcesError -> new RuntimeException("Failed to retrieve resources", resourcesError));
         }
 
-        public Collection<Resource> filterLatestVersion(Collection<Resource> items) throws IllegalArgumentException {
+        public Collection<Resource> filterLatestVersion(Collection<Resource> items) {
             if (items == null) {
                 throw new IllegalArgumentException("null is not acceptable as a list of items");
             }
@@ -475,7 +456,7 @@ public class ASDCCatalog implements Catalog {
     }
 
     /** */
-    public class TemplateAction implements Catalog.TemplateAction {
+    public class CatalogTemplateAction implements Catalog.TemplateAction {
 
         private String artifactId;
         private Target target;
@@ -485,32 +466,28 @@ public class ASDCCatalog implements Catalog {
         private boolean doNodes, doNodeProperties, doNodePropertiesAssignments, doNodeRequirements, doNodeCapabilities,
                 doNodeCapabilityProperties, doNodeCapabilityPropertyAssignments;
 
-        protected TemplateAction(Target theTarget) {
-            this.target = theTarget;
-        }
-
         /*
          * expected to be the relative url provided by asdc for the template
          * artifact
          */
-        protected TemplateAction(String theArtifactId) {
+        CatalogTemplateAction(String theArtifactId) {
             this.artifactId = theArtifactId;
         }
 
-        public TemplateAction withInputs() {
+        public CatalogTemplateAction withInputs() {
             return this;
         }
 
-        public TemplateAction withOutputs() {
+        public CatalogTemplateAction withOutputs() {
             return this;
         }
 
-        public TemplateAction withNodes() {
+        public CatalogTemplateAction withNodes() {
             this.doNodes = true;
             return this;
         }
 
-        protected TemplateAction doNodes() {
+        CatalogTemplateAction doNodes() {
             if (!this.doNodes) {
                 return this;
             }
@@ -531,12 +508,12 @@ public class ASDCCatalog implements Catalog {
         }
 
         // pre-requisite: a call to 'withNodes'
-        public TemplateAction withNodeProperties() {
+        public CatalogTemplateAction withNodeProperties() {
             this.doNodeProperties = true;
             return this;
         }
 
-        protected TemplateAction doNodeProperties() {
+        protected CatalogTemplateAction doNodeProperties() {
             if (!this.doNodeProperties) {
                 return this;
             }
@@ -558,12 +535,12 @@ public class ASDCCatalog implements Catalog {
         }
 
         // pre-requisite: a call to 'withNodesProperties'
-        public TemplateAction withNodePropertiesAssignments() {
+        public CatalogTemplateAction withNodePropertiesAssignments() {
             this.doNodePropertiesAssignments = true;
             return this;
         }
 
-        protected TemplateAction doNodePropertiesAssignments() {
+        CatalogTemplateAction doNodePropertiesAssignments() {
             if (!this.doNodePropertiesAssignments) {
                 return this;
             }
@@ -573,8 +550,8 @@ public class ASDCCatalog implements Catalog {
                 return this;
             }
 
-            nodes.entrySet().stream().forEach(node -> {
-                List nodeProps = null;
+            nodes.entrySet().forEach(node -> {
+                List nodeProps;
                 try {
                     nodeProps = (List) ctx.getValue(NODES_NAME + ((Map.Entry) node).getKey() + PROPERTIES);
                 } catch (JXPathNotFoundException pnfx) {
@@ -582,7 +559,7 @@ public class ASDCCatalog implements Catalog {
                     return;
                 }
 
-                nodeProps.stream().forEach(prop -> {
+                nodeProps.forEach(prop -> {
                     // pick from
                     String propPath = TOPOLOGY_TEMPLATE_NODE_TEMPLATES1 + ((Map.Entry) node).getKey()
                             + "/properties/" + ((Map) prop).get(NAME);
@@ -602,7 +579,7 @@ public class ASDCCatalog implements Catalog {
             return this;
         }
 
-        protected Map renderRequirementDefinition(Map.Entry theReq) {
+        Map renderRequirementDefinition(Map.Entry theReq) {
             Map def = (Map) theReq.getValue();
             return new MapBuilder().put(NAME, theReq.getKey())
                     // capability must be present
@@ -613,7 +590,7 @@ public class ASDCCatalog implements Catalog {
         }
 
         // TODO: see how this comes out of neo and match it
-        protected Map renderRequirementAssignment(Map.Entry theReq) {
+        Map renderRequirementAssignment(Map.Entry theReq) {
             Map def = (Map) theReq.getValue();
             return new MapBuilder().put(NAME, theReq.getKey())
                     // capability must be present
@@ -628,12 +605,12 @@ public class ASDCCatalog implements Catalog {
                     .putAll(evictEntries(def, CAPABILITY)).build();
         }
 
-        public TemplateAction withNodeRequirements() {
+        public CatalogTemplateAction withNodeRequirements() {
             this.doNodeRequirements = true;
             return this;
         }
 
-        TemplateAction doNodeRequirements() {
+        CatalogTemplateAction doNodeRequirements() {
             if (!this.doNodeRequirements) {
                 return this;
             }
@@ -647,7 +624,7 @@ public class ASDCCatalog implements Catalog {
             }
 
             // type
-            nodes.entrySet().stream()
+            nodes.entrySet()
                     .forEach(
                             node -> ctx
                                     .setValue(
@@ -666,13 +643,13 @@ public class ASDCCatalog implements Catalog {
                                                     .collect(Collectors.toList())));
 
             // merge assignments on top of definitions
-            nodes.entrySet().stream().forEach(node -> {
+            nodes.entrySet().forEach(node -> {
                 List nodeReqsAssigns = (List) resolve(this.target,
                         TOPOLOGY_TEMPLATE_NODE_TEMPLATES1 + ((Map.Entry) node).getKey() + "/requirements");
                 if (nodeReqsAssigns == null) {
                     return;
                 }
-                nodeReqsAssigns.stream().forEach(req -> {
+                nodeReqsAssigns.forEach(req -> {
                     Map.Entry reqAssign = toEntry(req);
                     catalog.mergeDefinitions((Map) ctx.getValue(NODES_NAME + ((Map.Entry) node).getKey()
                             + "']/requirements[name='" + reqAssign.getKey() + "']"),
@@ -683,12 +660,12 @@ public class ASDCCatalog implements Catalog {
             return this;
         }
 
-        public TemplateAction withNodeCapabilities() {
+        public CatalogTemplateAction withNodeCapabilities() {
             this.doNodeCapabilities = true;
             return this;
         }
 
-        protected Map renderCapabilityDefinition(Map.Entry theCap) {
+        Map renderCapabilityDefinition(Map.Entry theCap) {
             Map def = (Map) theCap.getValue();
             return new MapBuilder().put(NAME, theCap.getKey())
                     .put("type",
@@ -697,7 +674,7 @@ public class ASDCCatalog implements Catalog {
                     .putAll(evictEntries(def, "properties", "type")).build();
         }
 
-        TemplateAction doNodeCapabilities() {
+        CatalogTemplateAction doNodeCapabilities() {
             if (!this.doNodeCapabilities) {
                 return this;
             }
@@ -718,18 +695,18 @@ public class ASDCCatalog implements Catalog {
 
                             stream(catalog.facets(Construct.Node, Facet.capabilities,
                                     ((Map) ((Map.Entry) node).getValue()).get("type").toString()))
-                                            .map((Map.Entry capEntry) -> renderCapabilityDefinition(capEntry))
+                                            .map(this::renderCapabilityDefinition)
                                             .collect(Collectors.toList())));
 
             return this;
         }
 
-        public TemplateAction withNodeCapabilityProperties() {
+        public CatalogTemplateAction withNodeCapabilityProperties() {
             this.doNodeCapabilityProperties = true;
             return this;
         }
 
-        TemplateAction doNodeCapabilityProperties() {
+        CatalogTemplateAction doNodeCapabilityProperties() {
 
             if (!this.doNodeCapabilityProperties) {
                 return this;
@@ -742,7 +719,7 @@ public class ASDCCatalog implements Catalog {
 
             // pick up all the properties from the capability type hierarchy
             // definition
-            nodes.entrySet().stream().forEach(node -> {
+            nodes.entrySet().forEach(node -> {
                 List nodeCapabilities = (List) ctx
                         .getValue(NODES_NAME + ((Map.Entry) node).getKey() + CAPABILITIES);
                 if (nodeCapabilities == null) {
@@ -750,7 +727,7 @@ public class ASDCCatalog implements Catalog {
                 }
 
                 // collect properties from the capability type hierarchy
-                nodeCapabilities.stream().forEach(capability -> {
+                nodeCapabilities.forEach(capability -> {
                     List capabilityProperties = StreamSupport
                             .stream(Spliterators.spliteratorUnknownSize(
                                     catalog.facets(Construct.Capability, Facet.properties,
@@ -781,7 +758,7 @@ public class ASDCCatalog implements Catalog {
                                 return;
                             }
 
-                            properties.entrySet().stream().forEach(property -> {
+                            properties.entrySet().forEach(property -> {
                                 String propertyLoc = NODES_NAME + ((Map.Entry) node).getKey()
                                         + CAPABILITIES_NAME + ((Map) capability).get(NAME)
                                         + PROPERTIES_NAME + ((Map.Entry) property).getKey() + "']";
@@ -794,12 +771,12 @@ public class ASDCCatalog implements Catalog {
             return this;
         }
 
-        public TemplateAction withNodeCapabilityPropertyAssignments() {
+        public CatalogTemplateAction withNodeCapabilityPropertyAssignments() {
             this.doNodeCapabilityPropertyAssignments = true;
             return this;
         }
 
-        TemplateAction doNodeCapabilityPropertyAssignments() {
+        CatalogTemplateAction doNodeCapabilityPropertyAssignments() {
             if (!this.doNodeCapabilityPropertyAssignments) {
                 return this;
             }
@@ -818,14 +795,14 @@ public class ASDCCatalog implements Catalog {
                 return this;
             }
 
-            nodes.stream().forEach(node -> {
+            nodes.forEach(node -> {
                 List capabilities = (List) ctx.getValue(NODES_NAME + ((Map) node).get(NAME) + CAPABILITIES);
                 if (capabilities == null) {
                     return;
                 }
 
-                capabilities.stream().forEach(capability -> {
-                    List properties = null;
+                capabilities.forEach(capability -> {
+                    List properties;
                     try {
                         properties = (List) ctx.getValue(NODES_NAME + ((Map) node).get(NAME)
                                 + CAPABILITIES_NAME + ((Map) capability).get(NAME) + PROPERTIES);
@@ -834,7 +811,7 @@ public class ASDCCatalog implements Catalog {
                         return;
                     }
 
-                    properties.stream().forEach(property -> {
+                    properties.forEach(property -> {
                         String location = NODES_NAME + ((Map) node).get(NAME) + CAPABILITIES_NAME
                                 + ((Map) capability).get(NAME) + PROPERTIES_NAME + ((Map) property).get(NAME)
                                 + "']/assignment";
@@ -859,15 +836,15 @@ public class ASDCCatalog implements Catalog {
             return this;
         }
 
-        public TemplateAction withPolicies() {
+        public CatalogTemplateAction withPolicies() {
             return this;
         }
 
-        public TemplateAction withPolicyProperties() {
+        public CatalogTemplateAction withPolicyProperties() {
             return this;
         }
 
-        public TemplateAction withPolicyPropertiesAssignments() {
+        public CatalogTemplateAction withPolicyPropertiesAssignments() {
             return this;
         }
 
@@ -913,7 +890,7 @@ public class ASDCCatalog implements Catalog {
                     this.catalog = checker.catalog();
                     ASDCCatalog.this.catalogs.put(resourceId, this.catalog);
                     // we should only be doing this if we discovered an update
-                    // (by checking timestampts). Actually, we should
+                    // (by checking timestamps). Actually, we should
                     // only do the artifact fetching if we detect an update
                     ASDCCatalog.this.contexts.put(template, JXPathContext.newContext(template.getTarget()));
                 } catch (Exception x) {
@@ -924,7 +901,7 @@ public class ASDCCatalog implements Catalog {
             this.doNodes().doNodeProperties().doNodePropertiesAssignments().doNodeRequirements().doNodeCapabilities()
                     .doNodeCapabilityProperties().doNodeCapabilityPropertyAssignments();
 
-            JSONObject pack = new JSONObject((Map) ctx.getContextBean()).put(NAME, this.target.getName().toString())
+            JSONObject pack = new JSONObject((Map) ctx.getContextBean()).put(NAME, this.target.getName())
                     .put(ID, this.target.getLocation().toString())
                     .put(ITEM_ID, this.target.getLocation().toString());
             debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), pack.toString(2));
@@ -933,7 +910,7 @@ public class ASDCCatalog implements Catalog {
         }
     }
 
-    public class TypeAction implements Catalog.TypeAction {
+    public class CatalogTypeAction implements Catalog.TypeAction {
 
         private String name;
         private UUID resourceId;
@@ -941,17 +918,17 @@ public class ASDCCatalog implements Catalog {
 
         private boolean doHierarchy = false, doRequirements = false, doCapabilities = false;
 
-        private TypeAction(UUID theResourceId, /* Construct theConstruct, */ String theName) {
+        private CatalogTypeAction(UUID theResourceId, /* Construct theConstruct, */ String theName) {
             this.resourceId = theResourceId;
             this.name = theName;
         }
 
-        public TypeAction withHierarchy() {
+        public CatalogTypeAction withHierarchy() {
             this.doHierarchy = true;
             return this;
         }
 
-        TypeAction doHierarchy(org.onap.sdc.dcae.checker.Catalog theCatalog) {
+        CatalogTypeAction doHierarchy(org.onap.sdc.dcae.checker.Catalog theCatalog) {
             if (!this.doHierarchy) {
                 return this;
             }
@@ -968,12 +945,12 @@ public class ASDCCatalog implements Catalog {
             return this;
         }
 
-        public TypeAction withRequirements() {
+        public CatalogTypeAction withRequirements() {
             this.doRequirements = true;
             return this;
         }
 
-        TypeAction doRequirements(org.onap.sdc.dcae.checker.Catalog theCatalog) {
+        CatalogTypeAction doRequirements(org.onap.sdc.dcae.checker.Catalog theCatalog) {
             if (!this.doRequirements) {
                 return this;
             }
@@ -991,7 +968,7 @@ public class ASDCCatalog implements Catalog {
                                         // (within a node type)
                                         .put(ID,
                                                 getCatalog(resourceId).hasType(Construct.Capability, capability)
-                                                        ? (resourceId + "/" + capability) : capability.toString())
+                                                        ? (resourceId + "/" + capability) : capability)
                                         .build())
                         .put("node", new MapBuilder().putOpt(NAME, node).putOpt(ID, node == null ? null
                                 : (resourceId + "/" + node)).buildOpt())
@@ -1004,12 +981,12 @@ public class ASDCCatalog implements Catalog {
             return this;
         }
 
-        public TypeAction withCapabilities() {
+        public CatalogTypeAction withCapabilities() {
             this.doCapabilities = true;
             return this;
         }
 
-        TypeAction doCapabilities(org.onap.sdc.dcae.checker.Catalog theCatalog) {
+        CatalogTypeAction doCapabilities(org.onap.sdc.dcae.checker.Catalog theCatalog) {
             if (!this.doCapabilities) {
                 return this;
             }
@@ -1065,7 +1042,7 @@ public class ASDCCatalog implements Catalog {
         }
     }
 
-    public static interface Resource extends Catalog.Item<Resource> {
+    public interface Resource extends Catalog.Item<Resource> {
 
         @Override
         @Proxy.DataMap(map = "uuid")
@@ -1091,22 +1068,22 @@ public class ASDCCatalog implements Catalog {
     public static class Resources extends Elements<Resource> {
     }
 
-    public static interface Artifact extends Catalog.Element<Artifact> {
+    public interface Artifact extends Catalog.Element<Artifact> {
 
         @Proxy.DataMap(map = ARTIFACT_NAME)
-        public String name();
+        String name();
 
         @Proxy.DataMap(map = "artifactType")
-        public String type();
+        String type();
 
         @Proxy.DataMap(map = "artifactDescription")
-        public String description();
+        String description();
 
         @Proxy.DataMap(map = "artifactUUID")
-        public UUID uuid();
+        UUID uuid();
 
         @Proxy.DataMap(map = "artifactVersion")
-        public int version();
+        int version();
 
     }
 
@@ -1150,7 +1127,7 @@ public class ASDCCatalog implements Catalog {
                 return null;
             }
 
-            ASDCTarget target = null;
+            ASDCTarget target;
             if (this.catalog != null) {
                 // this is the caching!!
                 target = (ASDCTarget) this.catalog.getTarget(ASDCCatalog.this.getArtifactURI(targetArtifact));
@@ -1210,16 +1187,20 @@ public class ASDCCatalog implements Catalog {
         Resources items = f.elements(ITEMS, Resources.class);
         if (items != null) {
             for (Resource item : items) {
-                debugLogger.log(LogLevel.DEBUG, ASDCCatalog.class.getName(), "\titem: {} : {}",item.name(), item.data());
-                Templates templates = item.elements(MODELS, Templates.class);
-                if (templates != null) {
-                    for (Template t : templates) {
-                        Template ft = catalog.template(t.id()).withNodes().withNodeProperties()
-                                .withNodePropertiesAssignments().execute().waitForResult();
+                executeItemsNodePropertiesAssignments(catalog, item);
+            }
+        }
+    }
 
-                        debugLogger.log(LogLevel.DEBUG, ASDCCatalog.class.getName(), "template data: {}", ft.data());
-                    }
-                }
+    private static void executeItemsNodePropertiesAssignments(ASDCCatalog catalog, Resource item) throws Exception {
+        debugLogger.log(LogLevel.DEBUG, ASDCCatalog.class.getName(), "\titem: {} : {}",item.name(), item.data());
+        Templates templates = item.elements(MODELS, Templates.class);
+        if (templates != null) {
+            for (Template t : templates) {
+                Template ft = catalog.template(t.id()).withNodes().withNodeProperties()
+                        .withNodePropertiesAssignments().execute().waitForResult();
+
+                debugLogger.log(LogLevel.DEBUG, ASDCCatalog.class.getName(), "template data: {}", ft.data());
             }
         }
     }

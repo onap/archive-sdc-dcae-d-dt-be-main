@@ -1,126 +1,138 @@
 /*
- * @(#)MetaValidator.java	$Rev: 4 $ $Release: 0.5.1 $
- *
  * copyright(c) 2005 kuwata-lab all rights reserved.
  */
 
 package kwalify;
 
-import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.common.onaplog.OnapLoggerError;
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
 
 import java.util.Map;
 import java.util.List;
-import java.util.Iterator;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.regex.PatternSyntaxException;
 
 /**
  *  meta validator to validate schema definition
- *
- *  @revision    $Rev: 4 $
- *  @release     $Release: 0.5.1 $
  */
 public class MetaValidator extends Validator {
 
+    private static final String RANGE = "range";
+    private static final String MAX_EX = "max-ex";
+    private static final String MIN_EX = "min-ex";
+    private static final String LENGTH = "length";
+    private static final String SEQUENCE = "sequence";
+    private static final String ENUM_CONFLICT = "enum.conflict";
+    private static final String SCALAR_CONFLICT = "scalar.conflict";
+    private static final String IDENT = "ident";
+    private static final String IDENT1 = "ident:";
+    private static final String MAPPING = "mapping";
+    private static final String PATTERN = "pattern:";
+    private static final String PATTERN1 = "pattern";
+    private static final String TYPE_MAP = "    type:      map\n";
+    private static final String TYPE_STR = "    type:      str\n";
+    private static final String TYPE_BOOL = "    type:      bool\n";
+    private static final String MAPPING1 = "    mapping:\n";
+    private static final String TYPE_SCALAR = "        type:     scalar\n";
+    private static final String TYPE_INT = "        type:     int\n";
+
     private static OnapLoggerError errLogger = OnapLoggerError.getInstance();
-    private static OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
 
-    public static final String META_SCHEMA = ""
-        + "name:      MAIN\n"
-        + "type:      map\n"
-        + "required:  yes\n"
-        + "mapping:   &main-rule\n"
-        + " \"name\":\n"
-        + "    type:      str\n"
-        + " \"desc\":\n"
-        + "    type:      str\n"
-        + " \"type\":\n"
-        + "    type:      str\n"
-        + "    #required:  yes\n"
-        + "    enum:\n"
-        + "      - seq\n"
-        + "      #- sequence\n"
-        + "      #- list\n"
-        + "      - map\n"
-        + "      #- mapping\n"
-        + "      #- hash\n"
-        + "      - str\n"
-        + "      #- string\n"
-        + "      - int\n"
-        + "      #- integer\n"
-        + "      - float\n"
-        + "      - number\n"
-        + "      #- numeric\n"
-        + "      - bool\n"
-        + "      #- boolean\n"
-        + "      - text\n"
-        + "      - date\n"
-        + "      - time\n"
-        + "      - timestamp\n"
-        + "      #- object\n"
-        + "      - any\n"
-        + "      - scalar\n"
-        + "      #- collection\n"
-        + " \"required\":\n"
-        + "    type:      bool\n"
-        + " \"enum\":\n"
-        + "    type:      seq\n"
-        + "    sequence:\n"
-        + "      - type:     scalar\n"
-        + "        unique:   yes\n"
-        + " \"pattern\":\n"
-        + "    type:      str\n"
-        + " \"assert\":\n"
-        + "    type:      str\n"
-        + "    pattern:   /\\bval\\b/\n"
-        + " \"range\":\n"
-        + "    type:      map\n"
-        + "    mapping:\n"
-        + "     \"max\":\n"
-        + "        type:     scalar\n"
-        + "     \"min\":\n"
-        + "        type:     scalar\n"
-        + "     \"max-ex\":\n"
-        + "        type:     scalar\n"
-        + "     \"min-ex\":\n"
-        + "        type:     scalar\n"
-        + " \"length\":\n"
-        + "    type:      map\n"
-        + "    mapping:\n"
-        + "     \"max\":\n"
-        + "        type:     int\n"
-        + "     \"min\":\n"
-        + "        type:     int\n"
-        + "     \"max-ex\":\n"
-        + "        type:     int\n"
-        + "     \"min-ex\":\n"
-        + "        type:     int\n"
-        + " \"ident\":\n"
-        + "    type:      bool\n"
-        + " \"unique\":\n"
-        + "    type:      bool\n"
-        + " \"sequence\":\n"
-        + "    name:      SEQUENCE\n"
-        + "    type:      seq\n"
-        + "    sequence:\n"
-        + "      - type:      map\n"
-        + "        mapping:   *main-rule\n"
-        + "        name:      MAIN\n"
-        + "        #required:  yes\n"
-        + " \"mapping\":\n"
-        + "    name:      MAPPING\n"
-        + "    type:      map\n"
-        + "    mapping:\n"
-        + "      =:\n"
-        + "        type:      map\n"
-        + "        mapping:   *main-rule\n"
-        + "        name:      MAIN\n"
-        + "        #required:  yes\n"
-        ;
 
+    private static final String META_SCHEMA = new StringBuilder().
+            append("").
+            append("name:      MAIN\n").
+            append("type:      map\n").
+            append("required:  yes\n").
+            append("mapping:   &main-rule\n").
+            append(" \"name\":\n").
+            append(TYPE_STR).
+            append(" \"desc\":\n").
+            append(TYPE_STR).
+            append(" \"type\":\n").
+            append(TYPE_STR).
+            append("    #required:  yes\n").
+            append("    enum:\n").
+            append("      - seq\n").
+            append("      #- sequence\n").
+            append("      #- list\n").
+            append("      - map\n").
+            append("      #- mapping\n").
+            append("      #- hash\n").
+            append("      - str\n").
+            append("      #- string\n").
+            append("      - int\n").
+            append("      #- integer\n").
+            append("      - float\n").
+            append("      - number\n").
+            append("      #- numeric\n").
+            append("      - bool\n").
+            append("      #- boolean\n").
+            append("      - text\n").
+            append("      - date\n").
+            append("      - time\n").
+            append("      - timestamp\n").
+            append("      #- object\n").
+            append("      - any\n").
+            append("      - scalar\n").
+            append("      #- collection\n").
+            append(" \"required\":\n").
+            append(TYPE_BOOL).
+            append(" \"enum\":\n").
+            append("    type:      seq\n").
+            append("    sequence:\n").
+            append("      - type:     scalar\n").
+            append("        unique:   yes\n").
+            append(" \"pattern\":\n").
+            append(TYPE_STR).
+            append(" \"assert\":\n").
+            append(TYPE_STR).
+            append("    pattern:   /\\bval\\b/\n").
+            append(" \"range\":\n").
+            append(TYPE_MAP).
+            append(MAPPING1).
+            append("     \"max\":\n").
+            append(TYPE_SCALAR).
+            append("     \"min\":\n").
+            append(TYPE_SCALAR).
+            append("     \"max-ex\":\n").
+            append(TYPE_SCALAR).
+            append("     \"min-ex\":\n").
+            append(TYPE_SCALAR).
+            append(" \"length\":\n").
+            append(TYPE_MAP).
+            append(MAPPING1).
+            append("     \"max\":\n").
+            append(TYPE_INT).
+            append("     \"min\":\n").
+            append(TYPE_INT).
+            append("     \"max-ex\":\n").
+            append(TYPE_INT).
+            append("     \"min-ex\":\n").
+            append(TYPE_INT).
+            append(" \"ident\":\n").
+            append(TYPE_BOOL).
+            append(" \"unique\":\n").
+            append(TYPE_BOOL).
+            append(" \"sequence\":\n").
+            append("    name:      SEQUENCE\n").
+            append("    type:      seq\n").
+            append("    sequence:\n").
+            append("      - type:      map\n").
+            append("        mapping:   *main-rule\n").
+            append("        name:      MAIN\n").
+            append("        #required:  yes\n").
+            append(" \"mapping\":\n").
+            append("    name:      MAPPING\n").
+            append(TYPE_MAP).
+            append(MAPPING1).
+            append("      =:\n").
+            append("        type:      map\n").
+            append("        mapping:   *main-rule\n").
+            append("        name:      MAIN\n").
+            append("        #required:  yes\n").
+            toString();
 
     /**
      *
@@ -140,6 +152,11 @@ public class MetaValidator extends Validator {
 
     private static Validator __instance;
 
+    private MetaValidator(Map schema) {
+        super(schema);
+    }
+
+
     public static Validator instance() {
         synchronized (MetaValidator.class) {
             if (__instance == null) {
@@ -147,6 +164,7 @@ public class MetaValidator extends Validator {
                     Map schema = (Map) YamlUtil.load(META_SCHEMA);
                     __instance = new MetaValidator(schema);
                 } catch (SyntaxException ex) {
+                    errLogger.log(LogLevel.INFO,"MetaValidator","Failed validating schema: {}",ex);
                     assert false;
                 }
             }
@@ -155,289 +173,222 @@ public class MetaValidator extends Validator {
         return __instance;
     }
 
-    private MetaValidator(Map schema) {
-        super(schema);
-    }
-
+    @Override
     public void postValidationHook(Object value, Rule rule, ValidationContext theContext) {
         if (value == null) {
-            return;   // realy?
+            return;   // really?
         }
         if (! "MAIN".equals(rule.getName())) {
             return;
         }
-        //
         assert value instanceof Map;
         Map map = (Map)value;
         String type = (String)map.get("type");
         if (type == null) {
             type = Types.getDefaultType();
         }
-        //Class type_class = Types.typeClass(type);
-        //if (type_class == null) {
-        //    theContext.addError(validationError("type.unknown", rule, path + "/type", type, null));
-        //}
-        //
-        //String pattern;
-        //if ((pattern = (String)map.get("pattern")) != null) {
-        if (map.containsKey("pattern")) {
-            String pattern = (String)map.get("pattern");
+
+        if (map.containsKey(PATTERN1)) {
+            String pattern = (String)map.get(PATTERN1);
             Matcher m = Util.matcher(pattern, "\\A\\/(.*)\\/([mi]?[mi]?)\\z");
             String pat = m.find() ? m.group(1) : pattern;
             try {
                 Pattern.compile(pat);
             } catch (PatternSyntaxException ex) {
-                theContext.addError("pattern.syntaxerr", rule, "pattern", pattern, null);
+                errLogger.log(LogLevel.INFO,"MetaValidator","pattern.syntaxerr: {}",ex);
+                theContext.addError("pattern.syntaxerr", rule, PATTERN1, pattern, null);
             }
         }
-        //
-        //List enum_list;
-        //if ((enum_list = (List)map.get("enum")) != null) {
         if (map.containsKey("enum")) {
-            List enum_list = (List)map.get("enum");
+            List enumList = (List)map.get("enum");
             if (Types.isCollectionType(type)) {
                 theContext.addError("enum.notscalar", rule, "enum:", (Object[])null);
             } else {
-                for (Iterator it = enum_list.iterator(); it.hasNext(); ) {
-                    Object elem = it.next();
-                    if (! Types.isCorrectType(elem, type)) {
-                        theContext.addError("enum.type.unmatch", rule,  "enum", elem, new Object[] { Types.typeName(type) });
-                    }
-                }
+                checkEnum(rule, theContext, type, enumList);
             }
         }
-        //
-        //String assert_str;
-        //if ((assert_str = (String)map.get("assert")) != null) {
         if (map.containsKey("assert")) {
             errLogger.log(LogLevel.ERROR, this.getClass().getName(), "*** warning: sorry, 'assert:' is not supported in current version of Kwalify-java.");
-            //String assert_str = (String)map.get("assert");
-            //if (! Util.matches(assert_str, "\\bval\\b")) {
-            //    theContext.addError(validationError("assert.noval", rule, path + "/assert", assert_str, null);
-            //}
-            //try {
-            //    Expression.parse(assert_str);
-            //} catch (InvalidExpressionException ex) {
-            //    theContext.addError(validationError("assert.syntaxerr", rule, path + "/assert", assert_str, null));
-            //}
+
         }
-        //
-        //Map range;
-        //if ((range = (Map)map.get("range")) != null) {
-        if (map.containsKey("range")) {
-            Map range = (Map)map.get("range");
-            //if (! (range instanceof Map)) {
-            //    theContext.addError(validtionError("range.notmap", rule, path + "/range", range, null));
-            //} else
-            if (Types.isCollectionType(type) || type.equals("bool") || type.equals("any")) {
+
+        if (map.containsKey(RANGE)) {
+            Map range = (Map)map.get(RANGE);
+
+            if (Types.isCollectionType(type) || "bool".equals(type) || "any".equals(type)) {
                 theContext.addError("range.notscalar", rule, "range:", null, null);
             } else {
-                for (Iterator it = range.keySet().iterator(); it.hasNext(); ) {
-                    String k = (String)it.next();
-                    Object v = range.get(k);
-                    if (! Types.isCorrectType(v, type)) {
-                        theContext.addError("range.type.unmatch", rule, "range/" + k, v, new Object[] { Types.typeName(type) });
-                    }
-                }
+                rangeCheck(rule, theContext, type, range);
             }
-            if (range.containsKey("max") && range.containsKey("max-ex")) {
-                theContext.addError("range.twomax", rule, "range", null, null);
+            if (range.containsKey("max") && range.containsKey(MAX_EX)) {
+                theContext.addError("range.twomax", rule, RANGE, null, null);
             }
-            if (range.containsKey("min") && range.containsKey("min-ex")) {
-                theContext.addError("range.twomin", rule, "range", null, null);
+            if (range.containsKey("min") && range.containsKey(MIN_EX)) {
+                theContext.addError("range.twomin", rule, RANGE, null, null);
             }
             Object max    = range.get("max");
             Object min    = range.get("min");
-            Object max_ex = range.get("max-ex");
-            Object min_ex = range.get("min-ex");
-            Object[] args = null;
-            //String error_symbol = null;
+            Object maxEx = range.get(MAX_EX);
+            Object minEx = range.get(MIN_EX);
+            Object[] args;
             if (max != null) {
                 if (min != null && Util.compareValues(max, min) < 0) {
                     args = new Object[] { max, min };
-                    theContext.addError("range.maxltmin", rule, "range", null, args);
-                } else if (min_ex != null && Util.compareValues(max, min_ex) <= 0) {
-                    args = new Object[] { max, min_ex };
-                    theContext.addError("range.maxleminex", rule, "range", null, args);
+                    theContext.addError("range.maxltmin", rule, RANGE, null, args);
+                } else if (minEx != null && Util.compareValues(max, minEx) <= 0) {
+                    args = new Object[] { max, minEx };
+                    theContext.addError("range.maxleminex", rule, RANGE, null, args);
                 }
-            } else if (max_ex != null) {
-                if (min != null && Util.compareValues(max_ex, min) <= 0) {
-                    args = new Object[] { max_ex, min };
-                    theContext.addError("range.maxexlemin", rule, "range", null, args);
-                } else if (min_ex != null && Util.compareValues(max_ex, min_ex) <= 0) {
-                    args = new Object[] { max_ex, min_ex };
-                    theContext.addError("range.maxexleminex", rule, "range", null, args);
+            } else if (maxEx != null) {
+                if (min != null && Util.compareValues(maxEx, min) <= 0) {
+                    args = new Object[] { maxEx, min };
+                    theContext.addError("range.maxexlemin", rule, RANGE, null, args);
+                } else if (minEx != null && Util.compareValues(maxEx, minEx) <= 0) {
+                    args = new Object[] { maxEx, minEx };
+                    theContext.addError("range.maxexleminex", rule, RANGE, null, args);
                 }
             }
         }
-        //
-        //Map length;
-        //if ((length = (Map)map.get("length")) != null) {
-        if (map.containsKey("length")) {
-            Map length = (Map)map.get("length");
-            //if (! (length instanceof Map)) {
-            //    theContext.addError(validtionError("length.notmap", rule, path + "/length", length, null));
-            //} else
-            if (! (type.equals("str") || type.equals("text"))) {
+        if (map.containsKey(LENGTH)) {
+            Map length = (Map)map.get(LENGTH);
+
+            if (! ("str".equals(type) || "text".equals(type))) {
                 theContext.addError("length.nottext", rule, "length:", (Object[])null);
             }
-            //for (Iterator it = length.keySet().iterator(); it.hasNext(); ) {
-            //    String k = (String)it.next();
-            //    Object v = length.get(k);
-            //    if (k == null || ! (k.equals("max") || k.equals("min") || k.equals("max-ex") || k.equals("min-ex"))) {
-            //        theContext.addError(validationError("length.undefined", rule, path + "/length/" + k, "" + k + ":", null));
-            //    } else if (! (v instanceof Integer)) {
-            //        theContext.addError(validationError("length.notint", rule, path + "/length/" + k, v, null));
-            //    }
-            //}
-            if (length.containsKey("max") && length.containsKey("max-ex")) {
-                theContext.addError("length.twomax", rule, "length", (Object[])null);
+
+            if (length.containsKey("max") && length.containsKey(MAX_EX)) {
+                theContext.addError("length.twomax", rule, LENGTH, (Object[])null);
             }
-            if (length.containsKey("min") && length.containsKey("min-ex")) {
-                theContext.addError("length.twomin", rule, "length", (Object[])null);
+            if (length.containsKey("min") && length.containsKey(MIN_EX)) {
+                theContext.addError("length.twomin", rule, LENGTH, (Object[])null);
             }
             Integer max    = (Integer)length.get("max");
             Integer min    = (Integer)length.get("min");
-            Integer max_ex = (Integer)length.get("max-ex");
-            Integer min_ex = (Integer)length.get("min-ex");
-            Object[] args = null;
-            //String error_symbol = null;
+            Integer maxEx = (Integer)length.get(MAX_EX);
+            Integer minEx = (Integer)length.get(MIN_EX);
+            Object[] args;
             if (max != null) {
                 if (min != null && max.compareTo(min) < 0) {
                     args = new Object[] { max, min };
-                    theContext.addError("length.maxltmin", rule, "length", null, args);
-                } else if (min_ex != null && max.compareTo(min_ex) <= 0) {
-                    args = new Object[] { max, min_ex };
-                    theContext.addError("length.maxleminex", rule, "length", null, args);
+                    theContext.addError("length.maxltmin", rule, LENGTH, null, args);
+                } else if (minEx != null && max.compareTo(minEx) <= 0) {
+                    args = new Object[] { max, minEx };
+                    theContext.addError("length.maxleminex", rule, LENGTH, null, args);
                 }
-            } else if (max_ex != null) {
-                if (min != null && max_ex.compareTo(min) <= 0) {
-                    args = new Object[] { max_ex, min };
-                    theContext.addError("length.maxexlemin", rule, "length", null, args);
-                } else if (min_ex != null && max_ex.compareTo(min_ex) <= 0) {
-                    args = new Object[] { max_ex, min_ex };
-                    theContext.addError("length.maxexleminex", rule, "length", null, args);
+            } else if (maxEx != null) {
+                if (min != null && maxEx.compareTo(min) <= 0) {
+                    args = new Object[] { maxEx, min };
+                    theContext.addError("length.maxexlemin", rule, LENGTH, null, args);
+                } else if (minEx != null && maxEx.compareTo(minEx) <= 0) {
+                    args = new Object[] { maxEx, minEx };
+                    theContext.addError("length.maxexleminex", rule, LENGTH, null, args);
                 }
             }
         }
-        //
-        //Boolean unique;
-        //if ((unique = (Boolean)map.get("unique")) != null) {
+
         if (map.containsKey("unique")) {
             Boolean unique = (Boolean)map.get("unique");
-            if (unique.booleanValue() == true && Types.isCollectionType(type)) {
+            if (unique && Types.isCollectionType(type)) {
                 theContext.addError("unique.notscalar", rule, "unique:", (Object[])null);
             }
             if (theContext.getPath().length() == 0) {
                 theContext.addError("unique.onroot", rule, "", "unique:", null);
             }
         }
-        //
-        //Boolean ident;
-        //if ((ident = (Boolean)map.get("ident")) != null) {
-        if (map.containsKey("ident")) {
-            Boolean ident = (Boolean)map.get("ident");
-            if (ident.booleanValue() == true && Types.isCollectionType(type)) {
-                theContext.addError("ident.notscalar", rule, "ident:", (Object[])null);
+
+        if (map.containsKey(IDENT)) {
+            Boolean ident = (Boolean)map.get(IDENT);
+            if (ident && Types.isCollectionType(type)) {
+                theContext.addError("ident.notscalar", rule, IDENT1, (Object[])null);
             }
             if (theContext.getPath().length() == 0) {
-                theContext.addError("ident.onroot", rule, "/", "ident:", (Object[])null);
+                theContext.addError("ident.onroot", rule, "/", IDENT1, null);
             }
         }
-        //
-        //List seq;
-        //if ((seq = (List)map.get("sequence")) != null) {
-        if (map.containsKey("sequence")) {
-            List seq = (List)map.get("sequence");
-            //if (! (seq instanceof List)) {
-            //    theContext.addError(validationError("sequence.notseq", rule, path + "/sequence", seq, null));
-            //} else
-            if (seq == null || seq.size() == 0) {
-                theContext.addError("sequence.noelem", rule, "sequence", seq, null);
+
+        if (map.containsKey(SEQUENCE)) {
+            List seq = (List)map.get(SEQUENCE);
+
+            if (seq == null || seq.isEmpty()) {
+                theContext.addError("sequence.noelem", rule, SEQUENCE, seq, null);
             } else if (seq.size() > 1) {
-                theContext.addError("sequence.toomany", rule, "sequence", seq, null);
+                theContext.addError("sequence.toomany", rule, SEQUENCE, seq, null);
             } else {
                 Object item = seq.get(0);
                 assert item instanceof Map;
                 Map m = (Map)item;
-                Boolean ident2 = (Boolean)m.get("ident");
-                if (ident2 != null && ident2.booleanValue() == true && ! "map".equals(m.get("type"))) {
-                    theContext.addError("ident.notmap", null, "sequence/0", "ident:", null);
+                Boolean ident2 = (Boolean)m.get(IDENT);
+                if (ident2 != null && ident2 && ! "map".equals(m.get("type"))) {
+                    theContext.addError("ident.notmap", null, "sequence/0", IDENT1, null);
                 }
             }
         }
-        //
-        //Map mapping;
-        //if ((mapping = (Map)map.get("mapping")) != null) {
-        if (map.containsKey("mapping")) {
-            Map mapping = (Map)map.get("mapping");
-            //if (mapping != null && ! (mapping instanceof Map)) {
-            //    theContext.addError(validationError("mapping.notmap", rule, path + "/mapping", mapping, null));
-            //} else
-            Object default_value = null;
+        if (map.containsKey(MAPPING)) {
+            Map mapping = (Map)map.get(MAPPING);
+
+            Object defaultValue = null;
             if (mapping != null && mapping instanceof Defaultable) {
-                default_value = ((Defaultable)mapping).getDefault();
+                defaultValue = ((Defaultable)mapping).getDefault();
             }
-            if (mapping == null || (mapping.size() == 0 && default_value == null)) {
-                theContext.addError("mapping.noelem", rule, "mapping", mapping, null);
+            if (mapping == null || (mapping.size() == 0 && defaultValue == null)) {
+                theContext.addError("mapping.noelem", rule, MAPPING, mapping, null);
             }
         }
-        //
-        if (type.equals("seq")) {
-            if (! map.containsKey("sequence")) {
+        if ("seq".equals(type)) {
+            if (! map.containsKey(SEQUENCE)) {
                 theContext.addError("seq.nosequence", rule, null, (Object[])null);
             }
-            //if (map.containsKey("enum")) {
-            //    theContext.addError(validationError("seq.conflict", rule, path, "enum:", null));
-            //}
-            if (map.containsKey("pattern")) {
-                theContext.addError("seq.conflict", rule, "pattern:", (Object[])null);
+            if (map.containsKey(PATTERN1)) {
+                theContext.addError("seq.conflict", rule, PATTERN, (Object[])null);
             }
-            if (map.containsKey("mapping")) {
+            if (map.containsKey(MAPPING)) {
                 theContext.addError("seq.conflict", rule, "mapping:", (Object[])null);
             }
-            //if (map.containsKey("range")) {
-            //    theContext.addError(validationError("seq.conflict", rule, path, "range:", null));
-            //}
-            //if (map.containsKey("length")) {
-            //    theContext.addError(validationError("seq.conflict", rule, path, "length:", null));
-            //}
-        } else if (type.equals("map")) {
-            if (! map.containsKey("mapping")) {
+        } else if ("map".equals(type)) {
+            if (! map.containsKey(MAPPING)) {
                 theContext.addError("map.nomapping", rule, null, (Object[])null);
             }
-            //if (map.containsKey("enum")) {
-            //    theContext.addError(validationError("map.conflict", rule, path, "enum:", null));
-            //}
-            if (map.containsKey("pattern")) {
-                theContext.addError("map.conflict", rule, "pattern:", (Object[])null);
+            if (map.containsKey(PATTERN1)) {
+                theContext.addError("map.conflict", rule, PATTERN, (Object[])null);
             }
-            if (map.containsKey("sequence")) {
+            if (map.containsKey(SEQUENCE)) {
                 theContext.addError("map.conflict", rule, "sequence:", (Object[])null);
             }
-            //if (map.containsKey("range")) {
-            //    theContext.addError(validationError("map.conflict", rule, path, "range:", null));
-            //}
-            //if (map.containsKey("length")) {
-            //    theContext.addError(validationError("map.conflict", rule, path, "length:", null));
-            //}
         } else {
-            if (map.containsKey("sequence")) {
-                theContext.addError("scalar.conflict", rule, "sequence:", (Object[])null);
+            if (map.containsKey(SEQUENCE)) {
+                theContext.addError(SCALAR_CONFLICT, rule, "sequence:", (Object[])null);
             }
-            if (map.containsKey("mapping")) {
-                theContext.addError("scalar.conflict", rule, "mapping:", (Object[])null);
+            if (map.containsKey(MAPPING)) {
+                theContext.addError(SCALAR_CONFLICT, rule, "mapping:", (Object[])null);
             }
             if (map.containsKey("enum")) {
-                if (map.containsKey("range")) {
-                    theContext.addError("enum.conflict", rule, "range:", (Object[])null);
+                if (map.containsKey(RANGE)) {
+                    theContext.addError(ENUM_CONFLICT, rule, "range:", (Object[])null);
                 }
-                if (map.containsKey("length")) {
-                    theContext.addError("enum.conflict", rule, "length:", (Object[])null);
+                if (map.containsKey(LENGTH)) {
+                    theContext.addError(ENUM_CONFLICT, rule, "length:", (Object[])null);
                 }
-                if (map.containsKey("pattern")) {
-                    theContext.addError("enum.conflict", rule, "pattern:", (Object[])null);
+                if (map.containsKey(PATTERN1)) {
+                    theContext.addError(ENUM_CONFLICT, rule, PATTERN, (Object[])null);
                 }
+            }
+        }
+    }
+
+    private void checkEnum(Rule rule, ValidationContext theContext, String type, List enumList) {
+        for (Object elem : enumList) {
+            if (!Types.isCorrectType(elem, type)) {
+                theContext.addError("enum.type.unmatch", rule, "enum", elem, new Object[]{Types.typeName(type)});
+            }
+        }
+    }
+
+    private void rangeCheck(Rule rule, ValidationContext theContext, String type, Map range) {
+        for (Object o : range.keySet()) {
+            String k = (String) o;
+            Object v = range.get(k);
+            if (!Types.isCorrectType(v, type)) {
+                theContext.addError("range.type.unmatch", rule, "range/" + k, v, new Object[]{Types.typeName(type)});
             }
         }
     }

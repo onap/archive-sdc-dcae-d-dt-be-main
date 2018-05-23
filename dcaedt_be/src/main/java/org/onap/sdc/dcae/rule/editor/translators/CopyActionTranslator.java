@@ -1,15 +1,13 @@
 package org.onap.sdc.dcae.rule.editor.translators;
 
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
-import org.onap.sdc.dcae.composition.restmodels.ruleeditor.BaseAction;
+import org.onap.sdc.dcae.composition.restmodels.ruleeditor.BaseCopyAction;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.onap.sdc.dcae.composition.restmodels.ruleeditor.BaseAction;
-
-public class CopyActionTranslator<A extends BaseAction> implements IRuleElementTranslator<A>{
+public class CopyActionTranslator extends ActionTranslator<BaseCopyAction> {
 
 	private static CopyActionTranslator copyActionTranslator = new CopyActionTranslator();
 
@@ -19,20 +17,19 @@ public class CopyActionTranslator<A extends BaseAction> implements IRuleElementT
 
 	CopyActionTranslator(){}
 
-	public Translation translateToHpJson(A action) {
+	public Object translateToHpJson(BaseCopyAction action) {
 		return new CopyActionSetTranslation(action.getTarget(), action.getFromValue());
 	}
 
-	void addToHpJsonProcessors(A action, List<Translation> processors) {
-		processors.add(translateToHpJson(action));
-	}
-
-	public boolean addToHpJsonProcessors(A action, List<Translation> processors, boolean asNewProcessor) {
+	@Override
+	public boolean addToHpJsonProcessors(BaseCopyAction action, List<Object> processors, boolean asNewProcessor) {
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Translating {} action. New Processor: {}", action.getActionType(), asNewProcessor);
-		if(asNewProcessor)
-			addToHpJsonProcessors(action, processors);
-		else
-			((CopyActionSetTranslation) processors.get(processors.size()-1)).updates.put(action.getTarget(), action.getFromValue());
+		if(asNewProcessor) {
+			processors.add(translateToHpJson(action));
+		}
+		else {
+			((CopyActionSetTranslation) processors.get(processors.size() - 1)).updates.put(action.getTarget(), action.getFromValue());
+		}
 		return false;
 	}
 

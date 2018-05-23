@@ -9,13 +9,15 @@ public class NodeData {
     private final JsonArray properties;
     private final JsonObject typeInfo;
     private final String nodeName;
+    private final String aliasBelong;
 
-    NodeData(JsonArray capabilities, JsonArray requirements, JsonArray properties, JsonObject typeInfo, String nodeName) {
+    NodeData(JsonArray capabilities, JsonArray requirements, JsonArray properties, JsonObject typeInfo, String nodeName, String aliasBelong) {
         this.capabilities = capabilities;
         this.requirements = requirements;
         this.properties = properties;
         this.typeInfo = typeInfo;
         this.nodeName = nodeName;
+        this.aliasBelong = aliasBelong;
     }
 
     public JsonArray getCapabilities() {
@@ -36,5 +38,13 @@ public class NodeData {
 
     public String getName() {
         return nodeName;
+    }
+
+    public String getNameWithAlias() {
+        return aliasBelong + "." + nodeName;
+    }
+
+    public String getAliasBelong() {
+        return aliasBelong;
     }
 }

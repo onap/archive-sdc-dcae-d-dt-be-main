@@ -21,39 +21,17 @@ public class ProxyBuilder {
 
 	public ProxyBuilder() {
 	}
-/*
-	public <T> T build(Map theData, Class<T> theType) {
-		return build(theData, this.context, theType);
-	}
-	
-	public <T> T build(Map theData, Map theContextData, Class<T> theType) {
-		return (T)java.lang.reflect.Proxy.newProxyInstance(
-							ProxyBuilder.class.getClassLoader(),
-								new Class[] { theType },
-							 		new Proxy(theData, this));
-	}
-*/
+
 	public <T> T build(Map theData, Class<T> theType) {
 		return build(new JSONObject(theData), theType);
 	}
-	
-	public <T> T build(Map theData, Map theContextData, Class<T> theType) {
-		return build(new JSONObject(theData), theContextData, theType);
-	}
 
 	public <T> T build(JSONObject theData, Class<T> theType) {
-		return build(theData, this.context, theType);
-	}
-	
-	public <T> T build(JSONObject theData, Map theContextData, Class<T> theType) {
 		return (T)java.lang.reflect.Proxy.newProxyInstance(
-							ProxyBuilder.class.getClassLoader(),
-								new Class[] { theType },
-							 		new Proxy(theData, this));
+				ProxyBuilder.class.getClassLoader(),
+				new Class[] { theType },
+				new Proxy(theData, this));
 	}
-
-
-
 
 	public ProxyBuilder withConverter(final Function<Object, ?> theConverter, Class theType) {
 		ConvertUtils.register(new Converter() {

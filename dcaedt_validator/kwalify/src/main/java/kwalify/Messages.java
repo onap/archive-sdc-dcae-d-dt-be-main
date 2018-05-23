@@ -1,25 +1,22 @@
 /*
- * @(#)Messages.java	$Rev: 4 $ $Release: 0.5.1 $
- *
  * copyright(c) 2005 kuwata-lab all rights reserved.
  */
 
 package kwalify;
 
 import java.util.ResourceBundle;
-//import java.util.Locale;
 
 /**
  * set of utility methods around messages.
  *
- * @revision    $Rev: 4 $
- * @release     $Release: 0.5.1 $
  */
 public class Messages {
 
-    private static final String __basename = "kwalify.messages";
-    private static ResourceBundle __messages = ResourceBundle.getBundle(__basename);
-    //private static ResourceBundle __messages = ResourceBundle.getBundle(__basename, Locale.getDefault());
+    private static final String KWALIFY_MESSAGES = "kwalify.messages";
+    private static ResourceBundle __messages = ResourceBundle.getBundle(KWALIFY_MESSAGES);
+
+    // So that no one instantiate Messages and make sonar happy
+    private Messages(){}
 
     public static String message(String key) {
         return __messages.getString(key);
@@ -31,10 +28,9 @@ public class Messages {
 
     public static String buildMessage(String key, Object value, Object[] args) {
         String msg = message(key);
-        assert msg != null;
         if (args != null) {
-            for (int i = 0; i < args.length; i++) {  // don't use MessageFormat
-                msg = msg.replaceFirst("%[sd]", escape(args[i]));
+            for (Object arg : args) {  // don't use MessageFormat
+                msg = msg.replaceFirst("%[sd]", escape(arg));
             }
         }
         if (value != null && !Types.isCollection(value)) {
@@ -44,8 +40,6 @@ public class Messages {
     }
 
     private static String escape(Object obj) {
-        //return obj.toString().replaceAll("\\", "\\\\").replace("\n", "\\n");    // J2SK1.4 doesn't support String#replace(CharSequence, CharSequence)!
         return obj.toString().replaceAll("\\\\", "\\\\\\\\").replaceAll("\\n", "\\\\n");
     }
-
 }

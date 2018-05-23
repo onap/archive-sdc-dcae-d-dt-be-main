@@ -10,6 +10,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.onap.sdc.dcae.client.ISdcClient;
 import org.onap.sdc.dcae.composition.restmodels.MonitoringComponent;
 import org.onap.sdc.dcae.composition.restmodels.sdc.*;
+import org.onap.sdc.dcae.composition.util.DcaeBeConstants;
 import org.onap.sdc.dcae.errormng.ErrorConfigurationLoader;
 import org.onap.sdc.dcae.errormng.ResponseFormat;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,7 @@ public class ReferenceBusinessLogicTest {
     private ResourceDetailed templateMC;
 
     @InjectMocks
-    ReferenceBusinessLogic classUnderTest;
+    private ReferenceBusinessLogic classUnderTest;
 
     @Before
     public void setup(){
@@ -86,7 +87,7 @@ public class ReferenceBusinessLogicTest {
         ServiceDetailed serviceDetailed = new ServiceDetailed();
         ResourceInstance resourceInstance = new ResourceInstance();
         Artifact artifact = new Artifact();
-        artifact.setArtifactName(monitoringComponentName);
+        artifact.setArtifactName("." + monitoringComponentName + "." + DcaeBeConstants.Composition.fileNames.EVENT_PROC_BP_YAML);
         resourceInstance.setArtifacts(Collections.singletonList(artifact));
         resourceInstance.setResourceInstanceName(vfiName);
         serviceDetailed.setResources(Collections.singletonList(resourceInstance));
@@ -98,7 +99,7 @@ public class ReferenceBusinessLogicTest {
         mockGetService();
         ResponseEntity responseEntity = classUnderTest.deleteVfcmtReferenceBlueprint(userId, "", monitoringComponentName, serviceUuid, vfiName, "", requestId);
         verify(sdcClientMock).getService(serviceUuid, requestId);
-        verify(sdcClientMock).deleteInstanceResourceArtifact(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+        verify(sdcClientMock).deleteInstanceArtifact(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
         Assert.assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
     }
 
@@ -114,7 +115,7 @@ public class ReferenceBusinessLogicTest {
     @Test
     public void deleteVfcmtReferenceBlueprint_exceptionSdcdeleteInstanceResourceArtifact() throws Exception {
         mockGetService();
-        doThrow(new RuntimeException("")).when(sdcClientMock).deleteInstanceResourceArtifact(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+        doThrow(new RuntimeException("")).when(sdcClientMock).deleteInstanceArtifact(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
 
         ResponseEntity<ResponseFormat> responseEntity = classUnderTest.deleteVfcmtReferenceBlueprint(userId, "", monitoringComponentName, serviceUuid, vfiName, "", requestId);
 

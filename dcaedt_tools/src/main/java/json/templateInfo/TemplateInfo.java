@@ -17,8 +17,12 @@ public class TemplateInfo {
     private String Description;
     @SerializedName("name")
     private String Name;
+    @SerializedName("flowType")
+    private String FlowType;
     @SerializedName("relations")
     private List<Relation> Relations;
+    @SerializedName("nodesToDelete")
+    private List<NodeToDelete> NodesToDelete;
     @SerializedName("subCategory")
     private String SubCategory;
     @SerializedName("updateIfExist")
@@ -54,6 +58,22 @@ public class TemplateInfo {
 
     public void setName(String name) {
         Name = name;
+    }
+
+    public String getFlowType() {
+        return FlowType;
+    }
+
+    public void setFlowType(String flowType) {
+        FlowType = flowType;
+    }
+
+    public List<NodeToDelete> getNodesToDelete() {
+        return NodesToDelete;
+    }
+
+    public void setNodesToDelete(List<NodeToDelete> nodesToDelete) {
+        NodesToDelete = nodesToDelete;
     }
 
     public List<Relation> getRelations() {

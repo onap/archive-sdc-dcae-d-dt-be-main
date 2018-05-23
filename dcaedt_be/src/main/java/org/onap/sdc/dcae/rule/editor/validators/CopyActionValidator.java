@@ -1,6 +1,6 @@
 package org.onap.sdc.dcae.rule.editor.validators;
 
-import org.onap.sdc.dcae.composition.restmodels.ruleeditor.BaseAction;
+import org.onap.sdc.dcae.composition.restmodels.ruleeditor.BaseCopyAction;
 import org.onap.sdc.dcae.errormng.ActionStatus;
 import org.onap.sdc.dcae.errormng.ErrConfMgr;
 import org.onap.sdc.dcae.errormng.ResponseFormat;
@@ -8,15 +8,15 @@ import org.onap.sdc.dcae.rule.editor.utils.ValidationUtils;
 
 import java.util.List;
 
-public class ActionValidator<A extends BaseAction> implements IRuleElementValidator<A> {
+public class CopyActionValidator<A extends BaseCopyAction> implements IRuleElementValidator<A> {
 
-	private static ActionValidator actionValidator = new ActionValidator();
+	private static CopyActionValidator copyActionValidator = new CopyActionValidator();
 
-	public static ActionValidator getInstance() {
-		return actionValidator;
+	public static CopyActionValidator getInstance() {
+		return copyActionValidator;
 	}
 
-	ActionValidator(){}
+	CopyActionValidator(){}
 
 	public boolean validate(A action, List<ResponseFormat> errors) {
 

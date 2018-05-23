@@ -8,7 +8,7 @@ import org.onap.sdc.dcae.rule.editor.utils.ValidationUtils;
 
 import java.util.List;
 
-public class DateFormatterValidator extends ActionValidator<DateFormatterAction> {
+public class DateFormatterValidator extends CopyActionValidator<DateFormatterAction> {
 	private static DateFormatterValidator dateFormatterValidator = new DateFormatterValidator();
 
 	public static DateFormatterValidator getInstance() {

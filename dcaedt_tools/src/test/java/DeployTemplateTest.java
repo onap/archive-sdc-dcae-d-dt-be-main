@@ -26,6 +26,7 @@ public class DeployTemplateTest extends BaseTest {
         templateInfoToJsonObjectMap = new HashMap<>();
         TemplateInfo templateInfo = new TemplateInfo();
         templateInfo.setName(VFCMT_NAME1);
+        templateInfo.setFlowType(TEMPLATE_INFO_FLOWTYPE);
         templateInfo.setCategory("category");
         templateInfo.setSubCategory("subCategory");
         templateInfo.setDescription("description");
@@ -33,6 +34,7 @@ public class DeployTemplateTest extends BaseTest {
         templateInfoToJsonObjectMap.put(templateInfo, new JsonObject());
         templateInfo = new TemplateInfo();
         templateInfo.setName(TEMPLATE_INFO_NAME);
+        templateInfo.setFlowType(TEMPLATE_INFO_FLOWTYPE);
         templateInfo.setCategory("category");
         templateInfo.setSubCategory("subCategory");
         templateInfo.setDescription("description");

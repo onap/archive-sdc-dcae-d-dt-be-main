@@ -8,15 +8,15 @@ package org.onap.sdc.dcae.checker;
  */
 public enum Construct {
     Data,
-		Requirement,
+	Requirement,
     Capability,
     Relationship,
     Artifact,
     Interface,
     Node,
-		Group,
-		Policy,
-		Workflow
+	Group,
+	Policy,
+	Workflow
 }
 
 

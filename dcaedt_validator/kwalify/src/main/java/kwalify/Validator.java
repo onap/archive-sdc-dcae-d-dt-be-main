@@ -77,6 +77,7 @@ public class Validator {
     }
 
     protected void postValidationHook(Object value, Rule rule, ValidationContext context) {
+        // nothing
     }
 
     private void _validateRule(Object value, Rule rule, ValidationContext context) {

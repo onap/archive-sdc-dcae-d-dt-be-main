@@ -42,12 +42,12 @@ public abstract class BaseController {
 		return request.getAttribute("requestId").toString();
 	}
 
-	Asset checkout(String userId, String uuid, AssetType assetType, String requestId) throws Exception {
-		return baseBusinessLogic.getSdcRestClient().changeAssetLifecycleState(userId, uuid, LifecycleOperationType.CHECKOUT.name(), null, assetType, requestId);
+	ResourceDetailed checkoutVfcmt(String userId, String uuid, String requestId) {
+		return baseBusinessLogic.getSdcRestClient().changeResourceLifecycleState(userId, uuid, LifecycleOperationType.CHECKOUT.name(), null, requestId);
 	}
 
-	Asset checkin(String userId, String uuid, AssetType assetType, String requestId) throws Exception {
-		return baseBusinessLogic.getSdcRestClient().changeAssetLifecycleState(userId, uuid, LifecycleOperationType.CHECKIN.name(), "checking in " + assetType.name() + uuid, assetType, requestId);
+	ResourceDetailed checkinVfcmt(String userId, String uuid, String requestId) {
+		return baseBusinessLogic.getSdcRestClient().changeResourceLifecycleState(userId, uuid, LifecycleOperationType.CHECKIN.name(), "checking in vfcmt"  + uuid, requestId);
 	}
 
 
@@ -55,7 +55,7 @@ public abstract class BaseController {
 		return DcaeBeConstants.LifecycleStateEnum.NOT_CERTIFIED_CHECKOUT != DcaeBeConstants.LifecycleStateEnum.findState(lifecycleState);
 	}
 
-	void checkUserIfResourceCheckedOut(String userId, Asset asset) throws DcaeException {
+	void checkUserIfResourceCheckedOut(String userId, Asset asset) {
 		if (DcaeBeConstants.LifecycleStateEnum.NOT_CERTIFIED_CHECKOUT == DcaeBeConstants.LifecycleStateEnum.findState(asset.getLifecycleState())) {
 			String lastUpdaterUserId = asset.getLastUpdaterUserId();
 			if (lastUpdaterUserId != null && !lastUpdaterUserId.equals(userId)) {
@@ -67,7 +67,7 @@ public abstract class BaseController {
 	}
 
 	void checkVfcmtType(ResourceDetailed vfcmt) {
-		if (!"VFCMT".equals(vfcmt.getResourceType()) || !"Template".equals(vfcmt.getCategory())) {
+		if (AssetType.VFCMT != getValidAssetTypeOrNull(vfcmt.getResourceType()) || !"Template".equals(vfcmt.getCategory())) {
 			ResponseFormat responseFormat = ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.RESOURCE_NOT_VFCMT_ERROR, null, vfcmt.getUuid());
 			throw new DcaeException(HttpStatus.BAD_REQUEST, responseFormat.getRequestError());
 		}
@@ -76,5 +76,14 @@ public abstract class BaseController {
 	ResponseEntity handleException(Exception e, ApiType apiType, String... variables){
 		errLogger.log(LogLevel.ERROR, this.getClass().getName(), e.getMessage());
 		return ErrConfMgr.INSTANCE.handleException(e, apiType, variables);
+	}
+
+	AssetType getValidAssetTypeOrNull(String type) {
+		try {
+			return AssetType.getAssetTypeByName(type);
+		} catch (IllegalArgumentException e) {
+			debugLogger.log(LogLevel.ERROR, this.getClass().getName(), "invalid asset type: {}. Error: {}", type, e);
+			return null;
+		}
 	}
 }

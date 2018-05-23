@@ -1,5 +1,6 @@
 package org.onap.sdc.dcae.rule.editor.validators;
 
+import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.MapAction;
 import org.onap.sdc.dcae.errormng.ActionStatus;
 import org.onap.sdc.dcae.errormng.ErrConfMgr;
@@ -9,7 +10,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
-public class MapActionValidator extends ActionValidator<MapAction> {
+public class MapActionValidator extends CopyActionValidator<MapAction> {
 
 	private static MapActionValidator mapActionValidator = new MapActionValidator();
 
@@ -37,6 +38,7 @@ public class MapActionValidator extends ActionValidator<MapAction> {
 				}
 			} catch (IllegalStateException err) {
 				valid = false;
+				errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Map validation error: {}", err);
 				errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.DUPLICATE_KEY, null));
 			}
 		}

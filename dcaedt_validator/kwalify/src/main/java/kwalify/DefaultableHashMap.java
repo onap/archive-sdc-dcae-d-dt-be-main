@@ -4,7 +4,6 @@
 
 package kwalify;
 
-import java.io.Serializable;
 import java.util.HashMap;
 
 /**
@@ -14,18 +13,18 @@ public class DefaultableHashMap extends HashMap implements Defaultable {
 
     private static final long serialVersionUID = -5224819562023897380L;
 
-    private Object defaultValue = null;
+    private Rule defaultValue;
 
     public DefaultableHashMap() {
         super();
     }
 
-    public Object getDefault() { return defaultValue; }
+    public Rule getDefault() { return defaultValue; }
 
-    public void setDefault(Object value) { defaultValue = value; }
+    public void setDefault(Rule value) { defaultValue = value; }
 
     @Override
     public Object get(Object key) {
-        return containsKey(key) ? super.get(key) : defaultValue;
+        return containsKey(key) ? (Rule)super.get(key) : defaultValue;
     }
 }

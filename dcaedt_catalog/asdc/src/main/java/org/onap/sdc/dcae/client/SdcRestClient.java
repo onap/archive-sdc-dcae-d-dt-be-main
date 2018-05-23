@@ -1,9 +1,12 @@
 package org.onap.sdc.dcae.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHeader;
+import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.dcae.composition.restmodels.CreateVFCMTRequest;
 import org.onap.sdc.dcae.composition.restmodels.ReferenceUUID;
 import org.onap.sdc.dcae.composition.restmodels.sdc.*;
@@ -14,18 +17,22 @@ import org.onap.sdc.dcae.enums.SdcConsumerInfo;
 import org.onap.sdc.dcae.utils.Normalizers;
 import org.onap.sdc.dcae.utils.SDCResponseErrorHandler;
 import org.onap.sdc.dcae.utils.SdcRestClientUtils;
-import org.onap.sdc.common.onaplog.OnapLoggerDebug;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Base64Utils;
-import org.springframework.web.client.*;
+import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,8 +46,6 @@ public class SdcRestClient implements ISdcClient {
     private static final String ECOMP_INSTANCE_ID_HEADER = "X-ECOMP-InstanceID";
     private static final String ECOMP_REQUEST_ID_HEADER = "X-ECOMP-RequestID";
     private static final String USER_ID_HEADER = "USER_ID";
-    private static final String RESOURCES_PATH = "resources";
-    private static final String SERVICES_PATH = "services";
     private static final String ARTIFACTS_PATH = "artifacts";
     private static final String CONTENT_MD5_HEADER = "Content-MD5";
     private static final String RESOURCE_INSTANCES_PATH = "resourceInstances";
@@ -76,117 +81,110 @@ public class SdcRestClient implements ISdcClient {
         return headers;
     }
 
+    public ServiceDetailed getAssetMetadata(String contextType, String uuid, String requestId) {
+        String url = buildRequestPath(AssetType.getSdcContextPath(contextType), uuid, METADATA_PATH);
+        debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Get asset metadata from SDC. URL={}", url);
+        return getObject(url, requestId, ServiceDetailed.class);
+    }
+
     public ResourceDetailed getResource(String uuid, String requestId) {
-        String url = buildRequestPath(RESOURCES_PATH, uuid, METADATA_PATH);
+        String url = buildRequestPath(AssetType.RESOURCE.getSdcContextPath(), uuid, METADATA_PATH);
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Get resource from SDC. URL={}", url);
         return getObject(url, requestId, ResourceDetailed.class);
     }
 
     public ServiceDetailed getService(String uuid, String requestId) {
-        String url = buildRequestPath(SERVICES_PATH, uuid, METADATA_PATH);
-        debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Get service from SDC. URL={}", url);
-        return getObject(url, requestId, ServiceDetailed.class);
+        return getAssetMetadata(AssetType.SERVICE.name(), uuid, requestId);
     }
 
     public List<Resource> getResources(String resourceType, String category, String subcategory, String requestId) {
-        String url = buildRequestPath(RESOURCES_PATH, SdcRestClientUtils.buildResourceFilterQuery(resourceType, category, subcategory));
+        String url = buildRequestPath(AssetType.RESOURCE.getSdcContextPath(), SdcRestClientUtils.buildResourceFilterQuery(resourceType, category, subcategory));
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Get resources from SDC. URL={}", url);
         return Arrays.asList(getObject(url, requestId, Resource[].class));
     }
 
     public List<Service> getServices(String requestId) {
-        String url = buildRequestPath(SERVICES_PATH);
+        String url = buildRequestPath(AssetType.SERVICE.getSdcContextPath());
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Get services from SDC. URL={}", url);
         return Arrays.asList(getObject(url, requestId, Service[].class));
     }
 
-    public String addExternalMonitoringReference(String userId, CreateVFCMTRequest resource, ReferenceUUID vfcmtUuid, String requestId) {
-        String url = buildRequestPath(resource.getContextType(), resource.getServiceUuid(), RESOURCE_INSTANCES_PATH,
-                Normalizers.normalizeComponentInstanceName(resource.getVfiName()), MONITORING_REFERENCES_PATH);
-
-        debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Connecting service id {} name {} to vfcmt {} URL={}",
-                resource.getServiceUuid(), resource.getVfiName(), vfcmtUuid.getReferenceUUID(), url);
-
-        return client.postForObject(url, new HttpEntity<>(vfcmtUuid, postResourceHeaders(userId, requestId)),
-                String.class);
+    public String addExternalMonitoringReference(String userId, String contextType, String serviceUuid, String vfiName, ReferenceUUID vfcmtUuid, String requestId) {
+        String url = buildRequestPath(AssetType.getSdcContextPath(contextType), serviceUuid, RESOURCE_INSTANCES_PATH, Normalizers.normalizeComponentInstanceName(vfiName), MONITORING_REFERENCES_PATH);
+        debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Creating external monitoring reference from service id {} vfi name {} to vfcmt {} URL={}", serviceUuid, vfiName, vfcmtUuid.getReferenceUUID(), url);
+        return client.postForObject(url, new HttpEntity<>(vfcmtUuid, postResourceHeaders(userId, requestId)), String.class);
     }
 
-    public void deleteExternalMonitoringReference(String userId, String context, String uuid, String normalizeVfiName, String vfcmtUuid, String requestId) {
-        String url = buildRequestPath(context, uuid, RESOURCE_INSTANCES_PATH,
-                normalizeVfiName, MONITORING_REFERENCES_PATH, vfcmtUuid);
+    public String addExternalMonitoringReference(String userId, CreateVFCMTRequest resource, ReferenceUUID vfcmtUuid, String requestId) {
+        return addExternalMonitoringReference(userId, resource.getContextType(), resource.getServiceUuid(), resource.getVfiName(), vfcmtUuid, requestId);
+    }
+
+    public void deleteExternalMonitoringReference(String userId, String contextType, String serviceUuid, String normalizeVfiName, String vfcmtUuid, String requestId) {
+        String url = buildRequestPath(AssetType.getSdcContextPath(contextType), serviceUuid, RESOURCE_INSTANCES_PATH, normalizeVfiName, MONITORING_REFERENCES_PATH, vfcmtUuid);
+        debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Delete external monitoring reference from SDC asset. URL={}", url);
         client.exchange(url, HttpMethod.DELETE, new HttpEntity(postResourceHeaders(userId, requestId)), String.class);
     }
 
     public ResourceDetailed createResource(String userId, CreateVFCMTRequest resource, String requestId) {
-        String url = buildRequestPath(RESOURCES_PATH);
+        String url = buildRequestPath(AssetType.RESOURCE.getSdcContextPath());
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Create SDC resource with name {} URL={}", resource.getName(), url);
         return client.postForObject(url, new HttpEntity<>(resource, postResourceHeaders(userId, requestId)), ResourceDetailed.class);
     }
 
     public ResourceDetailed changeResourceLifecycleState(String userId, String uuid, String lifecycleOperation, String userRemarks, String requestId) {
-        String url = buildRequestPath(RESOURCES_PATH, uuid, LIFECYCLE_STATE_PATH);
+        String url = buildRequestPath(AssetType.RESOURCE.getSdcContextPath(), uuid, LIFECYCLE_STATE_PATH);
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Change SDC resource lifecycle state ({}). URL={}", lifecycleOperation, url);
         return client.postForObject(url, new HttpEntity<>(SdcRestClientUtils.buildUserRemarksObject(userRemarks), postResourceHeaders(userId, requestId)), ResourceDetailed.class, lifecycleOperation);
     }
 
-    public ServiceDetailed changeServiceLifecycleState(String userId, String uuid, String lifecycleOperation, String userRemarks, String requestId) {
-        String url = buildRequestPath(SERVICES_PATH, uuid, LIFECYCLE_STATE_PATH);
-        debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Change SDC service lifecycle state ({}). URL={}", lifecycleOperation, url);
-        return client.postForObject(url, new HttpEntity<>(SdcRestClientUtils.buildUserRemarksObject(userRemarks), postResourceHeaders(userId, requestId)), ServiceDetailed.class, lifecycleOperation);
-    }
-
-    public Asset changeAssetLifecycleState(String userId, String uuid, String lifecycleOperation, String userRemarks, AssetType assetType, String requestId) {
-        return AssetType.RESOURCE == assetType ? changeResourceLifecycleState(userId, uuid, lifecycleOperation, userRemarks, requestId) : changeServiceLifecycleState(userId, uuid, lifecycleOperation, userRemarks, requestId);
-    }
-
     public String getResourceArtifact(String resourceUuid, String artifactUuid, String requestId) {
-        String url = buildRequestPath(RESOURCES_PATH, resourceUuid, ARTIFACTS_PATH, artifactUuid);
+        String url = buildRequestPath(AssetType.RESOURCE.getSdcContextPath(), resourceUuid, ARTIFACTS_PATH, artifactUuid);
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Get resource artifact from SDC. URL={}", url);
         return getObject(url, requestId, String.class);
     }
 
-    public Artifact createResourceArtifact(String userId, String resourceUuid, Artifact artifact, String requestId) throws Exception {
-        String url = buildRequestPath(RESOURCES_PATH, resourceUuid, ARTIFACTS_PATH);
+    public Artifact createResourceArtifact(String userId, String resourceUuid, Artifact artifact, String requestId) throws JsonProcessingException {
+        String url = buildRequestPath(AssetType.RESOURCE.getSdcContextPath(), resourceUuid, ARTIFACTS_PATH);
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Create SDC resource artifact. URL={}", url);
         String artifactData = SdcRestClientUtils.artifactToString(artifact);
         return client.postForObject(url, new HttpEntity<>(artifactData, postArtifactHeaders(userId, artifactData, requestId)), Artifact.class);
     }
 
-    public Artifact updateResourceArtifact(String userId, String resourceUuid, Artifact artifact, String requestId) throws Exception {
-        String url = buildRequestPath(RESOURCES_PATH, resourceUuid, ARTIFACTS_PATH, artifact.getArtifactUUID());
+    public Artifact updateResourceArtifact(String userId, String resourceUuid, Artifact artifact, String requestId) throws JsonProcessingException {
+        String url = buildRequestPath(AssetType.RESOURCE.getSdcContextPath(), resourceUuid, ARTIFACTS_PATH, artifact.getArtifactUUID());
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Update SDC resource artifact. URL={}", url);
         String artifactData = SdcRestClientUtils.artifactToString(artifact);
         return client.postForObject(url, new HttpEntity<>(artifactData, postArtifactHeaders(userId, artifactData, requestId)), Artifact.class);
     }
 
     public void deleteResourceArtifact(String userId, String resourceUuid, String artifactId, String requestId) {
-        String url = buildRequestPath(RESOURCES_PATH, resourceUuid, ARTIFACTS_PATH, artifactId);
+        String url = buildRequestPath(AssetType.RESOURCE.getSdcContextPath(), resourceUuid, ARTIFACTS_PATH, artifactId);
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Delete SDC resource artifact. URL={}", url);
         client.exchange(url, HttpMethod.DELETE, new HttpEntity(postResourceHeaders(userId, requestId)), Artifact.class);
     }
 
-    public Artifact createVfInstanceArtifact(String userId, String serviceUuid, String normalizedInstanceName, Artifact artifact, String requestId) throws Exception {
-        String url = buildRequestPath(SERVICES_PATH, serviceUuid, RESOURCE_INSTANCES_PATH, normalizedInstanceName, ARTIFACTS_PATH);
+    public  Artifact createInstanceArtifact(String userId, String contextType, String serviceUuid, String normalizedInstanceName, Artifact artifact, String requestId) throws JsonProcessingException {
+        String url = buildRequestPath(AssetType.getSdcContextPath(contextType), serviceUuid, RESOURCE_INSTANCES_PATH, normalizedInstanceName, ARTIFACTS_PATH);
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Create SDC resource instance artifact. URL={}", url);
         String artifactData = SdcRestClientUtils.artifactToString(artifact);
         return client.postForObject(url, new HttpEntity<>(artifactData, postArtifactHeaders(userId, artifactData, requestId)), Artifact.class);
     }
 
-    public Artifact updateVfInstanceArtifact(String userId, String serviceUuid, String normalizedInstanceName, Artifact artifact, String requestId) throws Exception {
-        String url = buildRequestPath(SERVICES_PATH, serviceUuid, RESOURCE_INSTANCES_PATH, normalizedInstanceName, ARTIFACTS_PATH, artifact.getArtifactUUID());
+    public Artifact updateInstanceArtifact(String userId, String contextType, String serviceUuid, String normalizedInstanceName, Artifact artifact, String requestId) throws JsonProcessingException {
+        String url = buildRequestPath(AssetType.getSdcContextPath(contextType), serviceUuid, RESOURCE_INSTANCES_PATH, normalizedInstanceName, ARTIFACTS_PATH, artifact.getArtifactUUID());
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Update SDC resource instance artifact. URL={}", url);
         String artifactData = SdcRestClientUtils.artifactToString(artifact);
         return client.postForObject(url, new HttpEntity<>(artifactData, postArtifactHeaders(userId, artifactData, requestId)), Artifact.class);
     }
 
-    public ExternalReferencesMap getMonitoringReferences(String context, String uuid, String version, String requestId) {
-        String url = buildRequestPath(context, uuid, VERSION_PATH, version, MONITORING_REFERENCES_PATH);
+    public ExternalReferencesMap getMonitoringReferences(String contextType, String uuid, String version, String requestId) {
+        String url = buildRequestPath(AssetType.getSdcContextPath(contextType), uuid, VERSION_PATH, version, MONITORING_REFERENCES_PATH);
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Get SDC service monitoring references. URL={}", url);
         return getObject(url, requestId, ExternalReferencesMap.class);
     }
 
-    public void deleteInstanceResourceArtifact(String userId, String context, String serviceUuid, String normalizedVfiName, String artifactUuid, String requestId) {
-        String url = buildRequestPath(context, serviceUuid, RESOURCE_INSTANCES_PATH, normalizedVfiName, ARTIFACTS_PATH, artifactUuid);
+    public void deleteInstanceArtifact(String userId, String contextType, String serviceUuid, String normalizedVfiName, String artifactUuid, String requestId) {
+        String url = buildRequestPath(AssetType.getSdcContextPath(contextType), serviceUuid, RESOURCE_INSTANCES_PATH, normalizedVfiName, ARTIFACTS_PATH, artifactUuid);
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Delete SDC instance resource artifact. URL={}", url);
         client.exchange(url, HttpMethod.DELETE, new HttpEntity(postResourceHeaders(userId, requestId)), Artifact.class);
     }
