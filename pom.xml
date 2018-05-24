@@ -7,6 +7,7 @@
     <artifactId>dcae_dt_be_main</artifactId>
     <version>1.2.0-SNAPSHOT</version>
     <packaging>pom</packaging>
+    <name>dcae-d dt-be-main</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -26,6 +27,7 @@
         <nexus.proxy>https://nexus.onap.org</nexus.proxy>
         <staging.profile.id>176c31dfe190a</staging.profile.id>
         <sitePath>/content/sites/site/org/openecomp/sdc/${project.version}</sitePath>
+        <sonar.branch>${project.version}</sonar.branch>
     </properties>
 
     <dependencies>

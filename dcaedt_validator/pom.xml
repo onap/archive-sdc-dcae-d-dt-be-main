@@ -21,4 +21,7 @@
     <tag>HEAD</tag>
     <url>https://github.research.att.com/ASC/ASC-Validator/</url>
   </scm>
+  <properties>
+		<sonar.skip>true</sonar.skip>
+	</properties>
 </project>
