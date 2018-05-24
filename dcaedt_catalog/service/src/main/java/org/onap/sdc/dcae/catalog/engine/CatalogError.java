@@ -1,8 +1,5 @@
 package org.onap.sdc.dcae.catalog.engine;
 
-import org.onap.sdc.dcae.catalog.engine.CatalogRequest;
-import org.onap.sdc.dcae.catalog.engine.CatalogResponse;
-
 /**
  */
 public class CatalogError extends CatalogResponse {

@@ -1,8 +1,5 @@
 package org.onap.sdc.dcae.catalog.commons;
 
-import org.onap.sdc.dcae.catalog.commons.Future;
-import org.onap.sdc.dcae.catalog.commons.FutureHandler;
-
 /**
  * Modeled after the vertx future
  */

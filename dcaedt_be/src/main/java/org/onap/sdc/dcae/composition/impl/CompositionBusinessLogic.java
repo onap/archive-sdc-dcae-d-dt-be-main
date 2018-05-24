@@ -31,6 +31,13 @@ public class CompositionBusinessLogic extends BaseBusinessLogic {
     private static final String CREATE_DESC = "creating new artifact blueprint on the service vfi";
     private static final String UPDATE_DESC = "updating artifact blueprint on the service vfi";
 
+	//canvas cdump as simple string
+    public Artifact getComposition(String vfcmtUuid, String requestId) {
+		ResourceDetailed vfcmt = sdcRestClient.getResource(vfcmtUuid, requestId);
+		return fetchCdump(vfcmt, requestId);
+	}
+
+	//cdump and vfcmt for monitoring configuration
     public CreateMcResponse getDataAndComposition(String vfcmtUuid, String requestId) throws IOException {
         ResourceDetailed vfcmt = sdcRestClient.getResource(vfcmtUuid, requestId);
         Artifact composition = fetchCdump(vfcmt, requestId);
@@ -73,7 +80,7 @@ public class CompositionBusinessLogic extends BaseBusinessLogic {
         }
     }
 
-    public Artifact submitComposition(String userId, String context, VfcmtData vfcmtData, String resultBlueprintCreation, String requestId) throws JsonProcessingException {
+    Artifact submitComposition(String userId, String context, VfcmtData vfcmtData, String resultBlueprintCreation, String requestId) throws JsonProcessingException {
 
         // get service / find vfi
         ServiceDetailed service = sdcRestClient.getAssetMetadata(context, vfcmtData.getServiceUuid(), requestId);

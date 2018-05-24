@@ -11,6 +11,7 @@ import org.onap.sdc.dcae.composition.restmodels.CreateMcResponse;
 import org.onap.sdc.dcae.composition.restmodels.VfcmtData;
 import org.onap.sdc.dcae.composition.restmodels.sdc.*;
 import org.onap.sdc.dcae.composition.util.DcaeBeConstants;
+import org.onap.sdc.dcae.composition.util.SystemProperties;
 import org.onap.sdc.dcae.enums.AssetType;
 import org.onap.sdc.dcae.enums.LifecycleOperationType;
 import org.onap.sdc.dcae.errormng.ActionStatus;
@@ -21,7 +22,6 @@ import org.onap.sdc.dcae.utils.Normalizers;
 import org.onap.sdc.dcae.utils.SdcRestClientUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Base64Utils;
 
@@ -29,6 +29,10 @@ import java.io.IOException;
 
 @Component
 public class BaseBusinessLogic {
+
+	@Autowired
+	protected SystemProperties systemProperties;
+
     @Autowired
     protected ISdcClient sdcRestClient;
 
@@ -38,6 +42,10 @@ public class BaseBusinessLogic {
     public ISdcClient getSdcRestClient() {
         return sdcRestClient;
     }
+
+    public SystemProperties getSystemProperties() {
+    	return systemProperties;
+	}
 
     void setSdcRestClient(ISdcClient sdcRestClient) {
         this.sdcRestClient = sdcRestClient;
@@ -85,7 +93,7 @@ public class BaseBusinessLogic {
         return new CreateMcResponse(vfcmt, new ObjectMapper().readValue(cdumpPayload, Object.class));
     }
 
-    public Artifact fetchCdump(ResourceDetailed vfcmt, String requestId) {
+    Artifact fetchCdump(ResourceDetailed vfcmt, String requestId) {
         Artifact cdumpArtifactData = findCdumpArtifactData(vfcmt);
         if (null != cdumpArtifactData) {
             String cdumpPayload = sdcRestClient.getResourceArtifact(vfcmt.getUuid(), cdumpArtifactData.getArtifactUUID(), requestId);
@@ -110,22 +118,19 @@ public class BaseBusinessLogic {
                 .filter(p -> Normalizers.normalizeComponentInstanceName(vfiName).equals(Normalizers.normalizeComponentInstanceName(p.getResourceInstanceName()))).findAny().orElse(null);
     }
 
-    public String extractFlowTypeFromCdump(String cdump) {
+    String extractFlowTypeFromCdump(String cdump) {
         return StringUtils.substringBetween(cdump,"\"flowType\":\"","\"");
     }
 
-    // TODO - reuse
-
-    ResourceDetailed checkinVfcmt(String userId, String uuid, String requestId) {
+    public ResourceDetailed checkinVfcmt(String userId, String uuid, String requestId) {
         return getSdcRestClient().changeResourceLifecycleState(userId, uuid, LifecycleOperationType.CHECKIN.name(), "checking in vfcmt"  + uuid, requestId);
     }
-    ResourceDetailed checkoutVfcmt(String userId, String uuid, String requestId) {
+    public ResourceDetailed checkoutVfcmt(String userId, String uuid, String requestId) {
         return getSdcRestClient().changeResourceLifecycleState(userId, uuid, LifecycleOperationType.CHECKOUT.name(), null, requestId);
     }
 
-    // TODO - remove from BaseController
 
-    void checkUserIfResourceCheckedOut(String userId, Asset asset) {
+    public void checkUserIfResourceCheckedOut(String userId, Asset asset) {
         if (DcaeBeConstants.LifecycleStateEnum.NOT_CERTIFIED_CHECKOUT == DcaeBeConstants.LifecycleStateEnum.findState(asset.getLifecycleState())) {
             String lastUpdaterUserId = asset.getLastUpdaterUserId();
             if (lastUpdaterUserId != null && !lastUpdaterUserId.equals(userId)) {
@@ -136,29 +141,24 @@ public class BaseBusinessLogic {
         }
     }
 
-    boolean isNeedToCheckOut(String lifecycleState) {
+    public boolean isNeedToCheckOut(String lifecycleState) {
         return DcaeBeConstants.LifecycleStateEnum.NOT_CERTIFIED_CHECKOUT != DcaeBeConstants.LifecycleStateEnum.findState(lifecycleState);
     }
 
-    void checkVfcmtType(ResourceDetailed vfcmt) {
+    public void checkVfcmtType(ResourceDetailed vfcmt) {
         if (AssetType.VFCMT != getValidAssetTypeOrNull(vfcmt.getResourceType()) || !"Template".equals(vfcmt.getCategory())) {
             ResponseFormat responseFormat = ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.RESOURCE_NOT_VFCMT_ERROR, null, vfcmt.getUuid());
             throw new DcaeException(HttpStatus.BAD_REQUEST, responseFormat.getRequestError());
         }
     }
 
-    AssetType getValidAssetTypeOrNull(String type) {
+    public AssetType getValidAssetTypeOrNull(String type) {
         try {
             return AssetType.getAssetTypeByName(type);
         } catch (IllegalArgumentException e) {
             debugLogger.log(LogLevel.ERROR, this.getClass().getName(), "invalid asset type: {}. Error: {}", type, e);
             return null;
         }
-    }
-
-    ResponseEntity handleException(Exception e, ErrConfMgr.ApiType apiType, String... variables){
-        errLogger.log(LogLevel.ERROR, this.getClass().getName(), e.getMessage());
-        return ErrConfMgr.INSTANCE.handleException(e, apiType, variables);
     }
 
 }

@@ -26,7 +26,7 @@ import io.swagger.annotations.ApiResponses;
 @EnableAutoConfiguration
 @CrossOrigin
 @RequestMapping("/conf")
-public class ConfigurationController extends BaseController{
+public class ConfigurationController extends BaseController {
 
     @Autowired
     private CompositionConfig compositionConfig;

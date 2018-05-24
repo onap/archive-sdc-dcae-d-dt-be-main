@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/rule-editor")
 public class RuleEditorController extends BaseController {
 
-    private static final String EXCEPTION = "Exception {}";
-
     @Autowired
     private RuleEditorBusinessLogic ruleEditorBusinessLogic;
 
@@ -70,7 +68,7 @@ public class RuleEditorController extends BaseController {
      * @param configParam   - the name of the DCAE Component configuration property the rule is linked to
      * @return json representing the rule editor UI
      */
-    @RequestMapping(value = "/rule/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam}", method = {RequestMethod.GET}, produces = "application/json")
+    @RequestMapping(value = "/rule/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", method = {RequestMethod.GET}, produces = "application/json")
     public ResponseEntity getRules(
             @PathVariable("vfcmtUuid") String vfcmtUuid,
             @PathVariable("dcaeCompLabel") String dcaeCompLabel,
@@ -119,9 +117,8 @@ public class RuleEditorController extends BaseController {
      * 1. That the user is able to edit the VFCMT
      * 2. That the cdump holds a dcae component with such nid (to avoid orphan rules)
      * 3. Check that the fetched VFCMT is actually a VFCMT and not a regular VF
-     * @throws Exception
      */
-    @RequestMapping(value = "/rule/translate/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam}", method = {RequestMethod.GET}, produces = "application/json")
+    @RequestMapping(value = "/rule/translate/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", method = {RequestMethod.GET}, produces = "application/json")
     public ResponseEntity translateRules(@PathVariable("vfcmtUuid") String vfcmtUuid, @ModelAttribute("requestId") String requestId,
                                          @PathVariable("dcaeCompLabel") String dcaeCompLabel,
                                          @PathVariable("nid") String nid,
@@ -140,6 +137,4 @@ public class RuleEditorController extends BaseController {
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting getExistingRuleTargets ", vfcmtUuid);
         return ruleEditorBusinessLogic.getExistingRuleTargets(vfcmtUuid, requestId, dcaeCompLabel, nid);
     }
-
-
 }

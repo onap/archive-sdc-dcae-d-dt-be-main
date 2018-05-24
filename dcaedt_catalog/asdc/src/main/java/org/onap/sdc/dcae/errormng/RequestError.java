@@ -9,6 +9,11 @@ public class RequestError {
 	private PolicyException policyException;
 	private ServiceException serviceException;
 	private OkResponseInfo okResponseInfo;
+	private List<ServiceException> serviceExceptions;
+
+	public PolicyException getPolicyException() {
+		return policyException;
+	}
 
 	public ServiceException getServiceException() {
 		return serviceException;
@@ -26,8 +31,11 @@ public class RequestError {
 		this.okResponseInfo = okResponseInfo;
 	}
 
+	public List<ServiceException> getServiceExceptions() {
+		return serviceExceptions;
+	}
 	void setServiceExceptions(List<ServiceException> serviceExceptions) {
-		// no one asks for these exception ever
+		this.serviceExceptions = serviceExceptions;
 	}
 	
 	String getFormattedMessage() {
@@ -47,11 +55,9 @@ public class RequestError {
 	}
 
 	AbstractSdncException getError() {
-		if (null != policyException) {
-			return (null != serviceException) ? serviceException : policyException;
+		if (null != serviceException) {
+			return serviceException;
 		}
-		else {
-			return (null != serviceException) ? serviceException : okResponseInfo;
-		}
+		return (null != policyException) ? policyException : okResponseInfo;
 	}
 }

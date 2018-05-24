@@ -1,81 +1,42 @@
 package org.onap.sdc.dcae.catalog.asdc;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.Collections;
-
-import java.util.function.UnaryOperator;
-
-import javax.annotation.PostConstruct;
-
+import org.apache.commons.codec.digest.DigestUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.common.onaplog.OnapLoggerError;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
-import org.onap.sdc.dcae.enums.ArtifactGroupType;
-import org.onap.sdc.dcae.enums.ArtifactType;
-import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
-import org.springframework.http.MediaType;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpRequest;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.AsyncClientHttpRequestExecution;
-import org.springframework.http.client.AsyncClientHttpRequestInterceptor;
-import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.web.client.AsyncRestTemplate;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.http.converter.HttpMessageConverter;
-
-import org.springframework.util.Base64Utils;
-import org.apache.commons.codec.digest.DigestUtils;
-
-import org.springframework.stereotype.Component;
-import org.springframework.context.annotation.Scope;
-import org.springframework.scheduling.annotation.Scheduled;
-
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import org.json.JSONObject;
 import org.onap.sdc.dcae.catalog.commons.Action;
 import org.onap.sdc.dcae.catalog.commons.Future;
 import org.onap.sdc.dcae.catalog.commons.Futures;
 import org.onap.sdc.dcae.catalog.commons.JSONHttpMessageConverter;
-import org.json.JSONArray;
+import org.springframework.context.annotation.Scope;
+import org.springframework.http.*;
+import org.springframework.http.client.AsyncClientHttpRequestExecution;
+import org.springframework.http.client.AsyncClientHttpRequestInterceptor;
+import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.util.Base64Utils;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.ListenableFutureCallback;
+import org.springframework.web.client.AsyncRestTemplate;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 
-import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import javax.annotation.PostConstruct;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Component("asdc")
 @Scope("singleton")
 public class ASDC {
-
-	private static final String TARGET = "target";
-	private static final String ACTION = "action";
-	private static final String ASSET_TYPE = "assetType";
-	private static final String USER_ID = "USER_ID";
-	public static final String ASSET_ID = "assetId";
-	public static final String ARTIFACT_ID = "artifactId";
-	public static final String LIST_FILTER = "listFilter";
 
 	public enum AssetType {
 		resource,
@@ -83,31 +44,8 @@ public class ASDC {
 		product
 	}
 
-	public enum LifecycleState {
-		Checkin,
-		Checkout,
-		Certify,
-		undocheckout
-	}
-
-
 	protected static OnapLoggerError errLogger = OnapLoggerError.getInstance();
 	protected static OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
-
-	private static final String ARTIFACT_TYPE = "artifactType";
-	private static final String ARTIFACT_GROUP_TYPE = "artifactGroupType";
-	private static final String ARTIFACT_LABEL = "artifactLabel";
-	private static final String ARTIFACT_NAME = "artifactName";
-	private static final String DESCRIPTION = "description";
-	private static final String PAYLOAD_DATA = "payloadData";
-
-	private static final String[] artifactMandatoryEntries = new String[] {};
-
-	private static final String[] updateMandatoryEntries = new String[] {ARTIFACT_NAME,
-			ARTIFACT_TYPE, ARTIFACT_GROUP_TYPE, ARTIFACT_LABEL, DESCRIPTION, PAYLOAD_DATA};
-
-	private static final String[] uploadMandatoryEntries = new String[] {ARTIFACT_NAME,
-			ARTIFACT_TYPE, ARTIFACT_GROUP_TYPE, ARTIFACT_LABEL, DESCRIPTION, PAYLOAD_DATA};
 
 	private URI rootUri;
 	private String rootPath = "/sdc/v1/catalog/";
@@ -187,28 +125,8 @@ public class ASDC {
 		return getAssets(AssetType.resource, JSONArray.class, category, subCategory, resourceType);
 	}
 
-	public <T> Future<T> getServices(Class<T> theType) {
-		return getAssets(AssetType.service, theType);
-	}
-	
-	public Future<JSONArray> getServices() {
-		return getAssets(AssetType.service, JSONArray.class);
-	}
-	
-	public <T> Future<T> getServices(Class<T> theType, String theCategory, String theSubCategory) {
-		return getAssets(AssetType.service, theType, theCategory, theSubCategory);
-	}
-	
-	public Future<JSONArray> getServices(String theCategory, String theSubCategory) {
-		return getAssets(AssetType.service, JSONArray.class, theCategory, theSubCategory);
-	}
-
 	public <T> Future<T> getAssets(AssetType theAssetType, Class<T> theType) {
 		return fetch(refAssets(theAssetType), theType);
-	}
-	
-	public <T> Action<T> getAssetsAction(AssetType theAssetType, Class<T> theType) {
-		return () -> fetch(refAssets(theAssetType), theType);
 	}
 	
 	public <T> Future<T> getAssets(AssetType theAssetType, Class<T> theType,
@@ -220,12 +138,7 @@ public class ASDC {
 																 String theCategory, String theSubCategory, String theResourceType) {
 		return fetch(refAssets(theAssetType) + filter(theCategory, theSubCategory, theResourceType), theType);
 	}
-	
-	public <T> Action<T> getAssetsAction(AssetType theAssetType, Class<T> theType,
-																 			 String theCategory, String theSubCategory, String theResourceType) {
-		return () -> fetch(refAssets(theAssetType) + filter(theCategory, theSubCategory, theResourceType), theType);
-	}
-	
+
 	protected String refAssets(AssetType theAssetType) {
 		return this.rootPath + theAssetType + "s/";
 	}
@@ -260,33 +173,12 @@ public class ASDC {
 		return getAsset(AssetType.resource, theId, JSONObject.class);
 	}
 
-	public Future<ResourceDetailed> getSDCResource(UUID theId) {
-		return getAsset(AssetType.resource, theId, ResourceDetailed.class);
-	}
-
-
-	public <T> Future<T> getService(UUID theId, Class<T> theType) {
-		return getAsset(AssetType.service, theId, theType);
-	}
-	
-	public Future<JSONObject> getService(UUID theId) {
-		return getAsset(AssetType.service, theId, JSONObject.class);
-	}
-
 	public <T> Future<T> getAsset(AssetType theAssetType, UUID theId, Class<T> theType) {
 		return fetch(refAsset(theAssetType, theId) + "/metadata", theType);
 	}
 	
 	public <T> Action<T> getAssetAction(AssetType theAssetType, UUID theId, Class<T> theType) {
 		return () -> fetch(refAsset(theAssetType, theId) + "/metadata", theType);
-	}
-
-	public Future<byte[]> getResourceArchive(UUID theId) {
-		return getAssetArchive(AssetType.resource, theId);
-	}
-
-	public Future<byte[]> getServiceArchive(UUID theId) {
-		return getAssetArchive(AssetType.service, theId);
 	}
 
 	public Future<byte[]> getAssetArchive(AssetType theAssetType, UUID theId) {
@@ -297,42 +189,6 @@ public class ASDC {
 		return () -> fetch(refAsset(theAssetType, theId) + "/toscaModel", byte[].class);
 	}
 
-	public Future<JSONObject> checkinResource(UUID theId, String theUser, String theMessage) {
-		return cycleAsset(AssetType.resource, theId, LifecycleState.Checkin, theUser, theMessage);
-	}
-
-	public Future<JSONObject> checkinService(UUID theId, String theUser, String theMessage) {
-		return cycleAsset(AssetType.service, theId, LifecycleState.Checkin, theUser, theMessage);
-	}
-
-	public Future<JSONObject> checkoutResource(UUID theId, String theUser, String theMessage) {
-		return cycleAsset(AssetType.resource, theId, LifecycleState.Checkout, theUser, theMessage);
-	}
-
-	public Future<JSONObject> checkoutService(UUID theId, String theUser, String theMessage) {
-		return cycleAsset(AssetType.service, theId, LifecycleState.Checkout, theUser, theMessage);
-	}
-	
-	public Future<JSONObject> certifyResource(UUID theId, String theUser, String theMessage) {
-		return cycleAsset(AssetType.resource, theId, LifecycleState.Certify, theUser, theMessage);
-	}
-
-	public Future<JSONObject> certifyService(UUID theId, String theUser, String theMessage) {
-		return cycleAsset(AssetType.service, theId, LifecycleState.Certify, theUser, theMessage);
-	}
-
-	/* Normally theMessage is mandatory (and we'd use put instead of putOpt) but .. not so for undocheckout ..
-	 */
-	public Future<JSONObject> cycleAsset(AssetType theAssetType, UUID theId, LifecycleState theState,
-																			 String theUser, String theMessage) {
-		return post(refAsset(theAssetType, theId)	+ "/lifecycleState/" + theState,
-				headers -> prepareHeaders(headers).header(USER_ID, theUser), new JSONObject().putOpt("userRemarks", theMessage));
-	}
-
-	protected String refAssetInstanceArtifact(AssetType theAssetType, UUID theAssetId, String theAssetInstance, UUID theArtifactId) {
-		return refAsset(theAssetType, theAssetId) + "/resourceInstances/" + theAssetInstance + "/artifacts" + (theArtifactId == null ? "" : ("/" + theArtifactId));
-	}
-
 	protected String refAssetArtifact(AssetType theAssetType, UUID theAssetId, UUID theArtifactId) {
 		return refAsset(theAssetType, theAssetId) + "/artifacts" + (theArtifactId == null ? "" : ("/" + theArtifactId));
 	}
@@ -340,414 +196,11 @@ public class ASDC {
 	public <T> Future<T> getResourceArtifact(UUID theAssetId, UUID theArtifactId, Class<T> theType) {
 		return getAssetArtifact(AssetType.resource, theAssetId, theArtifactId, theType);
 	}
-	
-	public <T> Future<T> getServiceArtifact(UUID theAssetId, UUID theArtifactId, Class<T> theType) {
-		return getAssetArtifact(AssetType.service, theAssetId, theArtifactId, theType);
-	}
-	
-	public <T> Future<T> getResourceInstanceArtifact(UUID theAssetId, UUID theArtifactId, String theInstance, Class<T> theType) {
-		return getAssetInstanceArtifact(AssetType.resource, theAssetId, theInstance, theArtifactId, theType);
-	}
-	
-	public <T> Future<T> getServiceInstanceArtifact(UUID theAssetId, UUID theArtifactId, String theInstance, Class<T> theType) {
-		return getAssetInstanceArtifact(AssetType.service, theAssetId, theInstance, theArtifactId, theType);
-	}
 
 	public <T> Future<T> getAssetArtifact(AssetType theAssetType, UUID theAssetId, UUID theArtifactId, Class<T> theType) {
 		return fetch(refAssetArtifact(theAssetType, theAssetId, theArtifactId), theType);
 	}
-	
-	public <T> Action<T> getAssetArtifactAction(AssetType theAssetType, UUID theAssetId, UUID theArtifactId, Class<T> theType) {
-		return () -> fetch(refAssetArtifact(theAssetType, theAssetId, theArtifactId), theType);
-	}
-	
-	public <T> Future<T> getAssetInstanceArtifact(AssetType theAssetType, UUID theAssetId, String theInstance, UUID theArtifactId, Class<T> theType) {
-		return fetch(refAssetInstanceArtifact(theAssetType, theAssetId, theInstance, theArtifactId), theType);
-	}
-	
-	public <T> Action<T> getAssetInstanceArtifactAction(AssetType theAssetType, UUID theAssetId, String theInstance, UUID theArtifactId, Class<T> theType) {
-		return () -> fetch(refAssetInstanceArtifact(theAssetType, theAssetId, theInstance, theArtifactId), theType);
-	}
-	
-	public ArtifactUploadAction createResourceArtifact(UUID theAssetId) {
-		return createAssetArtifact(AssetType.resource, theAssetId);
-	}
-	
-	public ArtifactUploadAction createServiceArtifact(UUID theAssetId) {
-		return createAssetArtifact(AssetType.service, theAssetId);
-	}
-	
-	public ArtifactUploadAction createResourceInstanceArtifact(UUID theAssetId, String theInstance) {
-		return createAssetInstanceArtifact(AssetType.resource, theAssetId, theInstance);
-	}
-	
-	public ArtifactUploadAction createServiceInstanceArtifact(UUID theAssetId, String theInstance) {
-		return createAssetInstanceArtifact(AssetType.service, theAssetId, theInstance);
-	}
 
-	public ArtifactUploadAction createAssetArtifact(AssetType theAssetType, UUID theAssetId) {
-		return new ArtifactUploadAction()
-									.ofAsset(theAssetType, theAssetId);
-	}
-	
-	public ArtifactUploadAction createAssetInstanceArtifact(AssetType theAssetType, UUID theAssetId, String theInstance) {
-		return new ArtifactUploadAction()
-									.ofAssetInstance(theAssetType, theAssetId, theInstance);
-	}
-
-	public ArtifactUpdateAction updateResourceArtifact(UUID theAssetId, JSONObject theArtifactInfo) {
-		return updateAssetArtifact(AssetType.resource, theAssetId, theArtifactInfo);
-	}
-	
-	public ArtifactUpdateAction updateResourceInstanceArtifact(UUID theAssetId, String theInstance, JSONObject theArtifactInfo) {
-		return updateAssetInstanceArtifact(AssetType.resource, theAssetId, theInstance, theArtifactInfo);
-	}
-	
-	public ArtifactUpdateAction updateServiceArtifact(UUID theAssetId, JSONObject theArtifactInfo) {
-		return updateAssetArtifact(AssetType.service, theAssetId, theArtifactInfo);
-	}
-	
-	public ArtifactUpdateAction updateServiceInstanceArtifact(UUID theAssetId, String theInstance, JSONObject theArtifactInfo) {
-		return updateAssetInstanceArtifact(AssetType.service, theAssetId, theInstance, theArtifactInfo);
-	}
-
-	public ArtifactUpdateAction updateAssetArtifact(AssetType theAssetType, UUID theAssetId, JSONObject theArtifactInfo) {
-		return new ArtifactUpdateAction(theArtifactInfo)
-									.ofAsset(theAssetType, theAssetId);
-	}
-	
-	public ArtifactUpdateAction updateAssetInstanceArtifact(AssetType theAssetType, UUID theAssetId, String theInstance, JSONObject theArtifactInfo) {
-		return new ArtifactUpdateAction(theArtifactInfo)
-									.ofAssetInstance(theAssetType, theAssetId, theInstance);
-	}
-
-	public ArtifactDeleteAction deleteResourceArtifact(UUID theAssetId, UUID theArtifactId) {
-		return deleteAssetArtifact(AssetType.resource, theAssetId, theArtifactId);
-	}
-	
-	public ArtifactDeleteAction deleteResourceInstanceArtifact(UUID theAssetId, String theInstance, UUID theArtifactId) {
-		return deleteAssetInstanceArtifact(AssetType.resource, theAssetId, theInstance, theArtifactId);
-	}
-	
-	public ArtifactDeleteAction deleteServiceArtifact(UUID theAssetId, UUID theArtifactId) {
-		return deleteAssetArtifact(AssetType.service, theAssetId, theArtifactId);
-	}
-	
-	public ArtifactDeleteAction deleteServiceInstanceArtifact(UUID theAssetId, String theInstance, UUID theArtifactId) {
-		return deleteAssetInstanceArtifact(AssetType.service, theAssetId, theInstance, theArtifactId);
-	}
-
-	public ArtifactDeleteAction deleteAssetArtifact(AssetType theAssetType, UUID theAssetId, UUID theArtifactId) {
-		return new ArtifactDeleteAction(theArtifactId)
-									.ofAsset(theAssetType, theAssetId);
-	}
-	
-	public ArtifactDeleteAction deleteAssetInstanceArtifact(AssetType theAssetType, UUID theAssetId, String theInstance, UUID theArtifactId) {
-		return new ArtifactDeleteAction(theArtifactId)
-									.ofAssetInstance(theAssetType, theAssetId, theInstance);
-	}
-
-	
-	public abstract class ASDCAction<A extends ASDCAction<A, T>, T> implements Action<T> { 
-
-		protected JSONObject 	info; 				//info passed to asdc as request body
-		protected String			operatorId;		//id of the SDC user performing the action
-
-		protected ASDCAction(JSONObject theInfo) {
-			this.info = theInfo;
-		}
-		
-		protected abstract A self(); 
-
-		protected ASDC asdc() {
-			return ASDC.this;
-		}
-	
-		protected A withInfo(JSONObject theInfo) {
-			merge(this.info, theInfo);
-			return self();
-		}
-	
-		public A with(String theProperty, Object theValue) {
-			info.put(theProperty, theValue);
-			return self();
-		}
-
-		public A withOperator(String theOperator) {
-			this.operatorId = theOperator;
-			return self();			
-		}
-		
-		protected abstract String[] mandatoryInfoEntries();
-	
-		protected void checkOperatorId() {
-			if (this.operatorId == null) {
-				throw new IllegalStateException("No operator id was provided");
-			}
-		}
-
-		protected void checkMandatoryInfo() {
-			for (String field: mandatoryInfoEntries()) {
-				if (!info.has(field)) {
-					throw new IllegalStateException("No '" + field + "' was provided");
-				}
-			}
-		}
-		
-		protected void checkMandatory() {
-			checkOperatorId();
-			checkMandatoryInfo();
-		}
-	}
-
-
-	/**
-     * We use teh same API to operate on artifacts attached to assets or to their instances
-	 */
-	public abstract class ASDCArtifactAction<A extends ASDCArtifactAction<A>> extends ASDCAction<A, JSONObject> {
-
-		protected AssetType		assetType;
-		protected UUID				assetId;
-		protected String			assetInstance;
-
-		protected ASDCArtifactAction(JSONObject theInfo) {
-			super(theInfo);
-		}
-		
-		protected A ofAsset(AssetType theAssetType, UUID theAssetId) {
-			this.assetType = theAssetType;
-			this.assetId = theAssetId;
-			return self();			
-		}
-		
-		protected A ofAssetInstance(AssetType theAssetType, UUID theAssetId, String theInstance) {
-			this.assetType = theAssetType;
-			this.assetId = theAssetId;
-			this.assetInstance = theInstance;
-			return self();			
-		}
-		
-		protected String normalizeInstanceName(String theName) {
-			return StringUtils.removePattern(theName, "[ \\.\\-]+").toLowerCase();
-		}
-		
-		protected String[] mandatoryInfoEntries() {
-			return ASDC.this.artifactMandatoryEntries;
-		}
-
-		protected String ref(UUID theArtifactId) {
-			return (this.assetInstance == null) ?
-								refAssetArtifact(this.assetType, this.assetId, theArtifactId) :
-								refAssetInstanceArtifact(this.assetType, this.assetId, normalizeInstanceName(this.assetInstance), theArtifactId);
-		}
-	}
-
-	public class ArtifactUploadAction extends ASDCArtifactAction<ArtifactUploadAction> {
-
-		public static final String PAYLOAD_DATA = ASDC.PAYLOAD_DATA;
-
-		protected ArtifactUploadAction() {
-			super(new JSONObject());
-		}
-
-		protected ArtifactUploadAction self() {
-			return this;
-		}
-		
-		public ArtifactUploadAction withContent(byte[] theContent) {
-			return with(PAYLOAD_DATA, Base64Utils.encodeToString(theContent));
-		}
-
-		public ArtifactUploadAction withContent(File theFile) throws IOException {
-			return withContent(FileUtils.readFileToByteArray(theFile));
-		}
-
-		public ArtifactUploadAction withLabel(String theLabel) {
-			return with(ARTIFACT_LABEL, theLabel);
-		}
-		
-		public ArtifactUploadAction withName(String theName) {
-			return with(ARTIFACT_NAME, theName);
-		}
-		
-		public ArtifactUploadAction withDisplayName(String theName) {
-			return with("artifactDisplayName", theName);
-		}
-
-		public ArtifactUploadAction withType(ArtifactType theType) {
-			return with(ARTIFACT_TYPE, theType.toString());
-		}
-
-		public ArtifactUploadAction withGroupType(ArtifactGroupType theGroupType) {
-			return with(ARTIFACT_GROUP_TYPE, theGroupType.toString());
-		}
-
-		public ArtifactUploadAction withDescription(String theDescription) {
-			return with(DESCRIPTION, theDescription);
-		}
-
-		@Override
-		protected String[] mandatoryInfoEntries() {
-			return ASDC.this.uploadMandatoryEntries;
-		}
-
-		public Future<JSONObject> execute() {
-			checkMandatory();
-			return ASDC.this.post(ref(null),
-					headers -> prepareHeaders(headers).header(USER_ID, this.operatorId), this.info);
-		}
-	}
-
-
-
-	/**
-	 * In its current form the update relies on a previous artifact retrieval. One cannot build an update from scratch.
-	 * The label, tye and group type must be submitted but cannot be updated
-	 */
-	public class ArtifactUpdateAction extends ASDCArtifactAction<ArtifactUpdateAction> {
-
-		
-		protected ArtifactUpdateAction(JSONObject theInfo) {
-			super(theInfo);
-		}
-		
-		protected ArtifactUpdateAction self() {
-			return this;
-		}
-		
-		public ArtifactUpdateAction withContent(byte[] theContent) {
-			return with(PAYLOAD_DATA, Base64Utils.encodeToString(theContent));
-		}
-
-		public ArtifactUpdateAction withContent(File theFile) throws IOException {
-			return withContent(FileUtils.readFileToByteArray(theFile));
-		}
-
-		public ArtifactUpdateAction withDescription(String theDescription) {
-			return with(DESCRIPTION, theDescription);
-		}
-		
-		public ArtifactUpdateAction withName(String theName) {
-			return with(ARTIFACT_NAME, theName);
-		}
-
-		@Override
-		protected String[] mandatoryInfoEntries() {
-			return ASDC.this.updateMandatoryEntries;
-		}
-
-		/* The json object originates (normally) from a get so it will have entries we need to cleanup */
-		protected void cleanupInfoEntries() {
-			this.info.remove("artifactChecksum");
-			this.info.remove("artifactUUID");
-			this.info.remove("artifactVersion");
-			this.info.remove("artifactURL");
-			this.info.remove("artifactDescription");
-		}
-		
-		public Future<JSONObject> execute() {
-			UUID artifactUUID = UUID.fromString(this.info.getString("artifactUUID"));
-			checkMandatory();
-			cleanupInfoEntries();
-			return ASDC.this.post(ref(artifactUUID),
-					headers -> prepareHeaders(headers).header(USER_ID, this.operatorId),this.info);
-		}
-	}
-
-	public class ArtifactDeleteAction extends ASDCArtifactAction<ArtifactDeleteAction> {
-
-		private UUID		artifactId;
-		
-		protected ArtifactDeleteAction(UUID theArtifactId) {
-			super(null);
-			this.artifactId = theArtifactId;
-		}
-		
-		protected ArtifactDeleteAction self() {
-			return this;
-		}
-		
-		public Future<JSONObject> execute() {
-			checkMandatory();
-			return ASDC.this.delete(ref(this.artifactId),
-					headers -> prepareHeaders(headers).header(USER_ID, this.operatorId));
-		}
-	}
-
-
-
-
-	private VFCMTCreateAction createVFCMT() {
-		return new VFCMTCreateAction();
-	}
-
-
-
-
-	public class VFCMTCreateAction extends ASDCAction<VFCMTCreateAction, JSONObject> {
-
-		private static final String CONTACT_ID = "contactId";
-		private final String[] vfcmtMandatoryEntries = new String[] { "name", "vendorName", "vendorRelease", CONTACT_ID};
-
-		protected VFCMTCreateAction() {
-
-			super(new JSONObject());
-			this
-				.with("resourceType", "VFCMT")
-				.with("category", "Template")
-				.with("subcategory", "Monitoring Template")
-				.with("icon", "defaulticon");
-		}
-		
-		protected VFCMTCreateAction self() {
-			return this;
-		}
-
-		public VFCMTCreateAction withName(String theName) {
-			return with("name", theName);
-		}
-
-		public VFCMTCreateAction withDescription(String theDescription) {
-			return with(DESCRIPTION, theDescription);
-		}
-		
-		public VFCMTCreateAction withVendorName(String theVendorName) {
-			return with("vendorName", theVendorName);
-		}
-		
-		public VFCMTCreateAction withVendorRelease(String theVendorRelease) {
-			return with("vendorRelease", theVendorRelease);
-		}
-		
-		public VFCMTCreateAction withTags(String... theTags) {
-			for (String tag: theTags) {
-				this.info.append("tags", tag);
-			}
-			return this;			
-		}
-		
-		public VFCMTCreateAction withIcon(String theIcon) {
-			return with("icon", theIcon);
-		}
-		
-		protected String[] mandatoryInfoEntries() {
-			return vfcmtMandatoryEntries;
-		}
-		
-		public VFCMTCreateAction withContact(String theContact) {
-			return with(CONTACT_ID, theContact);
-		}
-		
-		public Future<JSONObject> execute() {
-		
-			this.info.putOnce(CONTACT_ID, this.operatorId);
-			this.info.append("tags", info.optString("name"));
-			checkMandatory();
-			return ASDC.this.post(refAssets(AssetType.resource),
-					headers -> prepareHeaders(headers).header(USER_ID, this.operatorId), this.info);
-		}
-
-	}
 
 	public static JSONObject merge(JSONObject theOriginal, JSONObject thePatch) {
 		for (String key: (Set<String>)thePatch.keySet()) {
@@ -756,15 +209,6 @@ public class ASDC {
 			}
 		}
 		return theOriginal;
-	}
-
-	protected URI refUri(String theRef) {
-		try {
-			return new URI(this.rootUri + theRef);
-		}
-		catch(URISyntaxException urisx) {
-			throw new UncheckedIOException(new IOException(urisx));
-		}
 	}
 
 	private HttpHeaders prepareHeaders() {
@@ -778,38 +222,10 @@ public class ASDC {
 		return headers;
 	}
 
-	private RequestEntity.HeadersBuilder prepareHeaders(RequestEntity.HeadersBuilder theBuilder) {
-		return theBuilder
-			.header(HttpHeaders.AUTHORIZATION, "Basic " + Base64Utils.encodeToString((this.user + ":" + this.passwd).getBytes()))
-			.header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-			.header(HttpHeaders.ACCEPT, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-			.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE)
-			.header("X-ECOMP-InstanceID", this.instanceId);
-	}
-
 	public <T> Future<T> fetch(String theRef, Class<T> theContentType) {
 		return exchange(theRef, HttpMethod.GET, new HttpEntity(prepareHeaders()), theContentType);
 	}
 
-	public Future<JSONObject> post(String theRef, JSONObject thePost) {
-		return exchange(theRef, HttpMethod.POST, new HttpEntity<JSONObject>(thePost, prepareHeaders()), JSONObject.class);
-	}
-	
-	public Future<JSONObject> post(String theRef, UnaryOperator<RequestEntity.HeadersBuilder> theHeadersBuilder, JSONObject thePost) {
-		RequestEntity.BodyBuilder builder = RequestEntity.post(refUri(theRef));
-		theHeadersBuilder.apply(builder);
-
-		return exchange(theRef, HttpMethod.POST, builder.body(thePost), JSONObject.class);
-	}
-	
-	public Future<JSONObject> delete(String theRef, UnaryOperator<RequestEntity.HeadersBuilder> theHeadersBuilder) {
-
-		RequestEntity.HeadersBuilder builder = RequestEntity.delete(refUri(theRef));
-		theHeadersBuilder.apply(builder);
-
-		return exchange(theRef, HttpMethod.DELETE, builder.build(), JSONObject.class);
-	}
-	
 	public <T> Future<T> exchange(String theRef, HttpMethod theMethod, HttpEntity theRequest, Class<T> theResponseType) {
 		
 		AsyncRestTemplate restTemplate = new AsyncRestTemplate();
@@ -838,8 +254,6 @@ public class ASDC {
 		return result;
 	}
 
-
-
 	public class ASDCFuture<T> extends Futures.BasicFuture<T> {
 
 		ListenableFutureCallback<ResponseEntity<T>> callback = new ListenableFutureCallback<ResponseEntity<T>>() {
@@ -857,7 +271,6 @@ public class ASDC {
 				}
 			}
 		};
-
 	}
 
 	public class ContentMD5Interceptor implements AsyncClientHttpRequestInterceptor {
@@ -871,172 +284,5 @@ public class ASDC {
 			}
 			return theExecution.executeAsync(theRequest, theBody);
 		}
-	}
-
-	public static void main(String[] theArgs) throws Exception {
-
-		CommandLineParser parser = new BasicParser();
-		
-		String userId = "jh0003";
-		
-		Options options = new Options();
-		options.addOption(OptionBuilder
-														  .withArgName(TARGET)
-															.withLongOpt(TARGET)
-                               .withDescription("target asdc system")
-															.hasArg()
-															.isRequired()
-															.create('t') );
-			
-		options.addOption(OptionBuilder
-														  .withArgName(ACTION)
-															.withLongOpt(ACTION)
-                              .withDescription("one of: list, get, getartifact, checkin, checkout")
-															.hasArg()
-															.isRequired()
-															.create('a') );
-
-		options.addOption(OptionBuilder
-														  .withArgName(ASSET_TYPE)
-															.withLongOpt(ASSET_TYPE)
-                               .withDescription("one of resource, service, product")
-															.hasArg()
-															.isRequired()
-															.create('k') ); //k for 'kind' ..
-
-		options.addOption(OptionBuilder
-														  .withArgName(ASSET_ID)
-															.withLongOpt(ASSET_ID)
-                               .withDescription("asset uuid")
-															.hasArg()
-															.create('u') ); //u for 'uuid'
-
-		options.addOption(OptionBuilder
-														  .withArgName(ARTIFACT_ID)
-															.withLongOpt(ARTIFACT_ID)
-                               .withDescription("artifact uuid")
-															.hasArg()
-															.create('s') ); //s for 'stuff'
-
-		options.addOption(OptionBuilder
-														  .withArgName(LIST_FILTER)
-															.withLongOpt(LIST_FILTER)
-                               .withDescription("filter for list operations")
-															.hasArg()
-															.create('f') ); //u for 'uuid'
-
-		CommandLine line = null;
-		try {
-   		line = parser.parse(options, theArgs);
-		}
-		catch(ParseException exp) {
-			errLogger.log(LogLevel.ERROR, ASDC.class.getName(), exp.getMessage());
-			new HelpFormatter().printHelp("asdc", options);
-			return;
-		}
-
-		ASDC asdc = new ASDC();
-		asdc.setUri(new URI(line.getOptionValue(TARGET)));
-
-		String action = line.getOptionValue(ACTION);
-		if ("list".equals(action)) {
-			JSONObject filterInfo = new JSONObject(
-																			line.hasOption(LIST_FILTER) ?
-																				line.getOptionValue(LIST_FILTER) : "{}");
-			JSONArray assets = 
-				asdc.getAssets(ASDC.AssetType.valueOf(line.getOptionValue(ASSET_TYPE)), JSONArray.class,
-											 filterInfo.optString("category", null), filterInfo.optString("subCategory", null))
-						.waitForResult();
-			for (int i = 0; i < assets.length(); i++) {
-				debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),"> {}", assets.getJSONObject(i).toString(2));
-			}
-		}
-		else if ("get".equals(action)) {
-			debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),
-					asdc.getAsset(ASDC.AssetType.valueOf(line.getOptionValue(ASSET_TYPE)),
-											UUID.fromString(line.getOptionValue(ASSET_ID)),
-											JSONObject.class)
-						.waitForResult()
-						.toString(2)
-			);
-		}
-		else if ("getartifact".equals(action)) {
-			debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),
-					asdc.getAssetArtifact(ASDC.AssetType.valueOf(line.getOptionValue(ASSET_TYPE)),
-															UUID.fromString(line.getOptionValue(ASSET_ID)),
-															UUID.fromString(line.getOptionValue(ARTIFACT_ID)),
-															String.class)
-						.waitForResult()
-			);
-		}
-		else if ("checkin".equals(action)) {
-			debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),
-					asdc.cycleAsset(ASDC.AssetType.valueOf(line.getOptionValue(ASSET_TYPE)),
-													UUID.fromString(line.getOptionValue(ASSET_ID)),
-													ASDC.LifecycleState.Checkin,
-													userId,
-													"cli op")
-							.waitForResult()
-							.toString()
-			);
-		}
-		else if ("checkout".equals(action)) {
-			debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),
-					asdc.cycleAsset(ASDC.AssetType.valueOf(line.getOptionValue(ASSET_TYPE)),
-													UUID.fromString(line.getOptionValue(ASSET_ID)),
-													ASDC.LifecycleState.Checkout,
-													userId,
-													"cli op")
-							.waitForResult()
-							.toString()
-			);
-		}
-		else if ("cleanup".equals(action)) {
-			JSONArray resources = asdc.getResources()
-																	.waitForResult();
-			debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),"Got {} resources", resources.length());
-
-			vfcmtCleanup(userId, asdc, resources);
-		}
-		else {
-			try {
-				debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),
-					asdc.createVFCMT()
-							.withName("Clonator")
-							.withDescription("Clone operation target 06192017")
-							.withVendorName("CloneInc")
-							.withVendorRelease("1.0")
-							.withTags("clone")
-							.withOperator(userId)
-							.execute()
-							.waitForResult()
-							.toString()
-				);
-			}
-			catch(Exception x) {
-				debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),"Failed to create VFCMT: {}", x);
-			}
-		}
-	}
-
-	private static void vfcmtCleanup(String userId, ASDC asdc, JSONArray resources) {
-		for (int i = 0; i < resources.length(); i++) {
-
-            JSONObject resource = resources.getJSONObject(i);
-
-            if ("VFCMT".equals(resource.getString("resourceType")) &&
-                    resource.getString("name").contains("test")) {
-
-                debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),"undocheckout for {}", resource.getString("uuid"));
-
-                try {
-                    asdc.cycleAsset(AssetType.resource, UUID.fromString(resource.getString("uuid")), LifecycleState.undocheckout, userId, null)
-                        .waitForResult();
-                }
-                catch (Exception x) {
-                    debugLogger.log(LogLevel.DEBUG, ASDC.class.getName(),"** {}", x);
-                }
-            }
-        }
 	}
 }

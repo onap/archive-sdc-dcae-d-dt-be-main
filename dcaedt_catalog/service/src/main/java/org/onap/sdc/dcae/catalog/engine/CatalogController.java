@@ -21,7 +21,6 @@ package org.onap.sdc.dcae.catalog.engine;
 import org.json.JSONObject;
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
-import org.onap.sdc.common.onaplog.OnapLoggerError;
 import org.onap.sdc.dcae.catalog.Catalog;
 import org.onap.sdc.dcae.catalog.asdc.ASDCCatalog;
 import org.onap.sdc.dcae.catalog.commons.Future;
@@ -93,7 +92,6 @@ import java.util.Map;
 @CrossOrigin(origins="*")
 public class CatalogController {
 
-	private static OnapLoggerError errLogger = OnapLoggerError.getInstance();
 	private static OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
 
 
@@ -101,7 +99,7 @@ public class CatalogController {
 	private SystemProperties systemProperties;
 
 	private URI defaultCatalog;
-	private static Map<URI, Catalog> catalogs = new HashMap<URI, Catalog>();
+	private static Map<URI, Catalog> catalogs = new HashMap<>();
 
 
 	public void setDefaultCatalog(URI theUri) {
@@ -130,8 +128,9 @@ public class CatalogController {
 
 	public Catalog getCatalog(URI theCatalogUri) {
 		//TODO: Thread safety! Check catalog is alive!
-		if (theCatalogUri == null)
+		if (theCatalogUri == null) {
 			theCatalogUri = this.defaultCatalog;
+		}
 
 		Catalog cat = catalogs.get(theCatalogUri);
 		if (cat == null && theCatalogUri != null) {
@@ -194,7 +193,7 @@ public class CatalogController {
 				//a null result allows the accumulatorHandler to pass the processing onto some other async processing stage
 				if (response != null) {
 					if (!this.result.setResult(response)) {
-						this.result.setErrorResult(new CatalogError(this.request, "Catalog API call succesful but late"));
+						this.result.setErrorResult(new CatalogError(this.request, "Catalog API call successful but late"));
 					}
 				}
 			}

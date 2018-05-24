@@ -1,6 +1,5 @@
 package org.onap.sdc.dcae.composition.controller;
 
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
 import org.onap.sdc.dcae.enums.AssetType;
 import org.onap.sdc.dcae.enums.LifecycleOperationType;
@@ -25,8 +24,8 @@ public class LifecycleController extends BaseController {
             @ModelAttribute("requestId") String requestId)  {
 
         try {
-        	if (AssetType.VFCMT == getValidAssetTypeOrNull(assetType)) {
-				ResourceDetailed resCheckin = checkinVfcmt(userId, uuid.toString(), requestId);
+        	if (AssetType.VFCMT == baseBusinessLogic.getValidAssetTypeOrNull(assetType)) {
+				ResourceDetailed resCheckin = baseBusinessLogic.checkinVfcmt(userId, uuid.toString(), requestId);
 				return new ResponseEntity<>(resCheckin, HttpStatus.OK);
             } else {
 				return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -44,8 +43,8 @@ public class LifecycleController extends BaseController {
             @ModelAttribute("requestId") String requestId)  {
 
         try {
-			if (AssetType.VFCMT == getValidAssetTypeOrNull(assetType)) {
-				ResourceDetailed asset = checkoutVfcmt(userId, uuid.toString(), requestId);
+			if (AssetType.VFCMT == baseBusinessLogic.getValidAssetTypeOrNull(assetType)) {
+				ResourceDetailed asset = baseBusinessLogic.checkoutVfcmt(userId, uuid.toString(), requestId);
 				return new ResponseEntity<>(asset, HttpStatus.OK);
 			} else {
 				return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -63,7 +62,7 @@ public class LifecycleController extends BaseController {
             @ModelAttribute("requestId") String requestId)  {
 
         try {
-			if (AssetType.VFCMT == getValidAssetTypeOrNull(assetType)) {
+			if (AssetType.VFCMT == baseBusinessLogic.getValidAssetTypeOrNull(assetType)) {
 				ResourceDetailed vfcmt = baseBusinessLogic.getSdcRestClient().changeResourceLifecycleState(userId, uuid, LifecycleOperationType.CERTIFY.name(), "certifying VFCMT", requestId);
 				return new ResponseEntity<>(vfcmt, HttpStatus.OK);
 

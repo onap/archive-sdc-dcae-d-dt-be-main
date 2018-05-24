@@ -20,11 +20,11 @@ public class RuleValidator implements IRuleElementValidator<Rule> {
 
 	private RuleValidator(){}
 
-
 	public boolean validate(Rule rule, List<ResponseFormat> errors) {
 		boolean valid = true;
-		if(rule.isConditionalRule())
+		if(rule.isConditionalRule()) {
 			valid = getConditionValidator(rule.getCondition()).validate(rule.getCondition(), errors);
+		}
 		if(!ValidationUtils.validateNotEmpty(rule.getDescription())) {
 			valid = false;
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.MISSING_RULE_DESCRIPTION, null, null));

@@ -115,10 +115,12 @@ public class Futures<T> {
 			BasicHandler<T> hnd = buildHandler();
 			setHandler(hnd);
 			hnd.waitForCompletion();
-			if (failed())
-				throw (Exception)cause();
-			else
+			if (failed()) {
+				throw (Exception) cause();
+			}
+			else {
 				return result();
+			}
 		}
 	
 		public Future<T> waitForCompletion() throws InterruptedException {

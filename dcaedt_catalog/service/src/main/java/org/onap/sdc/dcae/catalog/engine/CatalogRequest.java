@@ -2,8 +2,6 @@ package org.onap.sdc.dcae.catalog.engine;
 
 import java.net.URI;
 
-import org.onap.sdc.dcae.catalog.engine.CatalogMessage;
-
 public class CatalogRequest extends CatalogMessage {
 
 	private URI		 	catalog;

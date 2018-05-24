@@ -23,7 +23,6 @@ import java.util.List;
 @CrossOrigin
 public class VfcmtController extends BaseController{
 
-
     @Autowired
     private VfcmtBusinessLogic vfcmtBusinessLogic;
     @Autowired
@@ -32,8 +31,6 @@ public class VfcmtController extends BaseController{
     private static final String TEMPLATE = "Template";
     private static final String BASE_MONITORING_TEMPLATE = "Base Monitoring Template";
 	private static final String MONITORING_TEMPLATE = "Monitoring Template";
-
-
 
     /***
      * Get one resource information

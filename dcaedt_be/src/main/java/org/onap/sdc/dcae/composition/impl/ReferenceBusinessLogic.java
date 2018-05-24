@@ -34,7 +34,7 @@ public class ReferenceBusinessLogic extends BaseBusinessLogic {
                         .ifPresent(artifact -> sdcRestClient.deleteInstanceArtifact(userId, context, serviceUuid, normalizedVfiName, artifact.getArtifactUUID(), requestId));
             }
         } catch (Exception e) {
-            debugLogger.log(LogLevel.DEBUG, this.getClass().getName(),"Failed to delete blueprint with serviceUuid {}, vfcmtUuid . message: {} ", serviceUuid, vfcmtUuid, e);
+            debugLogger.log(LogLevel.DEBUG, this.getClass().getName(),"Failed to delete blueprint with serviceUuid {}, vfcmtUuid {}, message: {} ", serviceUuid, vfcmtUuid, e);
             return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.DELETE_BLUEPRINT_FAILED, e.getMessage());
         }
         return new ResponseEntity<>(HttpStatus.OK);

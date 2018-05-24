@@ -1,29 +1,29 @@
 package org.onap.sdc.dcae.composition.impl;
 
-        import org.onap.sdc.common.onaplog.Enums.LogLevel;
-        import org.onap.sdc.dcae.composition.restmodels.AttachVFCMTServiceRequest;
-        import org.onap.sdc.dcae.composition.restmodels.DcaeMinimizedService;
-        import org.onap.sdc.dcae.composition.restmodels.MessageResponse;
-        import org.onap.sdc.dcae.composition.restmodels.sdc.*;
-        import org.onap.sdc.dcae.composition.util.DcaeBeConstants;
-        import org.onap.sdc.dcae.enums.ArtifactType;
-        import org.onap.sdc.dcae.enums.LifecycleOperationType;
-        import org.onap.sdc.dcae.errormng.ActionStatus;
-        import org.onap.sdc.dcae.errormng.DcaeException;
-        import org.onap.sdc.dcae.errormng.ErrConfMgr;
-        import org.onap.sdc.dcae.errormng.ResponseFormat;
-        import org.onap.sdc.dcae.utils.SdcRestClientUtils;
-        import org.springframework.http.HttpStatus;
-        import org.springframework.http.ResponseEntity;
-        import org.springframework.stereotype.Component;
-        import org.springframework.util.Base64Utils;
-        import org.springframework.util.CollectionUtils;
+import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.dcae.composition.restmodels.AttachVFCMTServiceRequest;
+import org.onap.sdc.dcae.composition.restmodels.DcaeMinimizedService;
+import org.onap.sdc.dcae.composition.restmodels.MessageResponse;
+import org.onap.sdc.dcae.composition.restmodels.sdc.*;
+import org.onap.sdc.dcae.composition.util.DcaeBeConstants;
+import org.onap.sdc.dcae.enums.ArtifactType;
+import org.onap.sdc.dcae.enums.LifecycleOperationType;
+import org.onap.sdc.dcae.errormng.ActionStatus;
+import org.onap.sdc.dcae.errormng.DcaeException;
+import org.onap.sdc.dcae.errormng.ErrConfMgr;
+import org.onap.sdc.dcae.errormng.ResponseFormat;
+import org.onap.sdc.dcae.utils.SdcRestClientUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.util.Base64Utils;
+import org.springframework.util.CollectionUtils;
 
-        import java.util.ArrayList;
-        import java.util.Comparator;
-        import java.util.LinkedHashMap;
-        import java.util.List;
-        import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class ServiceBusinessLogic extends BaseBusinessLogic {

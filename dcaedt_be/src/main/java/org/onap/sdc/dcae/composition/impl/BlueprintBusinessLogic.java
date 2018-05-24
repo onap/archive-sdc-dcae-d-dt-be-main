@@ -10,7 +10,6 @@ import org.onap.sdc.dcae.composition.restmodels.VfcmtData;
 import org.onap.sdc.dcae.composition.restmodels.sdc.Artifact;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
 import org.onap.sdc.dcae.composition.util.DcaeBeConstants;
-import org.onap.sdc.dcae.composition.util.SystemProperties;
 import org.onap.sdc.dcae.errormng.ActionStatus;
 import org.onap.sdc.dcae.errormng.ErrConfMgr;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,15 +22,12 @@ import java.io.StringReader;
 import java.net.URI;
 
 @Component
-public class BlueprintBusinessLogic extends BaseBusinessLogic {
+public class BlueprintBusinessLogic extends CompositionBusinessLogic {
 
     @Autowired
     private Blueprinter blueprinter;
     @Autowired
     private ASDC asdc;
-    @Autowired
-    private SystemProperties systemProperties;
-    @Autowired private CompositionBusinessLogic compositionBusinessLogic;
 
 
     @PostConstruct
@@ -40,6 +36,7 @@ public class BlueprintBusinessLogic extends BaseBusinessLogic {
         asdc.setUri(sdcUri);
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "SDC uri: {}", sdcUri);
     }
+
 
     public ResponseEntity generateAndSaveBlueprint(String userId, String context, String vfcmtUuid, String serviceUuid, String vfiName, String flowType, String requestId) {
         try {
@@ -69,7 +66,7 @@ public class BlueprintBusinessLogic extends BaseBusinessLogic {
             }
 
             VfcmtData vfcmtData = new VfcmtData(vfcmt, vfiName, flowTypeFromCdump, serviceUuid);
-            Artifact blueprintArtifactResult = compositionBusinessLogic.submitComposition(userId, context, vfcmtData, resultBlueprintCreation, requestId);
+            Artifact blueprintArtifactResult = submitComposition(userId, context, vfcmtData, resultBlueprintCreation, requestId);
             if (null == blueprintArtifactResult) {
                 return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.SUBMIT_BLUEPRINT_ERROR);
             }
@@ -78,7 +75,8 @@ public class BlueprintBusinessLogic extends BaseBusinessLogic {
             response.setSuccessResponse("Blueprint build complete \n. Blueprint=" + blueprintArtifactResult.getArtifactName());
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            return handleException(e, ErrConfMgr.ApiType.SUBMIT_BLUEPRINT);
+			errLogger.log(LogLevel.ERROR, this.getClass().getName(), e.getMessage());
+			return ErrConfMgr.INSTANCE.handleException(e, ErrConfMgr.ApiType.SUBMIT_BLUEPRINT);
         }
     }
 
