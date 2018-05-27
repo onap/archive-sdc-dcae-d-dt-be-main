@@ -32,7 +32,7 @@ public class SDCResponseErrorHandlerTest {
 
             @Override
             public int getRawStatusCode() throws IOException {
-                return 0;
+                return httpStatus.value();
             }
 
             @Override
