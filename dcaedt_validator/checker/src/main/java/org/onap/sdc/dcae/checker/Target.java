@@ -1,26 +1,15 @@
 package org.onap.sdc.dcae.checker;
 
-import org.onap.sdc.common.onaplog.OnapLoggerDebug;
-import org.onap.sdc.common.onaplog.OnapLoggerError;
-
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.io.BufferedReader;
 import java.io.IOException;
-
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URI;
-import java.net.URL;
-import java.net.MalformedURLException;
 
 /**
  * Represents a yaml document to be parsed/validated/checked
  */
 public class Target {
-
-	private static OnapLoggerError errLogger = OnapLoggerError.getInstance();
-	private static OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
-
 
 	private String 				name;			//maintained mainly for logging
 	private URI					 	location;
@@ -72,7 +61,6 @@ public class Target {
 	}
 
 	public String toString() {
-		//return String.format("Target %s (%.20s ...)", this.location, this.target == null ? "" : this.target.toString());
 		return String.format("Target %s at %s", this.name, this.location);
 
 	}

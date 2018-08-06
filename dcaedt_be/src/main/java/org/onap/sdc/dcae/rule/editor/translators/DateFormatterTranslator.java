@@ -22,12 +22,12 @@ public class DateFormatterTranslator extends ActionTranslator<DateFormatterActio
 
 		private DateFormatterTranslation(DateFormatterAction action){
 			clazz = "DateFormatter";
-			fromFormat = action.getFromFormat();
-			fromTz = action.getFromTz();
+			fromFormat = action.fromFormat();
+			fromTz = action.fromTz();
 			toField = action.getTarget();
-			toFormat = action.getToFormat();
-			toTz = action.getToTz();
-			value = action.getFromValue();
+			toFormat = action.toFormat();
+			toTz = action.toTz();
+			value = action.fromValue();
 		}
 	}
 

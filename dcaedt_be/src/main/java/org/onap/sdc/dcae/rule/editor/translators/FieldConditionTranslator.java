@@ -19,10 +19,21 @@ public class FieldConditionTranslator implements IRuleElementTranslator<Conditio
 		private String field;
 		private String value;
 
-		private FieldFilterTranslation(Condition condition) {
-			clazz = OperatorTypeEnum.getTypeByName(condition.getOperator()).getType();
+		private FieldFilterTranslation(Condition condition, OperatorTypeEnum operatorType) {
+			clazz = operatorType.getType();
 			field = condition.getLeft();
 			value = condition.getRight().get(0);
+		}
+	}
+
+	private class UnaryFilterTranslation extends ProcessorTranslation {
+		private String field;
+		private boolean emptyIsAssigned;
+
+		private UnaryFilterTranslation(Condition condition, OperatorTypeEnum operatorType) {
+			clazz = operatorType.getType();
+			field = condition.getLeft();
+			emptyIsAssigned = condition.isEmptyIsAssigned();
 		}
 	}
 
@@ -30,14 +41,23 @@ public class FieldConditionTranslator implements IRuleElementTranslator<Conditio
 		private String field;
 		private List<String> values;
 
-		private MultiFieldFilterTranslation(Condition condition) {
+		private MultiFieldFilterTranslation(Condition condition, OperatorTypeEnum operatorType) {
 			field = condition.getLeft();
 			values = condition.getRight();
-			clazz = OperatorTypeEnum.getTypeByName(condition.getOperator()).getModifiedType();
+			clazz = operatorType.getModifiedType().getType();
 		}
 	}
 
 	public Object translateToHpJson(Condition condition) {
-		return 1 == condition.getRight().size() ? new FieldFilterTranslation(condition) : new MultiFieldFilterTranslation(condition);
+		OperatorTypeEnum operatorType = OperatorTypeEnum.getTypeByName(condition.getOperator());
+		if(OperatorTypeEnum.UNASSIGNED == operatorType || OperatorTypeEnum.ASSIGNED == operatorType) {
+			return new UnaryFilterTranslation(condition, operatorType);
+		}
+		return 1 == condition.getRight().size() && !alwaysUseMultipleRightValues(operatorType)? new FieldFilterTranslation(condition, operatorType) : new MultiFieldFilterTranslation(condition, operatorType);
 	}
+
+	private boolean alwaysUseMultipleRightValues(OperatorTypeEnum operatorType) {
+		return operatorType.equals(operatorType.getModifiedType());
+	}
+
 }

@@ -14,7 +14,4 @@ public class ValidationUtils {
 	public static boolean validateTargetField(String value) {
 		return validateNotEmpty(value) && !EXPLICIT_EMPTY.equals(value);
 	}
-
-
-
 }

@@ -20,7 +20,7 @@ public class ConcatActionValidator extends CopyActionValidator<BaseCopyAction> {
 
 	@Override
 	protected boolean validateFromValue(BaseCopyAction action, List<ResponseFormat> errors) {
-		if(!ValidationUtils.validateNotEmpty(action.getFromValue()) || 2 > action.getFromValues().size()) {
+		if(!ValidationUtils.validateNotEmpty(action.fromValue()) || 2 > action.fromValues().size()) {
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.MISSING_CONCAT_VALUE, null, action.getTarget()));
 			return false;
 		}

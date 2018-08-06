@@ -178,4 +178,9 @@ public class VfcmtController extends BaseController{
         }
     }
 
+	@RequestMapping(value = { "/{contextType}/{serviceUuid}/{vfiName}/{vfcmtUuid}/getLatestMcUuid" }, method = { RequestMethod.GET }, produces = {"application/json" })
+	public ResponseEntity getLatestMcUuid(@RequestHeader("USER_ID")  String userId, @PathVariable String contextType, @PathVariable String serviceUuid, @PathVariable String vfiName, @PathVariable String vfcmtUuid, @ModelAttribute String requestId) {
+	    return referenceBusinessLogic.checkoutAndBindToServiceIfCertified(userId, contextType, serviceUuid, vfiName, vfcmtUuid, requestId);
+	}
+
 }

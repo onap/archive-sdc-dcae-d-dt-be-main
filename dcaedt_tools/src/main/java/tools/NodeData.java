@@ -2,6 +2,7 @@ package tools;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import org.apache.commons.lang3.StringUtils;
 
 public class NodeData {
     private final JsonArray capabilities;
@@ -41,7 +42,11 @@ public class NodeData {
     }
 
     public String getNameWithAlias() {
-        return aliasBelong + "." + nodeName;
+        if (StringUtils.isBlank(aliasBelong)) {
+            return nodeName;
+        } else {
+            return aliasBelong + "." + nodeName;
+        }
     }
 
     public String getAliasBelong() {

@@ -1,0 +1,9 @@
+Build commons-pipeline separately, it is not a sub-project.
+It also needs to be installed in the local repository with 'mvn install'
+
+Build the validator itself
+
+
+If runnign into problems, clear the local maven repo,
+	mvn dependency:purge-local-repository -DreResolve=false
+and start from the beginning.

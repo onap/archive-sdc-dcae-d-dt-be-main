@@ -20,19 +20,19 @@ public class DateFormatterValidator extends CopyActionValidator<DateFormatterAct
 	@Override
 	public boolean validate(DateFormatterAction action, List<ResponseFormat> errors) {
 		boolean valid = super.validate(action, errors);
-		if(!ValidationUtils.validateNotEmpty(action.getFromFormat())){
+		if(!ValidationUtils.validateNotEmpty(action.fromFormat())){
 			valid = false;
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.MISSING_ACTION_FIELD, null, "from format", action.getActionType(), action.getTarget()));
 		}
-		if(!ValidationUtils.validateNotEmpty(action.getFromTz())){
+		if(!ValidationUtils.validateNotEmpty(action.fromTz())){
 			valid = false;
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.MISSING_ACTION_FIELD, null, "from timezone", action.getActionType(), action.getTarget()));
 		}
-		if(!ValidationUtils.validateNotEmpty(action.getToFormat())){
+		if(!ValidationUtils.validateNotEmpty(action.toFormat())){
 			valid = false;
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.MISSING_ACTION_FIELD, null, "to format", action.getActionType(), action.getTarget()));
 		}
-		if(!ValidationUtils.validateNotEmpty(action.getToTz())){
+		if(!ValidationUtils.validateNotEmpty(action.toTz())){
 			valid = false;
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.MISSING_ACTION_FIELD, null, "to timezone", action.getActionType(), action.getTarget()));
 		}

@@ -22,7 +22,7 @@ public class LogEventTranslator extends ActionTranslator<LogEventAction> {
 
 		LogEventTranslation(LogEventAction action) {
 			clazz = "LogEvent";
-			title = action.getTitle();
+			title = action.logTitle();
 		}
 	}
 }

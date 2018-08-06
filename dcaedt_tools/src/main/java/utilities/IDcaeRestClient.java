@@ -1,12 +1,12 @@
 package utilities;
 
 import json.Environment;
-import json.response.ElementsResponse.Element;
-import json.response.ItemsResponse.Item;
 import org.onap.sdc.dcae.composition.restmodels.CreateVFCMTRequest;
+import org.onap.sdc.dcae.composition.restmodels.sdc.Resource;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
 
 import java.util.List;
+import java.util.Map;
 
 public interface IDcaeRestClient {
     void init(Environment environment);
@@ -23,9 +23,7 @@ public interface IDcaeRestClient {
 
     ResourceDetailed checkinVfcmt(String vfcmtUuid);
 
-    List<Element> getElements();
-
-    List<Item> getItem(String element);
+	Map<String, List<Resource>> getDcaeCatalog();
 
     String getItemModel(String elementId);
 

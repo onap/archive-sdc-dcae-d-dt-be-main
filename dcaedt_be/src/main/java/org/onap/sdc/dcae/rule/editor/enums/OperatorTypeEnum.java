@@ -3,26 +3,41 @@ package org.onap.sdc.dcae.rule.editor.enums;
 import java.util.Arrays;
 
 public enum OperatorTypeEnum {
-	EQUALS("Equals", "OneOf"),
-	NOT_EQUAL("NotEqual", "NotOneOf"),
-	CONTAINS("Contains", null),
-	ENDS_WITH("EndsWith", null),
-	STARTS_WITH("StartsWith", null);
+
+	EQUALS("Equals"), NOT_EQUAL("NotEqual"), CONTAINS("Contains"), ENDS_WITH("EndsWith"), STARTS_WITH("StartsWith"), ONE_OF("OneOf"), NOT_ONE_OF("NotOneOf"), ASSIGNED("Assigned"), UNASSIGNED("Unassigned");
 
 	private String type;
-	private String modifiedType;
 
-	OperatorTypeEnum(String type, String modifiedType) {
+	OperatorTypeEnum(String type) {
 		this.type = type;
-		this.modifiedType = modifiedType;
 	}
 
 	public String getType() {
 		return type;
 	}
 
-	public String getModifiedType() {
-		return modifiedType;
+	public OperatorTypeEnum getModifiedType() {
+		switch (this) {
+		case EQUALS:
+		case ONE_OF:
+			return ONE_OF;
+		case NOT_EQUAL:
+		case NOT_ONE_OF:
+			return NOT_ONE_OF;
+		default:
+			return null;
+		}
+	}
+
+	public String getConditionType() {
+		switch (this) {
+		case CONTAINS:
+		case STARTS_WITH:
+		case ENDS_WITH:
+		    return "Condition"; // comparing strings
+		default:
+			return "FieldCondition"; // comparing any type
+		}
 	}
 
 	public static OperatorTypeEnum getTypeByName(String name) {

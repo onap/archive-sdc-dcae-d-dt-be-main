@@ -13,10 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -58,6 +55,22 @@ public class ConfigurationController extends BaseController {
             return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.VES_SCHEMA_NOT_FOUND);
         }
     }
+
+	@RequestMapping(value = "/getPhases/{flowType}", method = RequestMethod.GET)
+	public ResponseEntity getPhasesByFlowType(@PathVariable String flowType) {
+		try {
+			CompositionConfig.FlowType phases = compositionConfig.getFlowTypesMap().get(flowType);
+			if(null == phases) {
+				phases = new CompositionConfig.FlowType();
+				phases.setEntryPointPhaseName("");
+				phases.setLastPhaseName("");
+			}
+			return new ResponseEntity<>(phases, HttpStatus.OK);
+		} catch (Exception e) {
+			debugLogger.log(LogLevel.DEBUG, this.getClass().getName(),"Exception:{}",e);
+			return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.FLOW_TYPES_CONFIGURATION_ERROR);
+		}
+	}
 
 
 }

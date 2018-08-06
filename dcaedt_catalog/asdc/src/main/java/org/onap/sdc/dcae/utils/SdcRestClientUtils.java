@@ -72,7 +72,7 @@ public class SdcRestClientUtils {
         return mapper.writeValueAsString(artifact);
     }
 
-    public static Artifact generateDeploymentArtifact(String description, String name, String type, String label, byte[] payload){
+    public static Artifact generateDeploymentArtifact(String description, String name, String type, String label, byte[] payload) {
         Artifact artifact = new Artifact();
         artifact.setDescription(description);
         artifact.setArtifactName(name);
@@ -82,4 +82,12 @@ public class SdcRestClientUtils {
         artifact.setPayloadData(Base64Utils.encodeToString(payload));
         return artifact;
     }
+
+	public static Artifact generateCatalogDcaeToscaArtifact(String name, String path, byte[] payload) {
+		Artifact artifact = new Artifact();
+		artifact.setArtifactName(name);
+		artifact.setArtifactURL(path);
+		artifact.setPayloadData(new String(payload));
+		return artifact;
+	}
 }

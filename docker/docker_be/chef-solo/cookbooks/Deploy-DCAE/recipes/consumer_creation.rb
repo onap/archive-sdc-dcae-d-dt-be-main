@@ -1,4 +1,4 @@
-sdc_be_vip = node['SDC_BE_FQDN']
+sdc_be_vip = node['BE_VIP']
 
 if node['disableHttp']
   protocol = "https"

@@ -5,4 +5,6 @@ public interface IReport {
     void addUpdatedMessage(String message);
     void addNotUpdatedMessage(String message);
     void addErrorMessage(String message);
+    void setStatusCode(int statusCode);
+    void reportAndExit();
 }

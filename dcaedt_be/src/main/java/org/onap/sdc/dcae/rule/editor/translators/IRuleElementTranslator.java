@@ -33,7 +33,7 @@ public interface IRuleElementTranslator<T> {
 	class RuleTranslation {
 		protected String phase;
 		protected Object filter;
-		protected List<Object> processors = new ArrayList<>();
+		protected List<ProcessorTranslation> processors = new ArrayList<>();
 	}
 
 	class RunPhaseProcessorsTranslation extends ProcessorTranslation {

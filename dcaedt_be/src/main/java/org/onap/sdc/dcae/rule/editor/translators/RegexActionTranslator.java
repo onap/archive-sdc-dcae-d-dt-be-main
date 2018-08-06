@@ -22,9 +22,9 @@ public class RegexActionTranslator extends ActionTranslator<BaseCopyAction> {
 
 		private RegexCopyActionTranslation(BaseCopyAction action) {
 			clazz = "ExtractText";
-			regex = action.getRegexValue();
+			regex = action.regexValue();
 			field = action.getTarget();
-			value = action.getFromValue();
+			value = action.fromValue();
 		}
 	}
 

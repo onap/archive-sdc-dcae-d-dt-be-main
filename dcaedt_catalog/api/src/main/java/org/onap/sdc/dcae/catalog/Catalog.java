@@ -1,23 +1,16 @@
 package org.onap.sdc.dcae.catalog;
 
-import java.net.URI;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.onap.sdc.dcae.catalog.commons.Action;
+import org.onap.sdc.dcae.catalog.commons.Future;
+import org.onap.sdc.dcae.catalog.commons.Proxies;
+import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
 
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import org.json.JSONObject;
-import org.onap.sdc.dcae.catalog.commons.Action;
-import org.onap.sdc.dcae.catalog.commons.Future;
-import org.onap.sdc.dcae.catalog.commons.Futures;
-import org.onap.sdc.dcae.catalog.commons.Proxies;
-
-
-import org.json.JSONArray;
-
 public interface Catalog {
-
-
-    URI getUri();
 
     <T> T proxy(JSONObject theData, Class<T> theType);
 
@@ -39,7 +32,7 @@ public interface Catalog {
          */
         JSONObject data();
 
-        /* Allows for typed deep exploration of the backing JSON data structure
+		/* Allows for typed deep exploration of the backing JSON data structure
          * @arg theName name of a JSON entry ; It must map another JSONObject.
          * @arg theType the expected wrapping catalog artifact type
          * @return the JSON entry wrapped in the specified type
@@ -127,18 +120,6 @@ public interface Catalog {
 
         String itemId();
 
-        default Future<Items> items() {
-            Items i = elements("items", Items.class);
-            if (i != null) {
-                return Futures.succeededFuture(i);
-            }
-            else {
-                return Futures.advance(catalog().folder(itemId())
-                                .withItems()
-                                .execute(),
-                        folder -> folder.elements("items", Items.class));
-            }
-        }
     }
 
     class Folders extends Elements<Folder> {}
@@ -234,38 +215,8 @@ public interface Catalog {
         Future<Type> execute();
     }
 
-    interface FolderAction extends Action<Folder> {
 
-        FolderAction withItems();
-
-        FolderAction withItemAnnotations();
-
-        FolderAction withItemModels();
-
-        FolderAction withParts();
-
-        FolderAction withPartAnnotations();
-
-        @Override
-        Future<Folder> execute();
-    }
-
-    interface ItemAction<T extends Item> extends Action<T> {
-
-        ItemAction<T> withModels();
-
-        @Override
-        Future<T> execute();
-
-    }
-
-    Future<Folders> rootsByLabel(String theLabel);
-
-    FolderAction folder(String theFolderId);
-
-    <T extends Item> ItemAction<T> item(String theItemId);
-
-    TemplateAction template(String theTemplateId);
+    TemplateAction template(ResourceDetailed resourceData);
 
     TypeAction type(String theNamespace, String theTypeName);
 }

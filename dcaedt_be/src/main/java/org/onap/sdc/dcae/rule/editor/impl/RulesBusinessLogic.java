@@ -12,6 +12,8 @@ import org.onap.sdc.dcae.errormng.ResponseFormat;
 import org.onap.sdc.dcae.errormng.ServiceException;
 import org.onap.sdc.dcae.rule.editor.translators.MappingRulesTranslator;
 import org.onap.sdc.dcae.rule.editor.utils.EmptyStringTranslationSerializer;
+import org.onap.sdc.dcae.rule.editor.utils.ValidationUtils;
+import org.onap.sdc.dcae.rule.editor.validators.MappingRulesValidator;
 import org.onap.sdc.dcae.rule.editor.validators.RuleValidator;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -20,12 +22,14 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class RulesBusinessLogic {
 
 	protected OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
 	private RuleValidator ruleValidator = RuleValidator.getInstance();
+	private MappingRulesValidator mappingRulesValidator = MappingRulesValidator.getInstance();
 	private MappingRulesTranslator mappingRulesTranslator = MappingRulesTranslator.getInstance();
 	private static Gson gsonTranslator = new GsonBuilder().registerTypeAdapter(String.class, new EmptyStringTranslationSerializer()).enableComplexMapKeySerialization().create();
 
@@ -37,28 +41,56 @@ public class RulesBusinessLogic {
 		return errors.stream().map(r -> r.getRequestError().getServiceException()).collect(Collectors.toList());
 	}
 
-	public List<ServiceException> validateRules(MappingRules rules) {
+	public List<ServiceException> validateImportedRules(MappingRules rules) {
 		List<ResponseFormat> errors = new ArrayList<>();
-		detectAndResolveRuleDependencies(rules, errors);
+		if(mappingRulesValidator.validate(rules, errors)){
+			rules.getRules().forEach((k,v) -> {
+				v.setUid(k);
+				detectAndResolveActionDependencies(v, errors);
+			});
+		}
 		return errors.stream().map(r -> r.getRequestError().getServiceException()).collect(Collectors.toList());
 	}
 
-	public String translateRules(MappingRules rules, String entryPointPhase, String lastPhase, String runPhase) {
-		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Start translating mapping rules");
-		return gsonTranslator.toJson(mappingRulesTranslator.translateToHpJson(rules, entryPointPhase, lastPhase, runPhase));
+
+	public List<ServiceException> validateRulesBeforeTranslate(MappingRules rules) {
+		List<ResponseFormat> errors = new ArrayList<>();
+		if(mappingRulesValidator.validateTranslationPhaseNames(rules, errors)) {
+			detectAndResolveRuleDependencies(rules, errors);
+		}
+		return errors.stream().map(r -> r.getRequestError().getServiceException()).collect(Collectors.toList());
 	}
 
-	public boolean addOrEditRule(MappingRules rules, Rule rule) {
+	public String translateRules(MappingRules rules) {
+		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Start translating mapping rules");
+		return gsonTranslator.toJson(mappingRulesTranslator.translateToHpJson(rules));
+	}
+
+	public boolean addOrEditRule(MappingRules rules, Rule rule, boolean supportGroups) {
 		// in case the rule id is passed but the rule doesn't exist on the mapping rule file:
 		if(StringUtils.isNotBlank(rule.getUid()) && !rules.ruleExists(rule)) {
 			return false;
+		}
+		// 1810 US427299 support user defined phase names - propagate update to all group members
+		if(supportGroups) {
+			rules.getRules().values().stream().filter(p -> rule.getGroupId().equals(p.getGroupId())).forEach(r -> r.setPhase(rule.getPhase()));
 		}
 		rules.addOrReplaceRule(rule);
 		return true;
 	}
 
+
+	public boolean validateGroupDefinitions(MappingRules rules, boolean supportGroups) {
+		return supportGroups == rules.getRules().values().stream().anyMatch(r -> ValidationUtils.validateNotEmpty(r.getGroupId()));
+	}
+
 	public Rule deleteRule(MappingRules rules, String ruleUid) {
 		return rules.removeRule(ruleUid);
+	}
+
+	public List<Rule> deleteGroupOfRules(MappingRules rules, String groupId) {
+		List<Rule> rulesByGroupId = rules.getRules().values().stream().filter(p -> groupId.equals(p.getGroupId())).collect(Collectors.toList());
+		return rulesByGroupId.stream().map(rule -> rules.removeRule(rule.getUid())).collect(Collectors.toList());
 	}
 
 	private <T> List<T> detectDependentItemsByDependencyDefinition(Collection<T> allItems, BiFunction<T, Collection<T>, Boolean> dependencyDefinition) {
@@ -127,6 +159,7 @@ public class RulesBusinessLogic {
 		}
 	}
 
+
 	private String extractDependentActionTargetsFromRules(List<Rule> dependentRules) {
 		List<BaseAction> allActions = dependentRules.stream().map(Rule::getActions).flatMap(List::stream).collect(Collectors.toList());
 		// option 1: circular dependency between actions
@@ -149,5 +182,20 @@ public class RulesBusinessLogic {
 			throw new IllegalStateException(String.format("Duplicate key %s", u));
 		}, LinkedHashMap::new));
 		rules.setRules(rulesMap);
+	}
+
+	public boolean validateTranslateRequestFields(TranslateRequest request) {
+		return Stream.of(request.getVfcmtUuid(), request.getDcaeCompLabel(), request.getNid(), request.getConfigParam(), request.getPublishPhase(), request.getEntryPhase()).allMatch(ValidationUtils::validateNotEmpty)
+				&& !request.getEntryPhase().equalsIgnoreCase(request.getPublishPhase());
+	}
+
+	public void updateGlobalTranslationFields(MappingRules mappingRules, TranslateRequest request, String vfcmtName) {
+		mappingRules.setEntryPhase(request.getEntryPhase());
+		mappingRules.setPublishPhase(request.getPublishPhase());
+		mappingRules.setNotifyId(request.getNotifyId());
+		if(validateGroupDefinitions(mappingRules, false)) {
+			// 1806 US349308 assign Vfcmt name as rule phaseName
+			mappingRules.getRules().forEach((k,v) -> v.setPhase(vfcmtName));
+		}
 	}
 }

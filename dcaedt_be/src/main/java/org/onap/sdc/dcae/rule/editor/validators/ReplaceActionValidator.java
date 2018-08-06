@@ -8,7 +8,7 @@ import org.onap.sdc.dcae.rule.editor.utils.ValidationUtils;
 
 import java.util.List;
 
-public class ReplaceActionValidator implements IRuleElementValidator<ReplaceTextAction> {
+public class ReplaceActionValidator extends BaseActionValidator<ReplaceTextAction> {
 
 	private static ReplaceActionValidator replaceActionValidator = new ReplaceActionValidator();
 
@@ -19,16 +19,16 @@ public class ReplaceActionValidator implements IRuleElementValidator<ReplaceText
 	private ReplaceActionValidator(){}
 
 	public boolean validate(ReplaceTextAction action, List<ResponseFormat> errors) {
-		boolean valid = true;
-		if(!ValidationUtils.validateNotEmpty(action.getFromValue())) {
+		boolean valid = super.validate(action, errors);
+		if(!ValidationUtils.validateNotEmpty(action.fromValue())) {
 			valid = false;
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.MISSING_ACTION_FIELD, null, "from", action.getActionType(), action.strippedTarget()));
 		}
-		if(!ValidationUtils.validateNotEmpty(action.getFind())) {
+		if(!ValidationUtils.validateNotEmpty(action.find())) {
 			valid = false;
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.MISSING_ACTION_FIELD, null, "find", action.getActionType(), action.strippedTarget()));
 		}
-		if(!ValidationUtils.validateNotEmpty(action.getReplace())) {
+		if(!ValidationUtils.validateNotEmpty(action.replace())) {
 			valid = false;
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.MISSING_ACTION_FIELD, null, "replace", action.getActionType(), action.strippedTarget()));
 		}

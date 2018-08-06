@@ -11,7 +11,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
-public class ConditionGroupValidator implements IRuleElementValidator<ConditionGroup> {
+public class ConditionGroupValidator extends BaseConditionValidator<ConditionGroup> {
 
 	private static ConditionGroupValidator conditionGroupValidator = new ConditionGroupValidator();
 
@@ -21,8 +21,9 @@ public class ConditionGroupValidator implements IRuleElementValidator<ConditionG
 
 	private ConditionGroupValidator(){}
 
+	@Override
 	public boolean validate(ConditionGroup condition, List<ResponseFormat> errors) {
-		boolean valid = true;
+		boolean valid = super.validate(condition, errors);
 		if(!ValidationUtils.validateNotEmpty(condition.getType()) || null == ConditionTypeEnum.getTypeByName(condition.getType())) {
 			valid = false;
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.INVALID_GROUP_CONDITION, null, condition.getType()));

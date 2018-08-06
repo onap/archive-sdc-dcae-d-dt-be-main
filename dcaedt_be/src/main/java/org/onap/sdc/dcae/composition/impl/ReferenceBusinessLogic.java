@@ -2,9 +2,13 @@ package org.onap.sdc.dcae.composition.impl;
 
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.dcae.composition.restmodels.MonitoringComponent;
+import org.onap.sdc.dcae.composition.restmodels.ReferenceUUID;
+import org.onap.sdc.dcae.composition.restmodels.VfcmtData;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ExternalReferencesMap;
+import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceInstance;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ServiceDetailed;
+import org.onap.sdc.dcae.composition.util.DcaeBeConstants;
 import org.onap.sdc.dcae.errormng.ActionStatus;
 import org.onap.sdc.dcae.errormng.ErrConfMgr;
 import org.onap.sdc.dcae.utils.Normalizers;
@@ -73,5 +77,27 @@ public class ReferenceBusinessLogic extends BaseBusinessLogic {
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Finished fetching monitoring components metadata for vfis {}", mcRefs.keySet());
         return result;
     }
+
+
+    // defect fix/workaround - rule editor may perform lazy checkout on a certified MC without binding it to the service. This is a preemptive measure
+	public ResponseEntity checkoutAndBindToServiceIfCertified(String userId, String contextType, String serviceUuid, String vfiName, String vfcmtUuid, String requestId) {
+		try {
+			ResourceDetailed vfcmt = sdcRestClient.getResource(vfcmtUuid, requestId);
+			DcaeBeConstants.LifecycleStateEnum initialState = DcaeBeConstants.LifecycleStateEnum.findState(vfcmt.getLifecycleState());
+			if(DcaeBeConstants.LifecycleStateEnum.NOT_CERTIFIED_CHECKOUT != initialState) {
+				debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "about to checkout vfcmt {} {} version {}", vfcmtUuid, vfcmt.getLifecycleState(), vfcmt.getVersion());
+				vfcmt = checkoutVfcmt(userId, vfcmtUuid, requestId);
+			}
+			//this is the only case in which the uuid will change. This UI call is followed by a save/import/delete rule request.
+			if(DcaeBeConstants.LifecycleStateEnum.CERTIFIED == initialState) {
+				debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "about to create reference for new vfcmt {} version {}", vfcmt.getUuid(), vfcmt.getVersion());
+				sdcRestClient.addExternalMonitoringReference(userId, contextType, serviceUuid, vfiName, new ReferenceUUID(vfcmt.getUuid()), requestId);
+			}
+			return new ResponseEntity<>(new VfcmtData(vfcmt), HttpStatus.OK);
+		} catch (Exception e) {
+			errLogger.log(LogLevel.ERROR, this.getClass().getName(),"Failed to during getLatestMcUuid request for vfcmt {}. message: {}", vfcmtUuid, e);
+			return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.SAVE_RULE_FAILED, e.getMessage());
+		}
+	}
 
 }

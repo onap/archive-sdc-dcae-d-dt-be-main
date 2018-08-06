@@ -53,7 +53,9 @@ public class CompositionConfig {
 
 	public static class FlowType {
 
+		@JsonProperty("entryPhase")
 		private String entryPointPhaseName;
+		@JsonProperty("publishPhase")
 		private String lastPhaseName;
 
 		public String getEntryPointPhaseName() {
@@ -81,7 +83,7 @@ public class CompositionConfig {
 			Type map = new TypeToken<Map<String, FlowType>>(){}.getType();
 			flowTypesMap = new Gson().fromJson(flowTypes, map);
 		} catch (Exception e) {
-			errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Error – Failed to read flow type definitions");
+			errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Error – Failed to read flow type definitions. message: {}", e);
 		}
 	}
 }

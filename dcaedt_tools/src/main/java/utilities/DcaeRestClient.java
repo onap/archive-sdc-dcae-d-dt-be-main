@@ -2,14 +2,12 @@ package utilities;
 
 import json.Credential;
 import json.Environment;
-import json.response.ElementsResponse.Element;
-import json.response.ElementsResponse.ElementsResponse;
-import json.response.ItemsResponse.Item;
-import json.response.ItemsResponse.ItemsResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHeader;
 import org.onap.sdc.dcae.composition.restmodels.CreateVFCMTRequest;
+import org.onap.sdc.dcae.composition.restmodels.canvas.DcaeComponentCatalog;
+import org.onap.sdc.dcae.composition.restmodels.sdc.Resource;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
@@ -17,10 +15,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,6 +28,7 @@ public class DcaeRestClient implements IDcaeRestClient {
     private static final String GET_RESOURCES_BY_CATEGORY = "/getResourcesByCategory";
     private static final String CREATE_VFCMT = "/createVFCMT";
     private static final String ELEMENTS = "/elements";
+	private static final String CATALOG = "/catalog";
 
 
     private static final String ECOMP_INSTANCE_ID_HEADER = "X-ECOMP-InstanceID";
@@ -102,16 +101,13 @@ public class DcaeRestClient implements IDcaeRestClient {
         return resourceDetailedResponse.getBody();
     }
 
-    @Override
-    public List<Element> getElements() {
-        String url = buildRequestPath(ELEMENTS);
-        return client.getForObject(url, ElementsResponse.class).getData().getElements();
-    }
-    @Override
-    public List<Item> getItem(String element) {
-        String url = buildRequestPath("/"+ element + ELEMENTS);
-        return client.getForObject(url, ItemsResponse.class).getData().getElement() == null ? null : client.getForObject(url, ItemsResponse.class).getData().getElement().getItems();
-    }
+	@Override
+	public Map<String, List<Resource>> getDcaeCatalog() {
+		String url = buildRequestPath(CATALOG);
+		DcaeComponentCatalog catalog = client.getForObject(url, DcaeComponentCatalog.class);
+		return catalog.getElements().stream().collect(Collectors.toMap(DcaeComponentCatalog.SubCategoryFolder::getName, DcaeComponentCatalog.SubCategoryFolder::getItems));
+	}
+
 
     @Override
     public String getItemModel(String elementId) {

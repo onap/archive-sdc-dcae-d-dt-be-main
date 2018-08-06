@@ -1,16 +1,16 @@
 package tools;
 
-import json.response.ItemsResponse.Item;
+import org.onap.sdc.dcae.composition.restmodels.sdc.Resource;
 
 public class ItemAndAlias {
-    private final Item item;
+    private final Resource item;
     private final String alias;
-    public ItemAndAlias(Item item, String alias) {
+    public ItemAndAlias(Resource item, String alias) {
         this.item = item;
         this.alias = alias;
     }
 
-    public Item getItem() {
+    public Resource getItem() {
         return item;
     }
 

@@ -24,9 +24,9 @@ public class LogTextTranslator extends ActionTranslator<LogTextAction> {
 
 		private LogTextTranslation(LogTextAction action) {
 			clazz = "LogText";
-			logLevel = action.getLevel();
-			logName = action.getName();
-			logText = action.getText();
+			logLevel = action.logLevel();
+			logName = action.logName();
+			logText = action.logText();
 		}
 	}
 

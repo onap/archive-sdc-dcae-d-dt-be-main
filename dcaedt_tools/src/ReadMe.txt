@@ -62,3 +62,9 @@ config.json example:
    		}
    	]
    }
+
+
+   exit codes:
+   0 - completed successfully
+   1 - completed with errors
+   2 - failed

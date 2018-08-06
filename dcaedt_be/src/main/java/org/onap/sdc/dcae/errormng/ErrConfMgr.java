@@ -146,6 +146,7 @@ public enum ErrConfMgr {
 		map.put("SVC4127", "SVC6021");
 		map.put("SVC4086", AS_IS);
 		map.put("SVC4301", AS_IS);
+		map.put("SVC4083", AS_IS);
 		sdcDcaeMsgIdMap.put(ApiType.SAVE_CDUMP, map);
 	}
 

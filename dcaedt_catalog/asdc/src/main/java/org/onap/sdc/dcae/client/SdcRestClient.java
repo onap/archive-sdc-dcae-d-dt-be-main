@@ -52,6 +52,7 @@ public class SdcRestClient implements ISdcClient {
     private static final String LIFECYCLE_STATE_PATH = "lifecycleState/{lifecycleOperation}";
     private static final String METADATA_PATH = "metadata";
     private static final String VERSION_PATH = "version";
+    private static final String CSAR_PATH = "toscaModel";
     private static final String MONITORING_REFERENCES_PATH = "externalReferences/monitoring";
 
     private static OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
@@ -92,6 +93,12 @@ public class SdcRestClient implements ISdcClient {
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Get resource from SDC. URL={}", url);
         return getObject(url, requestId, ResourceDetailed.class);
     }
+
+	public byte[] getResourceToscaModel(String uuid, String requestId) {
+		String url = buildRequestPath(AssetType.RESOURCE.getSdcContextPath(), uuid, CSAR_PATH);
+		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Get resource csar from SDC. URL={}", url);
+		return getObject(url, requestId, byte[].class);
+	}
 
     public ServiceDetailed getService(String uuid, String requestId) {
         return getAssetMetadata(AssetType.SERVICE.name(), uuid, requestId);

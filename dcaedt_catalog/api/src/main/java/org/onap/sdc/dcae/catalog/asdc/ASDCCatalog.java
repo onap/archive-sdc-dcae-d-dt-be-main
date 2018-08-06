@@ -5,13 +5,15 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.jxpath.JXPathContext;
 import org.apache.commons.jxpath.JXPathNotFoundException;
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.dcae.catalog.Catalog;
 import org.onap.sdc.dcae.catalog.commons.*;
 import org.onap.sdc.dcae.checker.*;
+import org.onap.sdc.dcae.composition.restmodels.sdc.Artifact;
+import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.net.URI;
@@ -22,7 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-@SuppressWarnings("ALL")
+@Component
 public class ASDCCatalog implements Catalog {
 
     private
@@ -36,39 +38,13 @@ public class ASDCCatalog implements Catalog {
     private
     static final String ITEM_ID = "itemId";
     private
-    static final String LABELS = "labels";
-    private
-    static final String ARTIFACT_URL = "artifactURL";
-    private
     static final String CAPABILITY = "capability";
-    private
-    static final String DATABASE = "Database";
-    private
-    static final String COLLECTOR = "Collector";
-    private
-    static final String MICROSERVICE = "Microservice";
-    private
-    static final String ANALYTICS = "Analytics";
-    private
-    static final String POLICY = "Policy";
-    private
-    static final String SOURCE = "Source";
-    private
-    static final String UTILITY = "Utility";
     private
     static final String NAME = "name";
     private
     static final String ID = "id";
     private
-    static final String ARTIFACT_NAME = "artifactName";
-    private
     static final String DESCRIPTION = "description";
-    private
-    static final String MODELS = "models";
-    private
-    static final String ARTIFACTS = "artifacts";
-    private
-    static final String ITEMS = "items";
     private
     static final String PROPERTIES = "']/properties";
     private
@@ -82,114 +58,26 @@ public class ASDCCatalog implements Catalog {
 
     private static OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
 
-    private ASDC asdc;
-
-    private JSONObject folders = new JSONObject();
-    private String[] folderFields = new String[] {ID, ITEM_ID, NAME};
-
     private ProxyBuilder proxies;
     private Map<Target, JXPathContext> contexts = new HashMap<>();
 
     // resource and its catalog
     private Map<UUID, org.onap.sdc.dcae.checker.Catalog> catalogs = new HashMap<>();
 
-    public ASDCCatalog(URI theURI) {
-
-        this.asdc = new ASDC();
-        this.asdc.setUri(theURI);
-
-        initFolders();
-
+    public ASDCCatalog() {
         this.proxies = new ProxyBuilder().withConverter(v -> v == null ? null : UUID.fromString(v.toString()), UUID.class)
                 .withExtensions(
                 new ImmutableMap.Builder<String, BiFunction<Proxy, Object[], Object>>().put("data", (proxy, args) -> proxy.data())
                         .build()).withContext(new ImmutableMap.Builder<String, Object>().put("catalog", this).build());
     }
 
-    private void initFolders() {
-
-        JSONArray labels = new JSONArray();
-        labels.put("Folder");
-        labels.put("DCAE");
-        labels.put("Superportfolio"); // for CCD compatibility
-
-        folders.put(DATABASE, new JSONObject().put(NAME, DATABASE).put(ID, "dcae_database")
-                .put(ITEM_ID, DATABASE).put(LABELS, labels));
-        folders.put(COLLECTOR, new JSONObject().put(NAME, COLLECTOR).put(ID, "dcae_collector")
-                .put(ITEM_ID, COLLECTOR).put(LABELS, labels));
-        folders.put(MICROSERVICE, new JSONObject().put(NAME, MICROSERVICE).put(ID, "dcae_microservice")
-                .put(ITEM_ID, MICROSERVICE).put(LABELS, labels));
-        folders.put(ANALYTICS, new JSONObject().put(NAME, ANALYTICS).put(ID, "dcae_analytics")
-                .put(ITEM_ID, ANALYTICS).put(LABELS, labels));
-        folders.put(POLICY, new JSONObject().put(NAME, POLICY).put(ID, "dcae_policy").put(ITEM_ID, POLICY)
-                .put(LABELS, labels));
-        folders.put(SOURCE, new JSONObject().put(NAME, SOURCE).put(ID, "dcae_source").put(ITEM_ID, SOURCE)
-                .put(LABELS, labels));
-        folders.put(UTILITY, new JSONObject().put(NAME, UTILITY).put(ID, "dcae_utility")
-                .put(ITEM_ID, UTILITY).put(LABELS, labels));
-    }
-
-    public URI getUri() {
-        return this.asdc.getUri();
-    }
-
-    public String namespace() {
-        return "asdc";
-    }
-
-    public boolean same(Catalog theCatalog) {
-        return true;
-    }
-
     public <T> T proxy(JSONObject theData, Class<T> theType) {
         return proxies.build(theData, theType);
     }
 
-    /** */
-    public Future<Folders> roots() {
 
-        Folders roots = new Folders();
-        for (Iterator fi = folders.keys(); fi.hasNext();) {
-            roots.add(proxies.build(folders.getJSONObject((String) fi.next()), Folder.class));
-        }
-        return Futures.succeededFuture(roots);
-    }
-
-    /** */
-    public Future<Folders> rootsByLabel(String theLabel) {
-
-        Folders roots = new Folders();
-        for (Iterator fi = folders.keys(); fi.hasNext();) {
-            JSONObject folder = folders.getJSONObject((String) fi.next());
-            JSONArray labels = folder.getJSONArray(LABELS);
-
-            for (int i = 0; i < labels.length(); i++) {
-                if (labels.get(i).equals(theLabel)) {
-                    roots.add(proxies.build(folder, Folder.class));
-                }
-            }
-        }
-        return Futures.succeededFuture(roots);
-    }
-
-    public Future<Mixels> lookup(JSONObject theSelector) {
-        return Futures.succeededFuture(new Mixels());
-    }
-
-    public Future<Mixels> lookup(String theAnnotation, JSONObject theSelector) {
-        return Futures.succeededFuture(new Mixels());
-    }
-
-    public ItemAction item(String theItemId) {
-        return new ResourceAction(UUID.fromString(theItemId));
-    }
-
-    public CatalogFolderAction folder(String theFolderId) {
-        return new CatalogFolderAction(theFolderId);
-    }
-
-    public CatalogTemplateAction template(String theId) {
-        return new CatalogTemplateAction(theId);
+    public CatalogTemplateAction template(ResourceDetailed resource) {
+        return new CatalogTemplateAction(resource);
     }
 
     public CatalogTypeAction type(String theItemId, String theName) {
@@ -229,35 +117,6 @@ public class ASDCCatalog implements Catalog {
                 Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE), false);
     }
 
-    private JSONArray selectModels(JSONArray theArtifacts) {
-        JSONArray models = new JSONArray();
-        if (theArtifacts == null) {
-            return models;
-        }
-
-        for (int i = 0; i < theArtifacts.length(); i++) {
-            JSONObject artifact = theArtifacts.getJSONObject(i);
-            String name = artifact.optString(ARTIFACT_NAME);
-            if (name != null && StringUtils.containsIgnoreCase(name, "template")) {
-                models.put(new JSONObject().putOpt(NAME, artifact.optString(ARTIFACT_NAME))
-                        .putOpt("version", artifact.optString("artifactVersion"))
-                        .putOpt(DESCRIPTION, artifact.optString("artifactType"))
-                        .putOpt(ID, artifact.optString(ARTIFACT_URL))
-                        .putOpt(ITEM_ID, artifact.optString(ARTIFACT_URL)));
-            }
-        }
-        return models;
-    }
-
-    private JSONObject patchResource(JSONObject theResource) {
-
-        theResource.remove("resources");
-        theResource.putOpt(ID, theResource.opt("uuid"));
-        theResource.putOpt(ITEM_ID, theResource.opt("uuid"));
-
-        return theResource;
-    }
-
     private static void dumpTargets(String theDirName, Collection<Target> theTargets) {
         File targetDir = new File(theDirName);
         if (!targetDir.exists() && !targetDir.mkdirs()) {
@@ -285,180 +144,17 @@ public class ASDCCatalog implements Catalog {
         return UUID.fromString(theValue);
     }
 
-    private org.onap.sdc.dcae.checker.Catalog getCatalog(UUID theResourceId) {
+    private org.onap.sdc.dcae.checker.Catalog getCachedCatalogItem(UUID theResourceId) {
         return this.catalogs.get(theResourceId);
     }
 
-    private String getArtifactVersion(JSONObject theData) {
-        return theData.getString("artifactVersion");
-    }
+    public boolean hasCachedItem(String uuid) {
+    	return this.catalogs.containsKey(asUUID(uuid));
+	}
 
-    private String getArtifactName(JSONObject theData) {
-        return theData.getString(ARTIFACT_NAME);
-    }
-
-    private String getArtifactURL(JSONObject theData) {
-        return theData.getString(ARTIFACT_URL);
-    }
-
-    private URI getArtifactURI(JSONObject theData) {
-        return asURI(theData.getString(ARTIFACT_URL));
-    }
-
-    /** */
-    public class ResourceAction implements Catalog.ItemAction<Resource> {
-
-        private UUID iid;
-        private boolean doModels;
-
-        ResourceAction(UUID theItemId) {
-            this.iid = theItemId;
-        }
-
-        public ResourceAction withModels() {
-            this.doModels = true;
-            return this;
-        }
-
-        public ResourceAction withAnnotations() {
-            return this;
-        }
-
-        @Override
-        public Future<Resource> execute() {
-
-            return Futures.advance(asdc.getResource(this.iid, JSONObject.class), resourceData -> {
-                if (doModels) {
-                    resourceData.put(MODELS, selectModels(resourceData.optJSONArray(ARTIFACTS)));
-                }
-                return proxies.build(patchResource(resourceData), Resource.class);
-            });
-        }
-
-        protected Future<JSONObject> executeRaw() {
-
-            return Futures.advance(asdc.getResource(this.iid, JSONObject.class), resourceData -> {
-                if (doModels) {
-                    resourceData.put(MODELS, selectModels(resourceData.optJSONArray(ARTIFACTS)));
-                }
-                return resourceData;
-            }, resourceError -> new RuntimeException("Failed to retrieve item " + this.iid, resourceError));
-        }
-    }
-
-    public class CatalogFolderAction implements Catalog.FolderAction {
-
-        private boolean doItemModels;
-        private String folderName;
-
-        // use the id/UUID of the folder ??
-        private CatalogFolderAction(String theFolderName) {
-            this.folderName = theFolderName;
-        }
-
-        public CatalogFolderAction withAnnotations() {
-            return this;
-        }
-
-        public CatalogFolderAction withAnnotations(String theSelector) {
-            return this;
-        }
-
-        public CatalogFolderAction withItems() {
-            return this;
-        }
-
-        public CatalogFolderAction withItemAnnotations() {
-            return this;
-        }
-
-        public CatalogFolderAction withItemAnnotations(String theSelector) {
-            return this;
-        }
-
-        public CatalogFolderAction withItemModels() {
-            doItemModels = true;
-            return this;
-        }
-
-        public CatalogFolderAction withParts() {
-            return this;
-        }
-
-        public CatalogFolderAction withPartAnnotations() {
-            return this;
-        }
-
-        public CatalogFolderAction withPartAnnotations(String theSelector) {
-            return this;
-        }
-
-        @Override
-        public Future<Folder> execute() {
-
-            JSONObject folder = folders.optJSONObject(this.folderName);
-            if (folder == null) {
-                return Futures.failedFuture(new RuntimeException("No such folder " + this.folderName));
-            }
-
-            final JSONObject folderView = new JSONObject(folder, folderFields);
-
-            return Futures.advance(asdc.getResources(JSONArray.class, "DCAE Component", this.folderName),
-                    resourcesData -> {
-
-                        Actions.CompoundAction<Resource> itemsAction = new Actions.BasicCompoundAction<>();
-                        for (int i = 0; i < resourcesData.length(); i++) {
-                            JSONObject resource = resourcesData.getJSONObject(i);
-
-                            if (doItemModels) {
-                                itemsAction
-                                        .addAction(new ResourceAction(asUUID(resource.getString("uuid"))).withModels());
-                            } else {
-                                folderView.append(ITEMS, patchResource(resource));
-                            }
-                        }
-
-                        try {
-                            List<Resource> items = itemsAction.execute().waitForResult();
-                            debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Number of DCAE item for : {} is {}", this.folderName, items.size());
-
-                            for (Resource res : filterLatestVersion(items)) {
-                                folderView.append(ITEMS, patchResource(res.data()));
-                            }
-                        } catch (Exception x) {
-                            debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Exception {}", x);
-                            throw new RuntimeException("Failed to retrieve folder items", x);
-                        }
-
-                        return proxies.build(folderView, Folder.class);
-                    }, resourcesError -> new RuntimeException("Failed to retrieve resources", resourcesError));
-        }
-
-        public Collection<Resource> filterLatestVersion(Collection<Resource> items) {
-            if (items == null) {
-                throw new IllegalArgumentException("null is not acceptable as a list of items");
-            }
-            Map<UUID, Resource> itemsMap = new HashMap<UUID, Resource>(items.size());
-            for (Resource r : items) {
-                if (itemsMap.containsKey(r.invariantUUID()) && isNewerVersion(itemsMap, r)) {
-                    debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Avoiding adding item {} since it has a advanced version already", r.toString());
-                    continue;
-                }
-                itemsMap.put(r.invariantUUID(), r);
-            }
-            return itemsMap.values();
-        }
-
-        private boolean isNewerVersion(Map<UUID, Resource> itemsMap, Resource r) {
-            return Float.valueOf(itemsMap.get(r.invariantUUID()).version()) > Float.valueOf(r.version());
-        }
-
-    }
-
-    /** */
     public class CatalogTemplateAction implements Catalog.TemplateAction {
 
-        private String artifactId;
+        private ResourceDetailed resourceMetadata;
         private Target target;
         private org.onap.sdc.dcae.checker.Catalog catalog;
         private JXPathContext ctx = JXPathContext.newContext(new HashMap());
@@ -466,13 +162,10 @@ public class ASDCCatalog implements Catalog {
         private boolean doNodes, doNodeProperties, doNodePropertiesAssignments, doNodeRequirements, doNodeCapabilities,
                 doNodeCapabilityProperties, doNodeCapabilityPropertyAssignments;
 
-        /*
-         * expected to be the relative url provided by asdc for the template
-         * artifact
-         */
-        CatalogTemplateAction(String theArtifactId) {
-            this.artifactId = theArtifactId;
-        }
+
+		CatalogTemplateAction(ResourceDetailed resourceMetadata) {
+			this.resourceMetadata = resourceMetadata;
+		}
 
         public CatalogTemplateAction withInputs() {
             return this;
@@ -500,7 +193,7 @@ public class ASDCCatalog implements Catalog {
             ctx.setValue("/nodes",
                     nodes.entrySet().stream()
                             .map(nodeEntry -> new MapBuilder().put(NAME, ((Map.Entry) nodeEntry).getKey())
-                                    .put(DESCRIPTION, this.artifactId)
+                                    .put(DESCRIPTION, resourceMetadata.getToscaModelURL())
                                     .putAll(selectEntries((Map) ((Map.Entry) nodeEntry).getValue(), "type")).build())
                             .collect(Collectors.toList()));
 
@@ -852,29 +545,20 @@ public class ASDCCatalog implements Catalog {
 
             if (this.target == null) {
 
-                String[] parts = this.artifactId.split("/");
-                if (parts.length != 8) {
-                    return Futures
-                            .failedFuture(new Exception("Unexpected artifact id for template " + this.artifactId));
-                }
-
-                UUID resourceId = asUUID(parts[5]);
+                UUID resourceId = asUUID(resourceMetadata.getUuid());
                 this.catalog = ASDCCatalog.this.catalogs.get(resourceId);
 
                 // if we find a catalog for this resource we have to figure out
                 // if it contains the required target ..
 
                 try {
-                    JSONObject resource = new ResourceAction(resourceId).executeRaw().waitForResult();
 
                     Checker checker = new Checker();
-                    TargetLocator locator = new ASDCLocator(resource.getJSONArray(ARTIFACTS),
-                            ASDCCatalog.this.catalogs.get(resourceId));
+					TargetLocator locator = new ASDCLocator(resourceMetadata.getArtifacts(), ASDCCatalog.this.catalogs.get(resourceId));
                     checker.setTargetLocator(locator);
-
                     Target template = locator.resolve("template");
                     if (template == null) {
-                        return Futures.failedFuture(new Exception("Failed to locate template in " + resource));
+                        return Futures.failedFuture(new Exception("Failed to locate template in " + resourceMetadata));
                     }
 
                     checker.check(template);
@@ -902,8 +586,8 @@ public class ASDCCatalog implements Catalog {
                     .doNodeCapabilityProperties().doNodeCapabilityPropertyAssignments();
 
             JSONObject pack = new JSONObject((Map) ctx.getContextBean()).put(NAME, this.target.getName())
-                    .put(ID, this.target.getLocation().toString())
-                    .put(ITEM_ID, this.target.getLocation().toString());
+                    .put(ID, resourceMetadata.getUuid())
+                    .put(ITEM_ID, resourceMetadata.getToscaModelURL());
             debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), pack.toString(2));
 
             return Futures.succeededFuture(proxies.build(pack, Template.class));
@@ -918,7 +602,7 @@ public class ASDCCatalog implements Catalog {
 
         private boolean doHierarchy = false, doRequirements = false, doCapabilities = false;
 
-        private CatalogTypeAction(UUID theResourceId, /* Construct theConstruct, */ String theName) {
+        private CatalogTypeAction(UUID theResourceId, String theName) {
             this.resourceId = theResourceId;
             this.name = theName;
         }
@@ -967,7 +651,7 @@ public class ASDCCatalog implements Catalog {
                                         // the type reference, else it is a name
                                         // (within a node type)
                                         .put(ID,
-                                                getCatalog(resourceId).hasType(Construct.Capability, capability)
+                                                getCachedCatalogItem(resourceId).hasType(Construct.Capability, capability)
                                                         ? (resourceId + "/" + capability) : capability)
                                         .build())
                         .put("node", new MapBuilder().putOpt(NAME, node).putOpt(ID, node == null ? null
@@ -1010,9 +694,6 @@ public class ASDCCatalog implements Catalog {
                                                     .putOpt("validSourceTypes",
                                                             ((Map) capability.getValue()).get("validSourceTypes"))
                                                     .build()
-                                            // renderEntry((Map.Entry)capability,
-                                            // "occurrences",
-                                            // "validSourceTypes")
                                             ).collect(Collectors.toList()));
             return this;
         }
@@ -1042,60 +723,12 @@ public class ASDCCatalog implements Catalog {
         }
     }
 
-    public interface Resource extends Catalog.Item<Resource> {
-
-        @Override
-        @Proxy.DataMap(map = "uuid")
-        public String id();
-
-        public UUID uuid();
-
-        public UUID invariantUUID();
-
-        public String category();
-
-        public String subCategory();
-
-        public String lastUpdaterFullName();
-
-        public String version();
-
-        @Proxy.DataMap(proxy = true, elementType = Artifact.class)
-        public Artifacts artifacts();
-
-    }
-
-    public static class Resources extends Elements<Resource> {
-    }
-
-    public interface Artifact extends Catalog.Element<Artifact> {
-
-        @Proxy.DataMap(map = ARTIFACT_NAME)
-        String name();
-
-        @Proxy.DataMap(map = "artifactType")
-        String type();
-
-        @Proxy.DataMap(map = "artifactDescription")
-        String description();
-
-        @Proxy.DataMap(map = "artifactUUID")
-        UUID uuid();
-
-        @Proxy.DataMap(map = "artifactVersion")
-        int version();
-
-    }
-
-    public static class Artifacts extends Elements<Artifact> {
-    }
-
     public class ASDCLocator implements TargetLocator {
 
-        private JSONArray artifacts;
+		private List<Artifact> artifacts;
         private org.onap.sdc.dcae.checker.Catalog catalog;
 
-        private ASDCLocator(JSONArray theArtifacts, org.onap.sdc.dcae.checker.Catalog theCatalog) {
+        private ASDCLocator(List<Artifact> theArtifacts, org.onap.sdc.dcae.checker.Catalog theCatalog) {
             this.artifacts = theArtifacts;
             this.catalog = theCatalog;
         }
@@ -1113,15 +746,8 @@ public class ASDCCatalog implements Catalog {
         }
 
         public Target resolve(String theName) {
-            JSONObject targetArtifact = null;
 
-            for (int i = 0; i < this.artifacts.length(); i++) {
-                JSONObject artifact = this.artifacts.getJSONObject(i);
-                String artifactName = artifact.getString(ARTIFACT_NAME);
-                if (StringUtils.containsIgnoreCase(artifactName, theName)) {
-                    targetArtifact = artifact;
-                }
-            }
+			Artifact targetArtifact = this.artifacts.stream().filter(a -> StringUtils.containsIgnoreCase(a.getArtifactName(), theName)).findAny().orElse(null);
 
             if (targetArtifact == null) {
                 return null;
@@ -1130,8 +756,8 @@ public class ASDCCatalog implements Catalog {
             ASDCTarget target;
             if (this.catalog != null) {
                 // this is the caching!!
-                target = (ASDCTarget) this.catalog.getTarget(ASDCCatalog.this.getArtifactURI(targetArtifact));
-                if (target != null && target.getVersion().equals(ASDCCatalog.this.getArtifactVersion(targetArtifact))) {
+                target = (ASDCTarget) this.catalog.getTarget(asURI(targetArtifact.getArtifactURL()));
+                if (target != null) {
                     return target;
                 }
             }
@@ -1142,11 +768,10 @@ public class ASDCCatalog implements Catalog {
 
     public class ASDCTarget extends Target {
 
-        private String content;
-        private JSONObject artifact;
+        private Artifact artifact;
 
-        private ASDCTarget(JSONObject theArtifact) {
-            super(ASDCCatalog.this.getArtifactName(theArtifact), ASDCCatalog.this.getArtifactURI(theArtifact));
+        private ASDCTarget(Artifact theArtifact) {
+            super(theArtifact.getArtifactName(), asURI(theArtifact.getArtifactURL()));
             this.artifact = theArtifact;
         }
 
@@ -1156,53 +781,8 @@ public class ASDCCatalog implements Catalog {
 
         @Override
         public Reader open() throws IOException {
-            if (this.content == null) {
-                try {
-                    this.content = ASDCCatalog.this.asdc
-                            .fetch(ASDCCatalog.this.getArtifactURL(this.artifact), String.class).waitForResult();
-                } catch (Exception x) {
-                    throw new IOException("Failed to load " + ASDCCatalog.this.getArtifactURL(this.artifact), x);
-                }
-            }
-
-            // should return immediately a reader blocked until content
-            // available .. hard to handle errors
-            return new StringReader(this.content);
-        }
-
-        public String getVersion() {
-            return ASDCCatalog.this.getArtifactVersion(this.artifact);
+            return new StringReader(this.artifact.getPayloadData());
         }
 
     }
-
-    public static void main(String[] theArgs) throws Exception {
-
-        ASDCCatalog catalog = new ASDCCatalog(new URI(theArgs[0]));
-
-        Folder f = catalog.folder(theArgs[1]).withItems().withItemModels().execute().waitForResult();
-
-        debugLogger.log(LogLevel.DEBUG, ASDCCatalog.class.getName(), "folder: {}", f.data());
-
-        Resources items = f.elements(ITEMS, Resources.class);
-        if (items != null) {
-            for (Resource item : items) {
-                executeItemsNodePropertiesAssignments(catalog, item);
-            }
-        }
-    }
-
-    private static void executeItemsNodePropertiesAssignments(ASDCCatalog catalog, Resource item) throws Exception {
-        debugLogger.log(LogLevel.DEBUG, ASDCCatalog.class.getName(), "\titem: {} : {}",item.name(), item.data());
-        Templates templates = item.elements(MODELS, Templates.class);
-        if (templates != null) {
-            for (Template t : templates) {
-                Template ft = catalog.template(t.id()).withNodes().withNodeProperties()
-                        .withNodePropertiesAssignments().execute().waitForResult();
-
-                debugLogger.log(LogLevel.DEBUG, ASDCCatalog.class.getName(), "template data: {}", ft.data());
-            }
-        }
-    }
-
 }

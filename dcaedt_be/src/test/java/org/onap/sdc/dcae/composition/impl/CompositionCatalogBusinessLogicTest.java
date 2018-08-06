@@ -7,68 +7,84 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.onap.sdc.dcae.catalog.asdc.ASDCCatalog;
+import org.onap.sdc.dcae.catalog.asdc.ASDCException;
 import org.onap.sdc.dcae.catalog.engine.CatalogController;
 import org.onap.sdc.dcae.catalog.engine.CatalogError;
 import org.onap.sdc.dcae.catalog.engine.CatalogResponse;
+import org.onap.sdc.dcae.client.ISdcClient;
+import org.onap.sdc.dcae.composition.restmodels.canvas.DcaeComponentCatalog;
+import org.onap.sdc.dcae.composition.restmodels.sdc.Resource;
+import org.onap.sdc.dcae.composition.util.DcaeBeConstants;
+import org.onap.sdc.dcae.errormng.ErrorConfigurationLoader;
+import org.onap.sdc.dcae.errormng.RequestError;
+import org.onap.sdc.dcae.errormng.ResponseFormat;
+import org.onap.sdc.dcae.errormng.ServiceException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.async.DeferredResult;
 
-import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 public class CompositionCatalogBusinessLogicTest {
 
+	private final String REQUEST_ID = "123456";
+	private ASDCCatalog asdcCatalog = new ASDCCatalog();
+
 	@Mock
 	private CatalogController catalogController;
 
-	private ASDCCatalog asdcCatalog = new ASDCCatalog(URI.create("https://mockUri:8888#mock"));
+	@Mock
+	private ISdcClient sdcRestClient;
 
 	@InjectMocks
-	private CompositionCatalogBusinessLogic compositionCatalogBusinessLogic = new CompositionCatalogBusinessLogic();
+	private CompositionCatalogBusinessLogic compositionCatalogBusinessLogic;
 
 	@Before
 	public void init() throws JSONException {
 		MockitoAnnotations.initMocks(this);
-		when(catalogController.getCatalog(any())).thenReturn(asdcCatalog);
+		when(catalogController.getCatalog()).thenReturn(asdcCatalog);
+		new ErrorConfigurationLoader(System.getProperty("user.dir")+"/src/main/webapp/WEB-INF");
+		mockCatalog();
 	}
 
 	@Test
-	public void getItemsTest() {
-		compositionCatalogBusinessLogic.getItems(null).getResult();
-		verify(catalogController, times(7)).patchData(any(), any());
+	public void getCatalogTest() {
+		DcaeComponentCatalog catalog = compositionCatalogBusinessLogic.getCatalog(REQUEST_ID);
+		assertEquals(1, catalog.getElements().size());
+		assertEquals(1, catalog.getElements().get(0).getItems().size());
 	}
 
-	@Test
-	public void getItemByIdNoSuchFolderFailureTest() {
-		DeferredResult<CatalogResponse> result = compositionCatalogBusinessLogic.getItemById(null, "No Such Category");
-		verify(catalogController).getCatalog(any());
-		verify(catalogController, times(0)).patchData(any(), any());
-		CatalogError error = (CatalogError)result.getResult();
-		assertEquals("{\"exception\":\"java.lang.RuntimeException: No such folder No Such Category\",\"message\":\"Catalog API failed\"}", error.getError());
-	}
 
 	@Test
 	public void getModelByIdInvalidUuidFailureTest() {
-		try {
-			compositionCatalogBusinessLogic.getModelById(null, "Invalid-UUID");
-		} catch (IllegalArgumentException e) {
-			assertEquals("Invalid UUID string: Invalid-UUID", e.getMessage());
-			verify(catalogController).getCatalog(any());
-			verify(catalogController, times(0)).patchData(any(), any());
-		}
+		ResponseEntity result = compositionCatalogBusinessLogic.getModelById(REQUEST_ID, "invalidId");
+		assertEquals("Invalid UUID string: invalidId", ((ResponseFormat)result.getBody()).getNotes());
 	}
 
 	@Test
 	public void getTypeInfoModelNotLoadedFailureTest() {
-		// this is pretty awful. you cannot call 'getTypeInfo' unless it is preceded by a 'getModel' call of the containing model, so that the 'catalogs' item is populated by the container model id.
 		String uuid = UUID.randomUUID().toString();
-		DeferredResult<CatalogResponse> result = compositionCatalogBusinessLogic.getTypeInfo(null, uuid, "tosca.nodes.Root");
-		verify(catalogController).getCatalog(any());
-		verify(catalogController, times(0)).patchData(any(), any());
-		CatalogError error = (CatalogError)result.getResult();
-		assertEquals("{\"exception\":\"java.lang.Exception: No catalog available for resource " + uuid + ". You might want to fetch the model first.\",\"message\":\"Catalog API failed\"}", error.getError());
+		// this is pretty awful. you cannot call 'getTypeInfo' unless it is preceded by a 'getModel' call of the containing model, so that the 'catalogs' item is populated by the container model id.
+		ResponseEntity result = compositionCatalogBusinessLogic.getTypeInfo(uuid, "tosca.nodes.Root");
+		assertEquals("No catalog available for resource " + uuid + ". You might want to fetch the model first.", ((ResponseFormat)result.getBody()).getNotes());
+	}
+
+	private void mockCatalog() {
+		String subcategory1 = "subcategory1";
+		String subcategory2 = "subcategory2";
+		List<Resource> resources = Arrays.asList(buildVf(subcategory1, DcaeBeConstants.LifecycleStateEnum.CERTIFIED.name()), buildVf(subcategory1, DcaeBeConstants.LifecycleStateEnum.NOT_CERTIFIED_CHECKOUT.name()), buildVf(subcategory2, DcaeBeConstants.LifecycleStateEnum.NOT_CERTIFIED_CHECKOUT.name()));
+		when(sdcRestClient.getResources(anyString(), anyString(), eq(null), anyString())).thenReturn(resources);
+	}
+
+	private Resource buildVf(String subcategory, String lifecycleState) {
+		Resource vf = new Resource();
+		vf.setLifecycleState(lifecycleState);
+		vf.setSubCategory(subcategory);
+		return vf;
 	}
 }

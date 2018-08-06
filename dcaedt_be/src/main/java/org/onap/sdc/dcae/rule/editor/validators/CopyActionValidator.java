@@ -8,7 +8,7 @@ import org.onap.sdc.dcae.rule.editor.utils.ValidationUtils;
 
 import java.util.List;
 
-public class CopyActionValidator<A extends BaseCopyAction> implements IRuleElementValidator<A> {
+public class CopyActionValidator<A extends BaseCopyAction> extends BaseActionValidator<A> {
 
 	private static CopyActionValidator copyActionValidator = new CopyActionValidator();
 
@@ -18,6 +18,7 @@ public class CopyActionValidator<A extends BaseCopyAction> implements IRuleEleme
 
 	CopyActionValidator(){}
 
+	@Override
 	public boolean validate(A action, List<ResponseFormat> errors) {
 
 		// validate from is populated
@@ -27,12 +28,17 @@ public class CopyActionValidator<A extends BaseCopyAction> implements IRuleEleme
 			valid = false;
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.MISSING_ACTION_FIELD, null, "target", action.getActionType(), action.getTarget()));
 		}
-		return valid;
+		return valid && super.validate(action, errors);
 	}
 
 	protected boolean validateFromValue(A action, List<ResponseFormat> errors) {
-		if(!ValidationUtils.validateNotEmpty(action.getFromValue())) {
+		if(!ValidationUtils.validateNotEmpty(action.fromValue())) {
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.MISSING_ACTION_FIELD, null, "from", action.getActionType(), action.getTarget()));
+			return false;
+		}
+		//1810 US423851 validate imported input
+		if(!ValidationUtils.validateNotEmpty(action.regexState())) {
+			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.INVALID_RULE_FORMAT, "", "missing regex state field"));
 			return false;
 		}
 		return true;

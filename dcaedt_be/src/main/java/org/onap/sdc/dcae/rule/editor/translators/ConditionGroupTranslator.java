@@ -1,9 +1,11 @@
 package org.onap.sdc.dcae.rule.editor.translators;
 
-import org.onap.sdc.dcae.composition.restmodels.ruleeditor.*;
+import org.onap.sdc.dcae.composition.restmodels.ruleeditor.BaseCondition;
+import org.onap.sdc.dcae.composition.restmodels.ruleeditor.Condition;
+import org.onap.sdc.dcae.composition.restmodels.ruleeditor.ConditionGroup;
 import org.onap.sdc.dcae.rule.editor.enums.ConditionTypeEnum;
 import org.onap.sdc.dcae.rule.editor.enums.OperatorTypeEnum;
-import org.onap.sdc.dcae.rule.editor.utils.ValidationUtils;
+import org.onap.sdc.dcae.rule.editor.enums.RuleEditorElementType;
 
 import java.util.List;
 import java.util.Map;
@@ -30,8 +32,12 @@ public class ConditionGroupTranslator implements IRuleElementTranslator<Conditio
 
 
 	private IRuleElementTranslator getConditionTranslator(BaseCondition condition){
-		return condition instanceof ConditionGroup ? ConditionGroupTranslator.getInstance() :
-				ValidationUtils.validateNotEmpty(OperatorTypeEnum.getTypeByName(((Condition)condition).getOperator()).getModifiedType()) ? FieldConditionTranslator.getInstance() : ConditionTranslator.getInstance();
+		return condition instanceof ConditionGroup ? ConditionGroupTranslator.getInstance() : getSimpleConditionTranslator((Condition) condition);
+	}
+
+	private IRuleElementTranslator getSimpleConditionTranslator(Condition condition) {
+		String conditionType = OperatorTypeEnum.getTypeByName(condition.getOperator()).getConditionType();
+		return RuleEditorElementType.getElementTypeByName(conditionType).getTranslator();
 	}
 
 	private Object getTranslation(BaseCondition condition) {

@@ -46,6 +46,6 @@ public class MapActionValidator extends CopyActionValidator<MapAction> {
 	}
 
 	private boolean validateMapValues(MapAction action) {
-		return action.transformToMap().entrySet().stream().noneMatch(p -> !ValidationUtils.validateNotEmpty(p.getKey()) || !ValidationUtils.validateNotEmpty(p.getValue()));
+		return action.transformToMap().entrySet().stream().allMatch(p -> ValidationUtils.validateNotEmpty(p.getKey()) && ValidationUtils.validateNotEmpty(p.getValue()));
 	}
 }

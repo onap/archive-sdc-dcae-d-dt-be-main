@@ -27,7 +27,7 @@ public class MapActionTranslator extends ActionTranslator<MapAction> {
 		private MapActionTranslation(MapAction action) {
 			clazz = "MapAlarmValues";
 			Default = action.getMapDefaultValue();
-			field = action.getFromValue();
+			field = action.fromValue();
 			toField = action.getTarget();
 			map = action.transformToMap();
 		}

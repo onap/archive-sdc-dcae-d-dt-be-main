@@ -9,6 +9,7 @@ public class Report implements IReport {
     private List<String> updated = new ArrayList<>();
     private List<String> notUpdated = new ArrayList<>();
     private List<String> error = new ArrayList<>();
+	private int statusCode = 0;
 
     @Override
     public void addCreatedMessage(String message) {
@@ -51,4 +52,14 @@ public class Report implements IReport {
         }
         return stringBuilder.toString();
     }
+
+
+	public void reportAndExit() {
+		System.exit(statusCode);
+	}
+
+	public void setStatusCode(int statusCode) {
+		this.statusCode = statusCode;
+	}
+
 }

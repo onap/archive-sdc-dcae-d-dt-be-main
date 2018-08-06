@@ -24,9 +24,9 @@ public class ReplaceActionTranslator extends ActionTranslator<ReplaceTextAction>
 
 		ReplaceActionTranslation(ReplaceTextAction action) {
 			clazz = "ReplaceText";
-			field = action.getFromValue();
-			find = action.getFind();
-			replace = action.getReplace();
+			field = action.fromValue();
+			find = action.find();
+			replace = action.replace();
 		}
 	}
 

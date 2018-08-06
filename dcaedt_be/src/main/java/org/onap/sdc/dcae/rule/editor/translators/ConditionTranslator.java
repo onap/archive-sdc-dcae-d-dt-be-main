@@ -20,15 +20,20 @@ public class ConditionTranslator implements IRuleElementTranslator<Condition> {
 		private String string;
 		private String value;
 
-		private StringFilterTranslation(Condition condition, String value){
-			this.clazz = OperatorTypeEnum.getTypeByName(condition.getOperator()).getType();
-			this.string = condition.getLeft();
+		private StringFilterTranslation(String clazz, String string, String value){
+			this.clazz = clazz;
+			this.string = string;
 			this.value = value;
+		}
+
+		private StringFilterTranslation(Condition condition, String value) {
+			this(OperatorTypeEnum.getTypeByName(condition.getOperator()).getType(), condition.getLeft(), value);
 		}
 
 		private StringFilterTranslation(Condition condition){
 			this(condition, condition.getRight().get(0));
 		}
+
 	}
 
 	public Object translateToHpJson(Condition condition) {
@@ -36,5 +41,7 @@ public class ConditionTranslator implements IRuleElementTranslator<Condition> {
 				.map(r -> new StringFilterTranslation(condition, r)).collect(Collectors.toList()));
 	}
 
-
+	Object notifyOidTranslation(String notifyOid) {
+		return new StringFilterTranslation(OperatorTypeEnum.STARTS_WITH.getType(),"${notify OID}", notifyOid);
+	}
 }

@@ -3,9 +3,7 @@ package org.onap.sdc.dcae.rule.editor.translators;
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.BaseCopyAction;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class CopyActionTranslator extends ActionTranslator<BaseCopyAction> {
 
@@ -15,10 +13,10 @@ public class CopyActionTranslator extends ActionTranslator<BaseCopyAction> {
 		return copyActionTranslator;
 	}
 
-	CopyActionTranslator(){}
+	private CopyActionTranslator(){}
 
 	public Object translateToHpJson(BaseCopyAction action) {
-		return new CopyActionSetTranslation(action.getTarget(), action.getFromValue());
+		return new CopyActionSetTranslation(action.getTarget(), action.fromValue());
 	}
 
 	@Override
@@ -28,17 +26,9 @@ public class CopyActionTranslator extends ActionTranslator<BaseCopyAction> {
 			processors.add(translateToHpJson(action));
 		}
 		else {
-			((CopyActionSetTranslation) processors.get(processors.size() - 1)).updates.put(action.getTarget(), action.getFromValue());
+			((CopyActionSetTranslation) processors.get(processors.size() - 1)).updates.put(action.getTarget(), action.fromValue());
 		}
 		return false;
-	}
-
-	class CopyActionSetTranslation extends ProcessorTranslation {
-		Map<String, String> updates = new LinkedHashMap<>();
-		CopyActionSetTranslation(String target, String from) {
-			clazz = "Set";
-			updates.put(target, from);
-		}
 	}
 
 }

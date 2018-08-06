@@ -8,7 +8,7 @@ import org.onap.sdc.dcae.rule.editor.utils.ValidationUtils;
 
 import java.util.List;
 
-public class LogEventValidator implements IRuleElementValidator<LogEventAction> {
+public class LogEventValidator extends BaseActionValidator<LogEventAction> {
 
 	private static LogEventValidator logEventValidator = new LogEventValidator();
 
@@ -16,13 +16,14 @@ public class LogEventValidator implements IRuleElementValidator<LogEventAction> 
 		return logEventValidator;
 	}
 
-	LogEventValidator(){}
+	private LogEventValidator(){}
 
+	@Override
 	public boolean validate(LogEventAction action, List<ResponseFormat> errors) {
-		if(!ValidationUtils.validateNotEmpty(action.getTitle())){
+		if(!ValidationUtils.validateNotEmpty(action.logTitle())){
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.MISSING_ACTION_FIELD, null, "title", action.getActionType(), action.strippedTarget()));
 			return false;
 		}
-		return true;
+		return super.validate(action, errors);
 	}
 }

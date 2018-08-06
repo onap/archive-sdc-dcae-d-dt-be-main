@@ -29,7 +29,7 @@ public class DeployTemplate {
     }
 
     public void deploy(Map<TemplateInfo, JsonObject> templateInfoToJsonObjectMap) {
-        ArrayList<ResourceDetailed> vfcmtList = new ArrayList();
+        ArrayList<ResourceDetailed> vfcmtList = new ArrayList<>();
         List<ResourceDetailed> regularVfcmtList = dcaeRestClient.getAllVfcmts();
         if (regularVfcmtList != null) {
             vfcmtList.addAll(regularVfcmtList);
@@ -55,7 +55,7 @@ public class DeployTemplate {
     private void verify(Map<TemplateInfo, JsonObject> templateInfoToJsonObjectMap) {
         AtomicInteger foundCount = new AtomicInteger();
         debugLogger.log("Starting verify deployment");
-        ArrayList<ResourceDetailed> vfcmtList = new ArrayList();
+        ArrayList<ResourceDetailed> vfcmtList = new ArrayList<>();
         List<ResourceDetailed> regularVfcmtList = dcaeRestClient.getAllVfcmts();
         if (regularVfcmtList != null) {
             vfcmtList.addAll(regularVfcmtList);
@@ -91,10 +91,11 @@ public class DeployTemplate {
 
             saveAndCertify(jsonObject, vfcmt);
 
-        } catch (HttpServerErrorException e) {
+        } catch (Exception e) {
             String msg = FAILED_UPDATE_VFCMT + templateInfo.getName() + ", With general message: " + e.getMessage();
             report.addErrorMessage(msg);
             errLogger.log(msg + " " + e);
+            report.setStatusCode(2);
         }
     }
 
@@ -120,10 +121,11 @@ public class DeployTemplate {
             } else {
                 report.addNotUpdatedMessage("vfcmt: " + vfcmt.getName() + " found, but didn't update.");
             }
-        } catch (HttpServerErrorException e) {
+        } catch (Exception e) {
             String msg = FAILED_UPDATE_VFCMT + vfcmt.getName() + ", With general message: " + e.getMessage();
             report.addErrorMessage(msg);
             errLogger.log( msg + " " + e);
+			report.setStatusCode(2);
         }
     }
 

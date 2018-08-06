@@ -25,7 +25,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Base64Utils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Component
 public class BaseBusinessLogic {
@@ -130,7 +136,7 @@ public class BaseBusinessLogic {
     }
 
 
-    public void checkUserIfResourceCheckedOut(String userId, Asset asset) {
+    void checkUserIfResourceCheckedOut(String userId, Asset asset) {
         if (DcaeBeConstants.LifecycleStateEnum.NOT_CERTIFIED_CHECKOUT == DcaeBeConstants.LifecycleStateEnum.findState(asset.getLifecycleState())) {
             String lastUpdaterUserId = asset.getLastUpdaterUserId();
             if (lastUpdaterUserId != null && !lastUpdaterUserId.equals(userId)) {
@@ -141,11 +147,11 @@ public class BaseBusinessLogic {
         }
     }
 
-    public boolean isNeedToCheckOut(String lifecycleState) {
+    boolean isNeedToCheckOut(String lifecycleState) {
         return DcaeBeConstants.LifecycleStateEnum.NOT_CERTIFIED_CHECKOUT != DcaeBeConstants.LifecycleStateEnum.findState(lifecycleState);
     }
 
-    public void checkVfcmtType(ResourceDetailed vfcmt) {
+    void checkVfcmtType(ResourceDetailed vfcmt) {
         if (AssetType.VFCMT != getValidAssetTypeOrNull(vfcmt.getResourceType()) || !"Template".equals(vfcmt.getCategory())) {
             ResponseFormat responseFormat = ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.RESOURCE_NOT_VFCMT_ERROR, null, vfcmt.getUuid());
             throw new DcaeException(HttpStatus.BAD_REQUEST, responseFormat.getRequestError());
@@ -161,4 +167,15 @@ public class BaseBusinessLogic {
         }
     }
 
+
+	byte[] extractFile(ZipInputStream zis) throws IOException {
+		byte[] buffer = new byte[1024];
+		try (ByteArrayOutputStream os = new ByteArrayOutputStream()){
+			int len;
+			while ((len = zis.read(buffer)) > 0) {
+				os.write(buffer, 0, len);
+			}
+			return os.toByteArray();
+		}
+	}
 }

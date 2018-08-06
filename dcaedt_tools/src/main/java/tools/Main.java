@@ -4,10 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.google.gson.JsonObject;
 import json.Environment;
-import json.response.ItemsResponse.Item;
+
 import json.templateInfo.DeployTemplateConfig;
 import json.templateInfo.TemplateInfo;
 
+import org.onap.sdc.dcae.composition.restmodels.sdc.Resource;
 import utilities.IDcaeRestClient;
 import utilities.IReport;
 import utilities.Report;
@@ -35,7 +36,7 @@ public class Main {
         debugLogger.log("Starting VFCMT template deployment");
         if (args.length != 2) {
             errLogger.log("Got " + args.length + ", but expecting exactly 2 arguments ONLY!");
-            return;
+            System.exit(2);
         }
         debugLogger.log("Arguments:");
         Arrays.stream(args).forEach(arg -> debugLogger.log(arg));
@@ -50,8 +51,7 @@ public class Main {
             IDcaeRestClient dcaeRestClient = new DcaeRestClient(environment.getCredential());
             dcaeRestClient.init(environment);
 
-            EntitiesRetriever entitiesRetriever = new EntitiesRetriever(dcaeRestClient);
-            Map<String, List<Item>> elementsByFolderNames = entitiesRetriever.getElementsByFolder();
+            Map<String, List<Resource>> elementsByFolderNames = dcaeRestClient.getDcaeCatalog();
 
             TemplateContainer templateContainer = new TemplateContainer(report, dcaeRestClient, deployTemplateConfig.getTemplateInfo(), elementsByFolderNames);
             Map<TemplateInfo, JsonObject> templateInfoToJsonObjectMap = templateContainer.getCdumps();
@@ -59,15 +59,20 @@ public class Main {
             DeployTemplate deployTemplate = new DeployTemplate(report, dcaeRestClient);
             deployTemplate.deploy(templateInfoToJsonObjectMap);
 
-            debugLogger.log( "VFCMT template deployment completed successfully");
+            debugLogger.log( "VFCMT template deployment completed");
+
         } catch (RuntimeException e) {
             errLogger.log("ERROR - Template deployment failed with error " + e, e);
+            report.setStatusCode(2);
         } catch (ConnectException e) {
             errLogger.log( "ERROR - Failed connection to server, are you on AT&T network? {}" + e, e);
+			report.setStatusCode(2);
         } catch (IOException e) {
             errLogger.log( "ERROR - Fatal Error! " + e, e);
+			report.setStatusCode(2);
         } finally {
             debugLogger.log(report.toString());
+            report.reportAndExit();
         }
     }
 

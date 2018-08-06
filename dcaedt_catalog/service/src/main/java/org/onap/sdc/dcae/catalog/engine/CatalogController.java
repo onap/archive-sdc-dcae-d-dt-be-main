@@ -18,26 +18,15 @@ under the License.
  */
 package org.onap.sdc.dcae.catalog.engine;
 
-import org.json.JSONObject;
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
-import org.onap.sdc.dcae.catalog.Catalog;
 import org.onap.sdc.dcae.catalog.asdc.ASDCCatalog;
 import org.onap.sdc.dcae.catalog.commons.Future;
 import org.onap.sdc.dcae.catalog.commons.FutureHandler;
-import org.onap.sdc.dcae.composition.util.DcaeBeConstants;
-import org.onap.sdc.dcae.composition.util.SystemProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * All requests body:
@@ -94,73 +83,11 @@ public class CatalogController {
 
 	private static OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
 
-
 	@Autowired
-	private SystemProperties systemProperties;
+	private ASDCCatalog catalog;
 
-	private URI defaultCatalog;
-	private static Map<URI, Catalog> catalogs = new HashMap<>();
-
-
-	public void setDefaultCatalog(URI theUri) {
-		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "set default catalog at {}", theUri);
-		this.defaultCatalog = theUri;
-	}
-
-	@PostConstruct
-	public void initCatalog() {
-		// Dump some info and construct our configuration objects
-		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "initCatalog");
-			
-		this.defaultCatalog = URI.create(systemProperties.getProperties().getProperty(DcaeBeConstants.Config.ASDC_CATALOG_URL));
-		// Initialize default catalog connection
-		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "default catalog at {}", this.defaultCatalog);
-		getCatalog(null);
-
-			// Done
-		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "CatalogEngine started");
-	}
-
-	@PreDestroy
-	public void cleanupCatalog() {
-		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "destroyCatalog");
-	}
-
-	public Catalog getCatalog(URI theCatalogUri) {
-		//TODO: Thread safety! Check catalog is alive!
-		if (theCatalogUri == null) {
-			theCatalogUri = this.defaultCatalog;
-		}
-
-		Catalog cat = catalogs.get(theCatalogUri);
-		if (cat == null && theCatalogUri != null) {
-			String scheme = theCatalogUri.getScheme();
-			URI catalogUri;
-			try {
-				catalogUri = new URI(theCatalogUri.getSchemeSpecificPart() + "#" + theCatalogUri.getFragment());
-			}
-			catch (URISyntaxException urisx) {
-				throw new IllegalArgumentException("Invalid catalog reference '" + theCatalogUri.getSchemeSpecificPart() + "'");
-			}
-			debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Build catalog for {}", catalogUri);
-
-			if ("asdc".equals(scheme)) {
-				cat = new ASDCCatalog(catalogUri);
-			}
-			else {
-				return null;
-			}
-
-			catalogs.put(theCatalogUri, cat);
-		}
-		return cat;
-	}
-
-	public JSONObject patchData(Catalog theCat, JSONObject theData) {
-		theData.put("catalog", theCat.getUri());
-		theData.put("catalogId", theData.optLong("id"));
-		theData.put("id", theData.optLong("itemId"));
-		return theData;
+	public ASDCCatalog getCatalog() {
+		return catalog;
 	}
 
 	public abstract class CatalogHandler<T> implements FutureHandler<T> {

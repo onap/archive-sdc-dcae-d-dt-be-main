@@ -11,7 +11,9 @@ public interface ISdcClient {
 
     ResourceDetailed getResource(String uuid, String requestId);
 
-    ServiceDetailed getService(String uuid, String requestId);
+	byte[] getResourceToscaModel(String uuid, String requestId);
+
+	ServiceDetailed getService(String uuid, String requestId);
 
     ServiceDetailed getAssetMetadata(String contextType, String uuid, String requestId);
 

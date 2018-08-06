@@ -4,12 +4,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import json.response.ItemsResponse.Item;
 import json.templateInfo.Composition;
 import json.templateInfo.NodeToDelete;
 import json.templateInfo.Relation;
 import json.templateInfo.TemplateInfo;
 import org.apache.commons.lang3.StringUtils;
+import org.onap.sdc.dcae.composition.restmodels.sdc.Resource;
 import utilities.IDcaeRestClient;
 import utilities.IReport;
 
@@ -20,16 +20,16 @@ import java.util.concurrent.atomic.AtomicReference;
 public class TemplateContainer {
     private static final String NODES = "nodes";
     private static final String RELATIONSHIP = "relationship";
-    public static final String ASSIGNMENT = "assignment";
+    private static final String ASSIGNMENT = "assignment";
     private static long nidCounter = 0;
     private final IReport report;
     private final IDcaeRestClient dcaeRestClient;
     private final List<TemplateInfo> templateInfos;
-    private final Map<String, List<Item>> elementsByFolderNames;
+    private final Map<String, List<Resource>> elementsByFolderNames;
     private LoggerDebug debugLogger = LoggerDebug.getInstance();
 
 
-    public TemplateContainer(IReport report, IDcaeRestClient dcaeRestClient, List<TemplateInfo> templateInfos, Map<String, List<Item>> elementsByFolderNames) {
+    public TemplateContainer(IReport report, IDcaeRestClient dcaeRestClient, List<TemplateInfo> templateInfos, Map<String, List<Resource>> elementsByFolderNames) {
         this.report = report;
         this.dcaeRestClient = dcaeRestClient;
         this.templateInfos = templateInfos;
@@ -69,6 +69,7 @@ public class TemplateContainer {
             List<ItemAndAlias> items = findTemplate(templateInfo);
             if (items == null || items.isEmpty()) {
                 report.addErrorMessage("vfcmt: " + templateInfo.getName() + ". DCAE Component not found");
+                report.setStatusCode(1);
                 continue;
             }
             templateInfoToJsonObjectMap.put(templateInfo, getCdumpJsonObject(items, templateInfo));
@@ -81,20 +82,21 @@ public class TemplateContainer {
         Map<ItemAndAlias, Map<String, NodeData>> itemMapHashMap = new HashMap<>();
         JsonArray relationsJsonArray = new JsonArray();
         for (ItemAndAlias itemAndAlias : ItemsAndAlias) {
-            Item item = itemAndAlias.getItem();
+            Resource item = itemAndAlias.getItem();
             debugLogger.log("Creating cdump for item: " + item.getName());
             JsonArray jsonArrayNode = cdumpJsonObject.getAsJsonArray(NODES);
             JsonParser jsonParser = new JsonParser();
-            JsonArray allNodeTemplates = jsonParser.parse(dcaeRestClient.getItemModel(item.getItemId())).getAsJsonObject().get("data").getAsJsonObject().get("model").getAsJsonObject().get(NODES).getAsJsonArray();
+            JsonObject modelResponse = jsonParser.parse(dcaeRestClient.getItemModel(item.getUuid())).getAsJsonObject().get("data").getAsJsonObject().get("model").getAsJsonObject();
+            JsonArray allNodeTemplates = modelResponse.get(NODES).getAsJsonArray();
             Map<String, NodeData> stringRelationsDataMap = new HashMap<>();
             for (JsonElement nodeElement : allNodeTemplates) {
                 if (checkIfNeedToSkip(templateInfo.getNodesToDelete(), nodeElement, item.getName())) {
                     continue;
                 }
                 JsonObject responseModelJson = nodeElement.getAsJsonObject();
-                JsonObject responseTypeInfoJson = jsonParser.parse(dcaeRestClient.getItemType(item.getItemId(), responseModelJson.get("type").getAsString())).getAsJsonObject().get("data").getAsJsonObject().get("type").getAsJsonObject();
-                String nodeName = itemAndAlias.getAlias() + "." + responseModelJson.get("name").getAsString();
-                JsonObject jsonObjectElement = newNodeTemplate(nodeName, item.getModels().get(0).getItemId());
+                JsonObject responseTypeInfoJson = jsonParser.parse(dcaeRestClient.getItemType(item.getUuid(), responseModelJson.get("type").getAsString())).getAsJsonObject().get("data").getAsJsonObject().get("type").getAsJsonObject();
+                String nodeName = itemAndAlias.getAlias() != "" ? itemAndAlias.getAlias() + "." + responseModelJson.get("name").getAsString() : responseModelJson.get("name").getAsString();
+                JsonObject jsonObjectElement = newNodeTemplate(nodeName, modelResponse.get("itemId").getAsString());
                 jsonObjectElement.addProperty("id", responseTypeInfoJson.get("itemId").getAsString().split("/")[0]);
                 String nid = "n." + new Date().getTime() + "." + nidCounter++;
                 jsonObjectElement.addProperty("nid", nid);
@@ -228,7 +230,7 @@ public class TemplateContainer {
                     metaData.addProperty("n1", nidListByRequirement.get(requirement));
                     metaData.addProperty("p1", requirement.get("name").toString().replaceAll("\"", ""));
                     relationElement.addProperty("n2", toNId);
-                    relationElement.addProperty("name2", fromNode.getAliasBelong() + "." + toNodeName);
+                    relationElement.addProperty("name2", StringUtils.isBlank(fromNode.getAliasBelong()) ? toNodeName : fromNode.getAliasBelong() + "." + toNodeName);
                     metaData.addProperty("n2", toNId);
                     String capabilityFullName = requirement.get("capability").getAsJsonObject().get("name").toString();
                     String capabilityShortName = StringUtils.substringAfterLast(capabilityFullName, ".");
@@ -270,10 +272,18 @@ public class TemplateContainer {
             JsonObject relationElement = new JsonObject();
             String fromComponent = relation.getFromComponent();
             String toComponent = relation.getToComponent();
-            String fromComponentAlias = StringUtils.substringBefore(fromComponent, ".");
-            String fromComponentNodeName = StringUtils.substringAfterLast(fromComponent, ".");
-            String toComponentAlias = StringUtils.substringBefore(toComponent, ".");
-            String toComponentNodeName = StringUtils.substringAfterLast(toComponent, ".");
+            String fromComponentAlias = "";
+            String fromComponentNodeName = fromComponent;
+            if ((fromComponent.contains("."))) {
+                fromComponentAlias = StringUtils.substringBefore(fromComponent, ".");
+                fromComponentNodeName = StringUtils.substringAfterLast(fromComponent, ".");
+            }
+            String toComponentAlias = "";
+            String toComponentNodeName = toComponent;
+            if (toComponent.contains(".")) {
+                toComponentAlias = StringUtils.substringBefore(toComponent, ".");
+                toComponentNodeName = StringUtils.substringAfterLast(toComponent, ".");
+            }
             boolean findTo = false;
             boolean findFrom = false;
             for (ItemAndAlias item : nodeDataByNidByItem.keySet()) {
@@ -281,12 +291,14 @@ public class TemplateContainer {
                 for (String nid : nodeDataByNid.keySet()) {
                     NodeData currentNodeData = nodeDataByNid.get(nid);
 
+                    String finalFromComponentAlias = fromComponentAlias;
+                    String finalFromComponentNodeName = fromComponentNodeName;
                     Optional<Composition> isFoundComposition = templateInfo.getComposition().stream()
-                            .filter(element -> fromComponentAlias.equalsIgnoreCase(element.getAlias())
+                            .filter(element -> finalFromComponentAlias.equalsIgnoreCase(element.getAlias())
                                     && element.getAlias().equalsIgnoreCase(currentNodeData.getAliasBelong())
                                     && element.getAlias().equalsIgnoreCase(item.getAlias())
                                     && element.getType().equalsIgnoreCase(item.getItem().getName())
-                                    && fromComponentNodeName.equalsIgnoreCase(currentNodeData.getName())).findAny();
+                                    && finalFromComponentNodeName.equalsIgnoreCase(currentNodeData.getName())).findAny();
                     if (isFoundComposition.isPresent()) {
                         boolean isFound = findNode(relation.getFromRequirement(), currentNodeData.getRequirements());
                         if (isFound) {
@@ -313,12 +325,14 @@ public class TemplateContainer {
 
                     }
 
+                    String finalToComponentNodeName = toComponentNodeName;
+                    String finalToComponentAlias = toComponentAlias;
                     isFoundComposition = templateInfo.getComposition().stream()
-                            .filter(element -> toComponentAlias.equalsIgnoreCase(element.getAlias())
+                            .filter(element -> finalToComponentAlias.equalsIgnoreCase(element.getAlias())
                                     && element.getAlias().equalsIgnoreCase(currentNodeData.getAliasBelong())
                                     && element.getAlias().equalsIgnoreCase(item.getAlias())
                                     && element.getType().equalsIgnoreCase(item.getItem().getName())
-                                    && toComponentNodeName.equalsIgnoreCase(currentNodeData.getName())).findAny();
+                                    && finalToComponentNodeName.equalsIgnoreCase(currentNodeData.getName())).findAny();
                     if (isFoundComposition.isPresent()) {
                         boolean isFound = findNode(relation.getToCapability(), currentNodeData.getCapabilities());
                         if (isFound) {

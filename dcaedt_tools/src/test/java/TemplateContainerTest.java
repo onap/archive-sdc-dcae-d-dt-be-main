@@ -1,6 +1,4 @@
 import com.google.gson.JsonObject;
-import json.response.ItemsResponse.Item;
-import json.response.ItemsResponse.Model;
 import json.templateInfo.Composition;
 import json.templateInfo.NodeToDelete;
 import json.templateInfo.Relation;
@@ -8,6 +6,7 @@ import json.templateInfo.TemplateInfo;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.onap.sdc.dcae.composition.restmodels.sdc.Resource;
 import tools.TemplateContainer;
 
 import java.util.*;
@@ -21,7 +20,7 @@ public class TemplateContainerTest extends BaseTest {
     private TemplateContainer templateContainer;
 
     private List<TemplateInfo> templateInfos;
-    private Map<String, List<Item>> elementsByFolderNames;
+    private Map<String, List<Resource>> elementsByFolderNames;
     @Before
     @Override
     public void setup() {
@@ -36,14 +35,9 @@ public class TemplateContainerTest extends BaseTest {
         templateInfo.setComposition(Collections.singletonList(composition));
         templateInfos.add(templateInfo);
         elementsByFolderNames = new HashMap<>();
-        Item item = new Item();
+        Resource item = new Resource();
         item.setName(ELEMENT_NAME3);
-        item.setItemId("");
-        Model model =  new Model();
-        model.setItemId("");
-        List<Model> models = Collections.singletonList(model);
-        item.setModels(models);
-        List<Item> items = new ArrayList<>(Collections.singletonList(item));
+        List<Resource> items = new ArrayList<>(Collections.singletonList(item));
         elementsByFolderNames.put(TEMPLATE_INFO_NAME, items);
 
     }
@@ -60,9 +54,9 @@ public class TemplateContainerTest extends BaseTest {
     @Test
     public void getCdumps_returnNotFoundEmptyList() {
         elementsByFolderNames = new HashMap<>();
-        Item item = new Item();
+		Resource item = new Resource();
         item.setName(ELEMENT_NAME2);
-        List<Item> items = new ArrayList<>(Collections.singletonList(item));
+        List<Resource> items = new ArrayList<>(Collections.singletonList(item));
         elementsByFolderNames.put(TEMPLATE_INFO_NAME, items);
         templateContainer = new TemplateContainer(report, dcaeRestClient, templateInfos, elementsByFolderNames);
 
@@ -126,22 +120,13 @@ public class TemplateContainerTest extends BaseTest {
         templateInfo.setRelations(Collections.singletonList(relation));
         templateInfos.add(templateInfo);
         elementsByFolderNames = new HashMap<>();
-        List<Item> itemList = new ArrayList<>();
-        Item item = new Item();
+        List<Resource> itemList = new ArrayList<>();
+		Resource item = new Resource();
         item.setName(ELEMENT_NAME3);
-        item.setItemId("");
-        Model model =  new Model();
-        model.setItemId("");
-        List<Model> models = Collections.singletonList(model);
-        item.setModels(models);
         itemList.add(item);
-        item = new Item();
+        item = new Resource();
         item.setName(ELEMENT_NAME2);
-        item.setItemId("");
-        model =  new Model();
-        model.setItemId("");
-        models = Collections.singletonList(model);
-        item.setModels(models);
+
         itemList.add(item);
         elementsByFolderNames.put(TEMPLATE_INFO_NAME, itemList);
         templateContainer = new TemplateContainer(report, dcaeRestClient, templateInfos, elementsByFolderNames);

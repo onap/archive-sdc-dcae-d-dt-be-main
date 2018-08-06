@@ -97,7 +97,7 @@ public class ResponseFormatManager {
 		}
 	}
 
-	public ResponseFormatManager(){
+	private ResponseFormatManager(){
 
 	}
 }

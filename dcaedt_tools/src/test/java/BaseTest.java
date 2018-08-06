@@ -1,17 +1,16 @@
-import json.response.ElementsResponse.Element;
-import json.response.ItemsResponse.Item;
-import json.response.ItemsResponse.Model;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.onap.sdc.dcae.composition.restmodels.sdc.Resource;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
 import utilities.IDcaeRestClient;
 import utilities.IReport;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -47,8 +46,7 @@ abstract class BaseTest {
     public void setup() {
         when(dcaeRestClient.getUserId()).thenReturn(USER_ID);
         mockGetAllVfcmt();
-        mockGetElements();
-        mockGetItems();
+        mockGetCatalog();
         mockGetItemModel();
         mockGetItemType();
         mockCheckoutVfcmtAndCreateResource();
@@ -70,46 +68,29 @@ abstract class BaseTest {
     }
 
     private void mockGetItemModel() {
-        when(dcaeRestClient.getItemModel(anyString())).thenReturn("{\"data\":{\"model\":{\"nodes\":[{\"capability\":{\"type\":\"someType\"}, \"type\":\"type\", \"name\":\"SomeNameFromRequirement\", \"requirements\":[{\"name\":\"SomeNameFromRequirement\"}], \"properties\":[{}], \"capabilities\":[{\"name\":\"SomeNameToCapability\"}],\"type\":\"type\"}]}}}",
-                "{\"data\":{\"model\":{\"nodes\":[{\"capability\":{\"type\":\"someType\"}, \"type\":\"type\", \"name\":\"SomeNameToCapability\", \"requirements\":[{\"name\":\"SomeNameFromRequirement\"}], \"properties\":[{}], \"capabilities\":[{\"name\":\"SomeNameToCapability\"}],\"type\":\"type\"}]}}}");
+        when(dcaeRestClient.getItemModel(anyString())).thenReturn("{\"data\":{\"model\":{\"itemId\":\"\",\"nodes\":[{\"capability\":{\"type\":\"someType\"}, \"type\":\"type\", \"name\":\"SomeNameFromRequirement\", \"requirements\":[{\"name\":\"SomeNameFromRequirement\"}], \"properties\":[{}], \"capabilities\":[{\"name\":\"SomeNameToCapability\"}],\"type\":\"type\"}]}}}",
+                "{\"data\":{\"model\":{\"itemId\":\"\",\"nodes\":[{\"capability\":{\"type\":\"someType\"}, \"type\":\"type\", \"name\":\"SomeNameToCapability\", \"requirements\":[{\"name\":\"SomeNameFromRequirement\"}], \"properties\":[{}], \"capabilities\":[{\"name\":\"SomeNameToCapability\"}],\"type\":\"type\"}]}}}");
     }
 
-    private void mockGetItems() {
-        when(dcaeRestClient.getItem(ELEMENT_NAME1)).thenReturn(null);
-        List<Item> items = new ArrayList<>();
-        Item item = new Item();
-        item.setName(ITEM_NAME1);
-        Model model =  new Model();
-        model.setItemId("");
-        List<Model> models = Collections.singletonList(model);
-        item.setModels(models);
-        items.add(item);
-        item = new Item();
-        item.setName(ITEM_NAME2);
-        item.setModels(models);
-        items.add(item);
-        when(dcaeRestClient.getItem(ELEMENT_NAME2)).thenReturn(items);
-        items = new ArrayList<>();
-        item = new Item();
-        item.setName(ITEM_NAME3);
-        item.setModels(models);
-        items.add(item);
-        when(dcaeRestClient.getItem(ELEMENT_NAME3)).thenReturn(items);
-    }
+	private void mockGetCatalog() {
+		Map<String, List<Resource>> catalog = new HashMap<>();
+		catalog.put(ELEMENT_NAME1, null);
+		List<Resource> items = new ArrayList<>();
+		Resource item = new Resource();
+		item.setName(ITEM_NAME1);
+		items.add(item);
+		item = new Resource();
+		item.setName(ITEM_NAME2);
+		items.add(item);
+		catalog.put(ELEMENT_NAME2, items);
+		items = new ArrayList<>();
+		item = new Resource();
+		item.setName(ITEM_NAME3);
+		items.add(item);
+		catalog.put(ELEMENT_NAME3, items);
+		when(dcaeRestClient.getDcaeCatalog()).thenReturn(catalog);
+	}
 
-    private void mockGetElements() {
-        List<Element> elements = new ArrayList<>();
-        Element element = new Element();
-        element.setName(ELEMENT_NAME1);
-        elements.add(element);
-        element = new Element();
-        element.setName(ELEMENT_NAME2);
-        elements.add(element);
-        element = new Element();
-        element.setName(ELEMENT_NAME3);
-        elements.add(element);
-        when(dcaeRestClient.getElements()).thenReturn(elements);
-    }
 
     private void mockGetAllVfcmt() {
         List<ResourceDetailed> resourceDetaileds = new ArrayList<>();

@@ -21,9 +21,11 @@ public class RuleValidator implements IRuleElementValidator<Rule> {
 	private RuleValidator(){}
 
 	public boolean validate(Rule rule, List<ResponseFormat> errors) {
-		boolean valid = true;
-		if(rule.isConditionalRule()) {
-			valid = getConditionValidator(rule.getCondition()).validate(rule.getCondition(), errors);
+		boolean valid = !rule.isConditionalRule() || getConditionValidator(rule.getCondition()).validate(rule.getCondition(), errors);
+		// 1810 US427299 phase grouping - support user defined phase names
+		if(ValidationUtils.validateNotEmpty(rule.getGroupId()) && !ValidationUtils.validateNotEmpty(rule.getPhase())) {
+			valid = false;
+			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.INVALID_RULE_FORMAT, "", "please define group name"));
 		}
 		if(!ValidationUtils.validateNotEmpty(rule.getDescription())) {
 			valid = false;

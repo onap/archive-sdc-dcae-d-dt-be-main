@@ -39,12 +39,18 @@ public class RuleTranslator implements IRuleElementTranslator<Rule> {
 
 	private IRuleElementTranslator getConditionTranslator(BaseCondition condition){
 		return condition instanceof ConditionGroup ? ConditionGroupTranslator.getInstance() :
-				ValidationUtils.validateNotEmpty(OperatorTypeEnum.getTypeByName(((Condition)condition).getOperator()).getModifiedType()) ? FieldConditionTranslator.getInstance() : ConditionTranslator.getInstance();
+				getSimpleConditionTranslator((Condition) condition);
 	}
+
+	private IRuleElementTranslator getSimpleConditionTranslator(Condition condition) {
+		String conditionType = OperatorTypeEnum.getTypeByName(condition.getOperator()).getConditionType();
+		return RuleEditorElementType.getElementTypeByName(conditionType).getTranslator();
+	}
+
 
 	private ActionTranslator getActionTranslator(BaseAction action) {
 		ActionTypeEnum type = ActionTypeEnum.getTypeByName(action.getActionType());
-		if(ActionTypeEnum.COPY == type && ValidationUtils.validateNotEmpty(((BaseCopyAction)action).getRegexValue())) {
+		if(ActionTypeEnum.COPY == type && ValidationUtils.validateNotEmpty(((BaseCopyAction)action).regexValue())) {
 			return RegexActionTranslator.getInstance();
 		}
 		return (ActionTranslator) RuleEditorElementType.getElementTypeByName(type.getType()).getTranslator();

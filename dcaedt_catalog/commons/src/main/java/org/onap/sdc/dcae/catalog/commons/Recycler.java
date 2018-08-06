@@ -73,11 +73,11 @@ public class Recycler {
         return this;
     }
 
-    public Object recycle(final Reader theSource) throws Exception {
+    public Map recycle(final Reader theSource) throws IOException {
         return this.recycle(new ObjectMapper().readValue(theSource, (Class)HashMap.class));
     }
     
-    public Object recycle(final Object theDump) {
+    private Map recycle(final Object theDump) {
   
         final JXPathContext jxroot = JXPathContext.newContext(theDump);
     	jxroot.setLenient(true);
