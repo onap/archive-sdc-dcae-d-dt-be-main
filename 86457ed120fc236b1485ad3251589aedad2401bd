@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a76adc5_bda148ab",
+        "filename": "README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 69
+      },
+      "writtenOn": "2018-08-08T08:55:24Z",
+      "side": 1,
+      "message": "remove the att fqdn",
+      "range": {
+        "startLine": 16,
+        "startChar": 42,
+        "endLine": 16,
+        "endChar": 60
+      },
+      "revId": "86457ed120fc236b1485ad3251589aedad2401bd",
+      "serverId": "14b4e41f-c4e3-4fb9-9955-6a9b5656895a",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1a76adc5_ddbbe4c2",
+        "filename": "dep.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 69
+      },
+      "writtenOn": "2018-08-08T08:55:24Z",
+      "side": 1,
+      "message": "why is this in the source control?",
+      "range": {
+        "startLine": 2,
+        "startChar": 16,
+        "endLine": 2,
+        "endChar": 19
+      },
+      "revId": "86457ed120fc236b1485ad3251589aedad2401bd",
+      "serverId": "14b4e41f-c4e3-4fb9-9955-6a9b5656895a",
+      "unresolved": false
+    }
+  ]
+}
