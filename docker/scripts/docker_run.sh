@@ -11,10 +11,14 @@ FAILURE=1
 RELEASE=latest
 LOCAL=false
 
+DEP_ENV="AUTO"
+
 
 # Java Options:
 DCAE_BE_JAVA_OPTIONS="-XX:MaxPermSize=256m -Xmx1024m -Dconfig.home=config -Dlog.home=/var/lib/jetty/logs/ -Dlogging.config=config/dcae-be/logback-spring.xml"
 DCAE_FE_JAVA_OPTIONS="-XX:MaxPermSize=256m -Xmx1024m -Dconfig.home=config -Dlog.home=/var/lib/jetty/logs/ -Dlogging.config=config/dcae-fe/logback-spring.xml"
+DCAE_DT_JAVA_OPTIONS="-XX:MaxPermSize=256m -Xmx1024m -Dconfig.home=config -Dlog.home=/var/lib/jetty/logs/ -Dlogging.config=config/dcae-dt/logback-spring.xml"
+
 
 #Define this as variable, so it can be excluded in run commands on Docker for OSX, as /etc/localtime cant be mounted there.
 LOCAL_TIME_MOUNT_CMD="--volume /etc/localtime:/etc/localtime:ro"
@@ -23,6 +27,10 @@ LOCAL_TIME_MOUNT_CMD="--volume /etc/localtime:/etc/localtime:ro"
 if [[ "$OSTYPE" == "darwin"* ]]; then
     LOCAL_TIME_MOUNT_CMD=""
 fi
+
+# Docker running Mode
+DOCKER_RUN_MODE_BG="--detach"
+DOCKER_RUN_MODE_FG="-dti"
 
 
 #
@@ -40,16 +48,16 @@ function cleanup {
     echo "Performing old dockers cleanup"
 
     if [ "$1" == "all" ] ; then
-        docker_ids=`docker ps -a | egrep "dcae" | awk '{print $1}'`
+        docker_ids=$(docker ps -a | egrep "dcae" | awk '{print $1}')
         for X in ${docker_ids}
         do
-           docker rm -f ${X}
+           docker rm -f "${X}"
          done
     else
         echo "performing $1 docker cleanup"
-        tmp=`docker ps -a -q --filter="name=$1"`
-        if [[ ! -z "$tmp" ]]; then
-            docker rm -f ${tmp}
+        tmp=$(docker ps -a -q --filter="name=$1")
+        if [[ -n "$tmp" ]]; then
+            docker rm -f "${tmp}"
         fi
     fi
 }
@@ -57,14 +65,15 @@ function cleanup {
 
 
 function dir_perms {
-    mkdir -p ${WORKSPACE}/data/logs/DCAE-BE/DCAE
-    mkdir -p ${WORKSPACE}/data/logs/DCAE-FE/DCAE
+    mkdir -p "${WORKSPACE}/data/logs/DCAE-BE/DCAE"
+    mkdir -p "${WORKSPACE}/data/logs/DCAE-FE/DCAE"
+    mkdir -p "${WORKSPACE}/data/logs/DCAE-DT/DCAE"
 }
 #
 
 
 function docker_logs {
-    docker logs $1 > ${WORKSPACE}/data/logs/docker_logs/$1_docker.log
+    docker logs "$1" > "${WORKSPACE}/data/logs/docker_logs/$1_docker.log"
 }
 #
 
@@ -74,10 +83,10 @@ function docker_logs {
 #
 
 function ready_probe {
-    docker exec $1 /var/lib/ready-probe.sh > /dev/null 2>&1
+    docker exec "$1" /var/lib/ready-probe.sh > /dev/null 2>&1
     rc=$?
     if [[ ${rc} == 0 ]]; then
-        echo DOCKER $1 start finished in $2 seconds
+        echo "DOCKER $1 start finished in $2 seconds"
         return ${SUCCESS}
     fi
     return ${FAILURE}
@@ -86,11 +95,11 @@ function ready_probe {
 
 
 function probe_docker {
-    MATCH=`docker logs --tail 30 $1 | grep "DOCKER STARTED"`
-    echo MATCH is -- ${MATCH}
+    MATCH=$(docker logs --tail 30 "$1" | grep "DOCKER STARTED")
+    echo MATCH is -- "${MATCH}"
 
     if [ -n "$MATCH" ] ; then
-        echo DOCKER start finished in $2 seconds
+        echo "DOCKER start finished in $2 seconds"
         return ${SUCCESS}
     fi
     return ${FAILURE}
@@ -99,9 +108,9 @@ function probe_docker {
 
 
 function probe_dcae_be {
-    health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}' http://${IP}:8082/dcae/conf/composition)
+    health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}' "http://${IP}:8082/dcae/conf/composition")
     if [[ "${health_check_http_code}" -eq 200 ]] ; then
-        echo DOCKER start finished in $1 seconds
+        echo "DOCKER start finished in $1 seconds"
         return ${SUCCESS}
     fi
     return ${FAILURE}
@@ -109,21 +118,30 @@ function probe_dcae_be {
 #
 
 function probe_dcae_fe {
-    health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}' http://${IP}:8183/dcaed/healthCheck)
+    health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}' "http://${IP}:8183/dcaed/healthCheck")
     if [[ "${health_check_http_code}" -eq 200 ]] ; then
-        echo DOCKER start finished in $1 seconds
+        echo "DOCKER start finished in $1 seconds"
         return ${SUCCESS}
     fi
     return ${FAILURE}
 }
 #
 
+function probe_dcae_dt {
+    health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}' "http://${IP}:8186/dcae/healthCheckOld")
+    if [[ "${health_check_http_code}" -eq 200 ]] ; then
+        echo "DOCKER start finished in $1 seconds"
+        return ${SUCCESS}
+    fi
+    return ${FAILURE}
+}
+#
 
 # Not applicable for current release. Return Success in any case
 function probe_dcae_tools {
-   health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}'  http://${IP}:8082/dcae/getResourcesByMonitoringTemplateCategory)
+   health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}'  "http://${IP}:8082/dcae/getResourcesByMonitoringTemplateCategory")
     if [[ "${health_check_http_code}" -eq 200 ]] ; then
-        echo DOCKER start finished in $1 seconds
+        echo "DOCKER start finished in $1 seconds"
         return ${SUCCESS}
     fi
     return ${SUCCESS}
@@ -151,12 +169,16 @@ function monitor_docker {
                 probe_dcae_fe ${TIME} ;
                 status=$? ;
             ;;
+            dcae-dt)
+                probe_dcae_dt ${TIME} ;
+                status=$? ;
+            ;;
             dcae-tools)
                 probe_dcae_tools ;
                 status=$? ;
             ;;
             *)
-                probe_docker ${DOCKER_NAME} ${TIME};
+                probe_docker "${DOCKER_NAME}" ${TIME};
                 status=$? ;
             ;;
 
@@ -171,7 +193,7 @@ function monitor_docker {
         TIME=$(($TIME+$INTERVAL))
     done
 
-    docker_logs ${DOCKER_NAME}
+    docker_logs "${DOCKER_NAME}"
 
     if [ "$TIME" -ge "$TIME_OUT" ]; then
         echo -e "\e[1;31mTIME OUT: DOCKER was NOT fully started in $TIME_OUT seconds... Could cause problems ...\e[0m"
@@ -183,12 +205,12 @@ function monitor_docker {
 function healthCheck {
 
     echo "BE health-Check:"
-    curl --noproxy "*" http://${IP}:8080/sdc2/rest/healthCheck
+    curl --noproxy "*" "http://${IP}:8080/sdc2/rest/healthCheck"
 
     echo ""
     echo ""
     echo "FE health-Check:"
-    curl --noproxy "*" http://${IP}:8181/sdc1/rest/healthCheck
+    curl --noproxy "*" "http://${IP}:8181/sdc1/rest/healthCheck"
 }
 #
 
@@ -213,10 +235,10 @@ function command_exit_status {
 function dcae-be {
     DOCKER_NAME="dcae-be"
     echo "docker run ${DOCKER_NAME}..."
-    if [ ${LOCAL} = false ]; then
-        docker pull ${PREFIX}/${DOCKER_NAME}:${RELEASE}
+    if [ ${LOCAL} == false ]; then
+        docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     fi
-    docker run --detach --name ${DOCKER_NAME} --env HOST_IP=${IP} --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${DCAE_BE_JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume ${WORKSPACE}/data/logs/DCAE-BE/:/var/lib/jetty/logs --volume ${WORKSPACE}/data/environments:/var/opt/dcae-be/chef-solo/environments --publish 8444:8444 --publish 8082:8082 ${PREFIX}/${DOCKER_NAME}:${RELEASE}
+    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${DCAE_BE_JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-BE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/var/opt/dcae-be/chef-solo/environments" --publish 8444:8444 --publish 8082:8082 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
     command_exit_status $? ${DOCKER_NAME}
     echo "please wait while ${DOCKER_NAME^^} is starting....."
     monitor_docker ${DOCKER_NAME}
@@ -228,14 +250,13 @@ function dcae-be {
 function dcae-tools {
     DOCKER_NAME="dcae-tools"
     echo "docker run ${DOCKER_NAME}..."
-    if [ ${LOCAL} = false ]; then
-        docker pull ${PREFIX}/${DOCKER_NAME}:${RELEASE}
+    if [ ${LOCAL} == false ]; then
+        docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     fi
-    docker run --detach --name ${DOCKER_NAME} --env HOST_IP=${IP} --env ENVNAME="${DEP_ENV}" ${LOCAL_TIME_MOUNT_CMD}  --volume ${WORKSPACE}/data/logs/BE/:/var/lib/jetty/logs --volume ${WORKSPACE}/data/environments:/var/opt/dcae-tools/chef-solo/environments  ${PREFIX}/${DOCKER_NAME}:${RELEASE}
+    docker run ${DOCKER_RUN_MODE_BG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/BE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/var/opt/dcae-tools/chef-solo/environments"  "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     command_exit_status $? ${DOCKER_NAME}
     echo "please wait while ${DOCKER_NAME^^} is starting....."
     monitor_docker ${DOCKER_NAME}
-
 }
 #
 
@@ -244,17 +265,30 @@ function dcae-tools {
 function dcae-fe {
     DOCKER_NAME="dcae-fe"
     echo "docker run ${DOCKER_NAME}..."
-    if [ ${LOCAL} = false ]; then
-        docker pull ${PREFIX}/${DOCKER_NAME}:${RELEASE}
+    if [ ${LOCAL} == false ]; then
+        docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     fi
-    docker run --detach --name ${DOCKER_NAME} --env HOST_IP=${IP} --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${DCAE_FE_JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume ${WORKSPACE}/data/logs/DCAE-FE/:/var/lib/jetty/logs --volume ${WORKSPACE}/data/environments:/var/opt/dcae-fe/chef-solo/environments/ --publish 9444:9444 --publish 8183:8183 ${PREFIX}/${DOCKER_NAME}:${RELEASE}
+    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${DCAE_FE_JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-FE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/var/opt/dcae-fe/chef-solo/environments/" --publish 9444:9444 --publish 8183:8183 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
+    command_exit_status $? ${DOCKER_NAME}
+    echo "please wait while ${DOCKER_NAME^^} is starting....."
+    monitor_docker ${DOCKER_NAME}
+}
+#
+
+# DCAE DT
+function dcae-dt {
+    DOCKER_NAME="dcae-dt"
+    echo "docker run ${DOCKER_NAME}..."
+    if [ ${LOCAL} == false ]; then
+        docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
+    fi
+    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${DCAE_DT_JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-DT/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/var/opt/dcae-dt/chef-solo/environments/" --publish 9446:9446 --publish 8186:8186 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
     command_exit_status $? ${DOCKER_NAME}
     echo "please wait while ${DOCKER_NAME^^} is starting....."
     monitor_docker ${DOCKER_NAME}
 
 }
 #
-
 
 
 #
@@ -313,11 +347,12 @@ done
 
 
 #Prefix those with WORKSPACE so it can be set to something other then /opt
-[ -f ${WORKSPACE}/opt/config/env_name.txt ] && DEP_ENV=$(cat ${WORKSPACE}/opt/config/env_name.txt) || echo ${DEP_ENV}
-[ -f ${WORKSPACE}/opt/config/nexus_username.txt ] && NEXUS_USERNAME=$(cat ${WORKSPACE}/opt/config/nexus_username.txt)    || NEXUS_USERNAME=release
-[ -f ${WORKSPACE}/opt/config/nexus_password.txt ] && NEXUS_PASSWD=$(cat ${WORKSPACE}/opt/config/nexus_password.txt)      || NEXUS_PASSWD=sfWU3DFVdBr7GVxB85mTYgAW
-[ -f ${WORKSPACE}/opt/config/nexus_docker_repo.txt ] && NEXUS_DOCKER_REPO=$(cat ${WORKSPACE}/opt/config/nexus_docker_repo.txt) || NEXUS_DOCKER_REPO=nexus3.onap.org:${PORT}
-[ -f ${WORKSPACE}/opt/config/nexus_username.txt ] && docker login -u ${NEXUS_USERNAME} -p ${NEXUS_PASSWD} ${NEXUS_DOCKER_REPO}
+[ -f "${WORKSPACE}/opt/config/env_name.txt" ] && DEP_ENV=$(cat "${WORKSPACE}/opt/config/env_name.txt") || echo "${DEP_ENV}"
+[ -f "${WORKSPACE}/opt/config/nexus_username.txt" ] && NEXUS_USERNAME=$(cat "${WORKSPACE}/opt/config/nexus_username.txt")    || NEXUS_USERNAME="release"
+[ -f "${WORKSPACE}/opt/config/nexus_password.txt" ] && NEXUS_PASSWD=$(cat "${WORKSPACE}/opt/config/nexus_password.txt")      || NEXUS_PASSWD="sfWU3DFVdBr7GVxB85mTYgAW"
+[ -f "${WORKSPACE}/opt/config/nexus_docker_repo.txt" ] && NEXUS_DOCKER_REPO=$(cat "${WORKSPACE}/opt/config/nexus_docker_repo.txt") || NEXUS_DOCKER_REPO="nexus3.onap.org:${PORT}"
+[ -f "${WORKSPACE}/opt/config/nexus_username.txt" ] && docker login -u ${NEXUS_USERNAME} -p ${NEXUS_PASSWD} ${NEXUS_DOCKER_REPO}
+
 
 
 export IP=`ip route get 8.8.8.8 | awk '/src/{ print $7 }'`
@@ -327,7 +362,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 fi
 export PREFIX=${NEXUS_DOCKER_REPO}'/onap'
 
-if [ ${LOCAL} = true ]; then
+if [ ${LOCAL} == true ]; then
     PREFIX='onap'
 fi
 
@@ -339,9 +374,10 @@ if [ -z "${DOCKER}" ]; then
     dcae-be
     dcae-tools
     dcae-fe
+    dcae-dt
     healthCheck
 else
-    cleanup ${DOCKER}
+    cleanup "${DOCKER}"
     dir_perms
     ${DOCKER}
     healthCheck
