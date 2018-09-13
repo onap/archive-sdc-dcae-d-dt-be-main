@@ -18,6 +18,7 @@ DEP_ENV="AUTO"
 DCAE_BE_JAVA_OPTIONS="-XX:MaxPermSize=256m -Xmx1024m -Dconfig.home=config -Dlog.home=/var/lib/jetty/logs/ -Dlogging.config=config/dcae-be/logback-spring.xml"
 DCAE_FE_JAVA_OPTIONS="-XX:MaxPermSize=256m -Xmx1024m -Dconfig.home=config -Dlog.home=/var/lib/jetty/logs/ -Dlogging.config=config/dcae-fe/logback-spring.xml"
 DCAE_DT_JAVA_OPTIONS="-XX:MaxPermSize=256m -Xmx1024m -Dconfig.home=config -Dlog.home=/var/lib/jetty/logs/ -Dlogging.config=config/dcae-dt/logback-spring.xml"
+DCAE_TOSCA_JAVA_OPTIONS="-XX:MaxPermSize=256m -Xmx1024m"
 
 
 #Define this as variable, so it can be excluded in run commands on Docker for OSX, as /etc/localtime cant be mounted there.
@@ -38,8 +39,8 @@ DOCKER_RUN_MODE_FG="-dti"
 #
 
 function usage {
-    echo "usage: docker_run.sh [ -r|--release <RELEASE-NAME> ]  [ -e|--environment <ENV-NAME> ] [ -p|--port <Docker-hub-port>] [ -l|--local <Run-without-pull>] [ -h|--help ]"
-    echo "example: sudo bash docker_run.sh -e AUTO -r 1.2-STAGING-latest"
+    echo "usage: dcae_docker_run.sh [ -r|--release <RELEASE-NAME> ]  [ -e|--environment <ENV-NAME> ] [ -p|--port <Docker-hub-port>] [ -l|--local <Run-without-pull>] [ -h|--help ]"
+    echo "example: sudo bash dcae_docker_run.sh -e AUTO -r 1.2-STAGING-latest"
 }
 #
 
@@ -68,6 +69,9 @@ function dir_perms {
     mkdir -p "${WORKSPACE}/data/logs/DCAE-BE/DCAE"
     mkdir -p "${WORKSPACE}/data/logs/DCAE-FE/DCAE"
     mkdir -p "${WORKSPACE}/data/logs/DCAE-DT/DCAE"
+    mkdir -p "${WORKSPACE}/data/logs/DCAE-TOSCA/DCAE"
+
+    chmod -R 775 "${WORKSPACE}/data/logs"
 }
 #
 
@@ -106,6 +110,15 @@ function probe_docker {
 }
 #
 
+function probe_dcae_tosca {
+    health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}' "http://${IP}:8085/healthcheck")
+    if [[ "${health_check_http_code}" -eq 200 ]] ; then
+        echo "DOCKER start finished in $1 seconds"
+        return ${SUCCESS}
+    fi
+    return ${FAILURE}
+}
+#
 
 function probe_dcae_be {
     health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}' "http://${IP}:8082/dcae/conf/composition")
@@ -161,6 +174,10 @@ function monitor_docker {
 
         case ${DOCKER_NAME} in
 
+            dcae-tosca-app)
+                probe_dcae_tosca ${TIME} ;
+                status=$? ;
+            ;;
             dcae-be)
                 probe_dcae_be ${TIME} ;
                 status=$? ;
@@ -228,6 +245,20 @@ function command_exit_status {
 
 #
 # Run Containers
+#
+
+# DCAE TOSCA
+function dcae-tosca {
+    DOCKER_NAME="dcae-tosca-app"
+    echo "docker run ${DOCKER_NAME}..."
+    if [ ${LOCAL} == false ]; then
+        docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
+    fi
+    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${DCAE_TOSCA_JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-TOSCA/:/var/lib/jetty/logs"  --publish 8085:8085  "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
+    command_exit_status $? ${DOCKER_NAME}
+    echo "please wait while ${DOCKER_NAME^^} is starting....."
+    monitor_docker ${DOCKER_NAME}
+}
 #
 
 
@@ -371,6 +402,7 @@ echo ""
 if [ -z "${DOCKER}" ]; then
     cleanup all
     dir_perms
+    dcae-tosca
     dcae-be
     dcae-tools
     dcae-fe
