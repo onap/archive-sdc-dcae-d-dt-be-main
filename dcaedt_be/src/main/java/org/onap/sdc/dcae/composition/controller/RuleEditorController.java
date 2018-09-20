@@ -1,8 +1,13 @@
 package org.onap.sdc.dcae.composition.controller;
 
+import com.google.gson.JsonParseException;
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.dcae.composition.impl.RuleEditorBusinessLogic;
+import org.onap.sdc.dcae.composition.restmodels.ruleeditor.MappingRulesResponse;
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.TranslateRequest;
+import org.onap.sdc.dcae.errormng.ActionStatus;
+import org.onap.sdc.dcae.errormng.ErrConfMgr;
+import org.onap.sdc.dcae.rule.editor.utils.RulesPayloadUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.MediaType;
@@ -61,6 +66,19 @@ public class RuleEditorController extends BaseController {
     }
 
 
+	@RequestMapping(value = "/applyFilter", method = {RequestMethod.POST}, produces = "application/json")
+	public ResponseEntity applyFilter(@RequestBody String json, @ModelAttribute("requestId") String requestId, @RequestHeader("USER_ID") String userId) {
+		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting applyFilter", json);
+		return ruleEditorBusinessLogic.applyFilter(json, requestId, userId);
+	}
+
+	@RequestMapping(value = "/deleteFilter", method = {RequestMethod.POST}, produces = "application/json")
+	public ResponseEntity deleteFilter(@RequestBody String json, @ModelAttribute("requestId") String requestId, @RequestHeader("USER_ID") String userId) {
+		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting deleteFilter", json);
+		return ruleEditorBusinessLogic.deleteFilter(json, requestId, userId);
+	}
+
+
     /**
      * This endpoint functions as a 'fetch' service for the rule editor UI
      *
@@ -94,17 +112,35 @@ public class RuleEditorController extends BaseController {
 		return ruleEditorBusinessLogic.downloadRules(vfcmtUuid, dcaeCompLabel, nid, configParam, requestId);
 	}
 
-	@RequestMapping(value = "/import/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", method = {RequestMethod.POST}, produces = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/import/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam}/{supportGroups}", method = {RequestMethod.POST}, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity importRules(
 			@RequestBody String json, @ModelAttribute("requestId") String requestId,
 			@RequestHeader("USER_ID") String userId,
 			@PathVariable("vfcmtUuid") String vfcmtUuid,
 			@PathVariable("dcaeCompLabel") String dcaeCompLabel,
 			@PathVariable("nid") String nid,
-			@PathVariable("configParam") String configParam) {
+			@PathVariable("configParam") String configParam,
+			@PathVariable boolean supportGroups) {
 
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting importRules", json);
-		return ruleEditorBusinessLogic.importRules(json, requestId, userId, vfcmtUuid, dcaeCompLabel, nid, configParam);
+		MappingRulesResponse mappingRules;
+		try {
+			mappingRules = RulesPayloadUtils.parsePayloadToMappingRules(json);
+			if(!ruleEditorBusinessLogic.validateEditorVersion(mappingRules, supportGroups)) {
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.INVALID_CONTENT, "", "The imported rules artifact version is not compatible with the current rule engine");
+			}
+		} catch (JsonParseException je) {
+			errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Error: Rule format is invalid: {}", je);
+			return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.INVALID_RULE_FORMAT, "", je.getMessage());
+		}
+		return ruleEditorBusinessLogic.importRules(mappingRules, requestId, userId, vfcmtUuid, dcaeCompLabel, nid, configParam);
+	}
+
+	@RequestMapping(value = "/importPhase", method = {RequestMethod.POST}, produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity importPhase(@RequestBody String json, @ModelAttribute("requestId") String requestId, @RequestHeader("USER_ID") String userId) {
+
+		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting importPhase", json);
+		return ruleEditorBusinessLogic.importPhase(json, requestId, userId);
 	}
 
     /**
