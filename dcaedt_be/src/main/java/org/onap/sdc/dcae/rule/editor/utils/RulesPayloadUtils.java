@@ -22,15 +22,19 @@ public class RulesPayloadUtils {
     private RulesPayloadUtils(){}
 
     public static Rule parsePayloadToRule(String payload) {
-        return gson.fromJson(payload, Rule.class);
+        return convertFromPayload(payload, Rule.class);
     }
 
     public static MappingRules parseMappingRulesArtifactPayload(String payload) {
-        return gson.fromJson(payload, MappingRules.class);
+        return convertFromPayload(payload, MappingRules.class);
     }
 
 	public static MappingRulesResponse parsePayloadToMappingRules(String payload) {
-		return gson.fromJson(payload, MappingRulesResponse.class);
+		return convertFromPayload(payload, MappingRulesResponse.class);
+	}
+
+	public static <T> T convertFromPayload(String payload, Class<T> type) {
+		return gson.fromJson(payload, type);
 	}
 
     public static SchemaInfo extractInfoFromDescription(Artifact rulesArtifact) {

@@ -30,10 +30,47 @@ public class RuleTranslator implements IRuleElementTranslator<Rule> {
 		}
 	}
 
+	private class EntryPhaseTranslation extends RuleTranslation {
+
+		private EntryPhaseTranslation(String phaseName, String runPhase) {
+			phase = phaseName;
+			processors.add(new RunPhaseProcessorsTranslation(runPhase));
+		}
+
+		private EntryPhaseTranslation(String phaseName, String runPhase, BaseCondition entryPhaseFilter) {
+			this(phaseName, runPhase);
+			if("snmp_map".equals(phaseName)) {
+				processors.add(0, new SnmpConvertor());
+			}
+			if(null != entryPhaseFilter) {
+				filter = getConditionTranslator(entryPhaseFilter).translateToHpJson(entryPhaseFilter);
+			}
+		}
+	}
+
+		// hardcoded SNMP processor
+
+	private class SnmpConvertor extends ProcessorTranslation {
+		private String array = "varbinds";
+		private String datacolumn = "varbind_value";
+		private String keycolumn = "varbind_oid";
+
+		private SnmpConvertor() {
+			clazz = "SnmpConvertor";
+		}
+	}
+
 	public Object translateToHpJson(Rule rule) {
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Start translating rule {}", rule.getUid());
 		Object translation = new ActionRuleTranslation(rule);
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Finished translation for rule {}. Result: {}", rule.getUid(), new Gson().toJson(translation));
+		return translation;
+	}
+
+	public Object entryPhaseTranslation(String entryPhase, String runPhase, BaseCondition entryPhaseFilter) {
+		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Start translating entry phase {}", entryPhase);
+		Object translation = new EntryPhaseTranslation(entryPhase, runPhase, entryPhaseFilter);
+		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Finished translation for entry phase {}. Result: {}", entryPhase, new Gson().toJson(translation));
 		return translation;
 	}
 

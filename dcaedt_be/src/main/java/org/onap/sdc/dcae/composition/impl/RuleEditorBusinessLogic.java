@@ -16,6 +16,7 @@ import org.onap.sdc.dcae.errormng.ServiceException;
 import org.onap.sdc.dcae.rule.editor.impl.RulesBusinessLogic;
 import org.onap.sdc.dcae.rule.editor.utils.RulesPayloadUtils;
 import org.onap.sdc.dcae.rule.editor.utils.ValidationUtils;
+import org.onap.sdc.dcae.rule.editor.validators.MappingRulesValidator;
 import org.onap.sdc.dcae.utils.Normalizers;
 import org.onap.sdc.dcae.utils.SdcRestClientUtils;
 import org.onap.sdc.dcae.ves.VesDataItemsDefinition;
@@ -40,6 +41,8 @@ public class RuleEditorBusinessLogic extends BaseBusinessLogic {
 
     @Autowired
     private RulesBusinessLogic rulesBusinessLogic;
+
+	private MappingRulesValidator mappingRulesValidator = MappingRulesValidator.getInstance();
 
     private static final String EXCEPTION = "Exception {}";
 
@@ -90,6 +93,58 @@ public class RuleEditorBusinessLogic extends BaseBusinessLogic {
             return ErrConfMgr.INSTANCE.handleException(e, ErrConfMgr.ApiType.SAVE_RULE_ARTIFACT);
         }
     }
+
+	public ResponseEntity applyFilter(String json, String requestId, String userId) {
+
+		try {
+			ApplyFilterRequest request = RulesPayloadUtils.convertFromPayload(json, ApplyFilterRequest.class);
+			if (null == request) {
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.INVALID_CONTENT);
+			}
+			if(!validateMandatoryRequestFields(request)) {
+				errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Invalid apply filter request. request: {}", request);
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.RULE_OPERATION_FAILED_MISSING_PARAMS);
+			}
+			List<ServiceException> errors = rulesBusinessLogic.validateFilter(request.getFilter());
+			if (!errors.isEmpty()) {
+				// this will return the first violation found by the validator to the UI view as a regular error and all violations to the console view
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.INVALID_RULE_FORMAT, errors.stream().map(ServiceException::getFormattedErrorMessage).collect(Collectors.joining(", ")), errors.get(0).getFormattedErrorMessage());
+			}
+
+			ResourceDetailed vfcmt = getSdcRestClient().getResource(request.getVfcmtUuid(), requestId);
+			checkVfcmtType(vfcmt);
+
+			if (CollectionUtils.isEmpty(vfcmt.getArtifacts())) {
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.SAVE_RULE_FAILED);
+			}
+
+			String artifactLabel = Normalizers.normalizeArtifactLabel(request.getDcaeCompLabel() + request.getNid() + request.getConfigParam());
+
+			// check for MappingRules artifact in existing artifacts
+			Artifact artifactFound = vfcmt.getArtifacts().stream()
+					.filter(a -> artifactLabel.equals(Normalizers.normalizeArtifactLabel(a.getArtifactLabel())))
+					.findAny().orElse(null);
+
+			// new mappingRules artifact, validate nid exists in composition before creating new artifact
+			if (null == artifactFound) {
+				if (cdumpContainsNid(vfcmt, request.getNid(), requestId)) {
+					MappingRules body = new MappingRules(request);
+					saveNewRulesArtifact(body, vfcmt.getUuid(), generateMappingRulesFileName(request.getDcaeCompLabel(),request.getNid(), request.getConfigParam()), artifactLabel, userId, requestId);
+					return checkInAndReturnSaveArtifactResult(request.getFilter(), vfcmt.getUuid(), userId, requestId);
+				}
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.NODE_NOT_FOUND, "", request.getDcaeCompLabel());
+			}
+
+			//update artifact flow - apply filter to existing artifact
+			return applyFilterToExistingArtifact(request, userId, artifactFound, requestId);
+
+		} catch (JsonParseException je) {
+			errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Error: request format is invalid: {}", je);
+			return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.INVALID_RULE_FORMAT, "", je.getMessage());
+		} catch (Exception e) {
+			return ErrConfMgr.INSTANCE.handleException(e, ErrConfMgr.ApiType.SAVE_RULE_ARTIFACT);
+		}
+	}
 
     public ResponseEntity getRulesAndSchema(String vfcmtUuid, String dcaeCompLabel, String nid, String configParam, String requestId) {
 
@@ -180,6 +235,53 @@ public class RuleEditorBusinessLogic extends BaseBusinessLogic {
         }
     }
 
+	public ResponseEntity deleteFilter(String json, String requestId, String userId) {
+
+		try {
+			RuleEditorRequest request = RulesPayloadUtils.convertFromPayload(json, RuleEditorRequest.class);
+			if (null == request) {
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.INVALID_CONTENT);
+			}
+			if(!validateMandatoryRequestFields(request)) {
+				errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Invalid delete filter request. request: {}", request);
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.RULE_OPERATION_FAILED_MISSING_PARAMS);
+			}
+			ResourceDetailed vfcmt = getSdcRestClient().getResource(request.getVfcmtUuid(), requestId);
+			if (null == vfcmt.getArtifacts()) {
+				errLogger.log(LogLevel.ERROR, this.getClass().getName(), "VFCMT {} doesn't have artifacts", vfcmt.getUuid());
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.FILTER_NOT_FOUND);
+			}
+			String artifactLabel = Normalizers.normalizeArtifactLabel(request.getDcaeCompLabel() + request.getNid() + request.getConfigParam());
+
+			// check for MappingRules artifact in existing artifacts
+			Artifact mappingRuleFile = vfcmt.getArtifacts().stream()
+					.filter(a -> artifactLabel.equals(Normalizers.normalizeArtifactLabel(a.getArtifactLabel())))
+					.findAny().orElse(null);
+
+			if (null == mappingRuleFile) {
+				errLogger.log(LogLevel.ERROR, this.getClass().getName(), "{} doesn't exist for VFCMT {}", artifactLabel, vfcmt.getUuid());
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.FILTER_NOT_FOUND);
+			}
+
+			String payload = getSdcRestClient().getResourceArtifact(vfcmt.getUuid(), mappingRuleFile.getArtifactUUID(), requestId);
+			MappingRules rules = RulesPayloadUtils.parseMappingRulesArtifactPayload(payload);
+			BaseCondition deletedFilter = rules.getFilter();
+			if (null == deletedFilter) {
+				errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Filter not found.");
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.FILTER_NOT_FOUND);
+			}
+			if (rules.isEmpty()) { // if the file doesn't contain any rules -> let's delete the file
+				getSdcRestClient().deleteResourceArtifact(userId, vfcmt.getUuid(), mappingRuleFile.getArtifactUUID(), requestId);
+			} else {
+				rules.setFilter(null);
+				updateRulesArtifact(vfcmt.getUuid(), userId, mappingRuleFile, rules, requestId);
+			}
+			return checkInAndReturnSaveArtifactResult(deletedFilter, vfcmt.getUuid(), userId, requestId);
+		} catch (Exception e) {
+			return ErrConfMgr.INSTANCE.handleException(e, ErrConfMgr.ApiType.SAVE_RULE_ARTIFACT);
+		}
+	}
+
 	public ResponseEntity deleteGroupOfRules(String userId, String vfcmtUuid, String dcaeCompLabel, String nid, String configParam, String groupId, String requestId) {
 
 		try {
@@ -222,7 +324,7 @@ public class RuleEditorBusinessLogic extends BaseBusinessLogic {
     public ResponseEntity translateRules(TranslateRequest request, String requestId) {
 
         try {
-        	if(!rulesBusinessLogic.validateTranslateRequestFields(request)) {
+        	if(!validateTranslateRequestFields(request)) {
         		errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Invalid translate request. request: {}", request);
                 return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.TRANSLATE_FAILED, "", "please enter valid request parameters");
             }
@@ -260,9 +362,12 @@ public class RuleEditorBusinessLogic extends BaseBusinessLogic {
         }
     }
 
-    public ResponseEntity importRules(String json, String requestId, String userId, String vfcmtUuid, String dcaeCompLabel, String nid, String configParam) {
+    public ResponseEntity importRules(MappingRulesResponse mappingRules, String requestId, String userId, String vfcmtUuid, String dcaeCompLabel, String nid, String configParam) {
     	try {
-    		MappingRulesResponse mappingRules = RulesPayloadUtils.parsePayloadToMappingRules(json);
+    		if(!mappingRulesValidator.validateVersionAndType(mappingRules)) {
+    			errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Invalid or missing VES version definition");
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.INVALID_RULE_FORMAT, "Invalid or missing VES version definitions", "The imported rules artifact is unsupported");
+			}
 			List<ServiceException> errors = rulesBusinessLogic.validateImportedRules(mappingRules);
 			if (!errors.isEmpty()) {
 				// this will return the first violation found by the validator to the UI view as a regular error and all violations to the console view
@@ -301,7 +406,81 @@ public class RuleEditorBusinessLogic extends BaseBusinessLogic {
 		} catch (Exception e) {
 			return ErrConfMgr.INSTANCE.handleException(e, ErrConfMgr.ApiType.SAVE_RULE_ARTIFACT);
 		}
+	}
 
+	public ResponseEntity importPhase(String json, String requestId, String userId) {
+
+		MappingRulesResponse allRules;
+		try {
+			ImportPhaseRequest request = RulesPayloadUtils.convertFromPayload(json, ImportPhaseRequest.class);
+			if (null == request) {
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.INVALID_CONTENT);
+			}
+			if(!validateImportPhaseRequestFields(request)) {
+				errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Invalid import phase request. request: {}", request);
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.RULE_OPERATION_FAILED_MISSING_PARAMS);
+			}
+			if(!validateVesVersionAndEventDomainMatch(request)) {
+				errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Invalid ves definitions, {} != {} or {} != {}", request.getEventType(), request.getPayload().getEventType(), request.getVersion(), request.getPayload().getVersion());
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.INVALID_RULE_FORMAT, "", "The Imported rules VES version is not compatible with the current rules VES version");
+			}
+			MappingRulesResponse inputRules = request.getPayload();
+			if(!validateEditorVersion(inputRules, false)) {
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.INVALID_RULE_FORMAT, "", "The imported rules artifact version is not compatible with the current rule engine");
+			}
+
+			// set the groupId and phase to be saved
+			inputRules.getRules().forEach((k,v) -> {
+				v.setGroupId(request.getGroupId());
+				v.setPhase(request.getPhase());
+			});
+
+			List<ServiceException> errors = rulesBusinessLogic.validateImportedRules(inputRules);
+			if (!errors.isEmpty()) {
+				// this will return the first violation found by the validator to the UI view as a regular error and all violations to the console view
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.INVALID_RULE_FORMAT, errors.stream().map(ServiceException::getFormattedErrorMessage).collect(Collectors.joining(", ")), errors.get(0).getFormattedErrorMessage());
+			}
+
+			ResourceDetailed vfcmt = getSdcRestClient().getResource(request.getVfcmtUuid(), requestId);
+			checkVfcmtType(vfcmt);
+
+			if (CollectionUtils.isEmpty(vfcmt.getArtifacts())) {
+				return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.SAVE_RULE_FAILED);
+			}
+
+			String artifactLabel = Normalizers.normalizeArtifactLabel(request.getDcaeCompLabel() + request.getNid() + request.getConfigParam());
+
+			// check for MappingRules artifact in existing artifacts
+			Artifact artifactFound = vfcmt.getArtifacts().stream()
+					.filter(a -> artifactLabel.equals(Normalizers.normalizeArtifactLabel(a.getArtifactLabel())))
+					.findAny().orElse(null);
+
+			// new mappingRules artifact, validate nid exists in composition before creating new artifact
+			if (null == artifactFound) {
+				if (!cdumpContainsNid(vfcmt, request.getNid(), requestId)) {
+					return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.NODE_NOT_FOUND, "", request.getDcaeCompLabel());
+				}
+				saveNewRulesArtifact(inputRules, vfcmt.getUuid(), generateMappingRulesFileName(request.getDcaeCompLabel(), request.getNid(), request.getConfigParam()), artifactLabel, userId, requestId);
+				allRules = inputRules;
+			} else {
+				allRules = RulesPayloadUtils.parsePayloadToMappingRules(getSdcRestClient().getResourceArtifact(vfcmt.getUuid(), artifactFound.getArtifactUUID(), requestId));
+				allRules.getRules().putAll(inputRules.getRules());
+				updateRulesArtifact(vfcmt.getUuid(), userId, artifactFound, allRules, requestId);
+			}
+			allRules.setSchema(getEventTypeDefinitionUIs(allRules.getVersion(), allRules.getEventType()));
+			return checkInAndReturnSaveArtifactResult(allRules, vfcmt.getUuid(), userId, requestId);
+
+		} catch (JsonParseException je) {
+			errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Error: Rule format is invalid: {}", je);
+			return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.INVALID_RULE_FORMAT, "", je.getMessage());
+		} catch (Exception e) {
+			return ErrConfMgr.INSTANCE.handleException(e, ErrConfMgr.ApiType.SAVE_RULE_ARTIFACT);
+		}
+	}
+
+	// when importing a rules file all rules must match the declared format (supportGroups)
+	public boolean validateEditorVersion(MappingRules rules, boolean supportGroups) {
+		return supportGroups ? mappingRulesValidator.validateGroupDefinitions(rules) : rules.getRules().values().stream().noneMatch(r -> ValidationUtils.validateNotEmpty(r.getGroupId()));
 	}
 
     public ResponseEntity getExistingRuleTargets(String vfcmtUuid, String requestId, String dcaeCompLabel, String nid) {
@@ -404,6 +583,16 @@ public class RuleEditorBusinessLogic extends BaseBusinessLogic {
         return checkInAndReturnSaveArtifactResult(rule.toJson(), vfcmtUuid, userId, requestId);
     }
 
+	private ResponseEntity applyFilterToExistingArtifact(ApplyFilterRequest request, String userId, Artifact rulesArtifact, String requestId) throws JsonProcessingException {
+		String payload = getSdcRestClient().getResourceArtifact(request.getVfcmtUuid(), rulesArtifact.getArtifactUUID(), requestId);
+		MappingRules rules = RulesPayloadUtils.parseMappingRulesArtifactPayload(payload);
+		rules.setEntryPhase(request.getEntryPhase());
+		rules.setPublishPhase(request.getPublishPhase());
+		rules.setFilter(request.getFilter());
+		updateRulesArtifact(request.getVfcmtUuid(), userId, rulesArtifact, rules, requestId);
+		return checkInAndReturnSaveArtifactResult(request.getFilter(), request.getVfcmtUuid(), userId, requestId);
+	}
+
     // regardless of check in result, return save artifact success
     private ResponseEntity checkInAndReturnSaveArtifactResult(Object response, String vfcmtUuid, String userId, String requestId) {
         try {
@@ -421,6 +610,23 @@ public class RuleEditorBusinessLogic extends BaseBusinessLogic {
         artifactInfo.setDescription(rules.describe());
         getSdcRestClient().updateResourceArtifact(userId, vfcmtUuid, artifactInfo, requestId);
     }
+
+	private boolean validateTranslateRequestFields(TranslateRequest request) {
+		return validateMandatoryRequestFields(request) && Stream.of(request.getPublishPhase(), request.getEntryPhase()).allMatch(ValidationUtils::validateNotEmpty)
+				&& !request.getEntryPhase().equalsIgnoreCase(request.getPublishPhase());
+	}
+
+	private boolean validateImportPhaseRequestFields(ImportPhaseRequest request) {
+		return validateMandatoryRequestFields(request) && Stream.of(request.getGroupId(), request.getPhase(), request.getVersion(), request.getEventType()).allMatch(ValidationUtils::validateNotEmpty) && null != request.getPayload();
+	}
+
+	private boolean validateMandatoryRequestFields(RuleEditorRequest request) {
+		return Stream.of(request.getVfcmtUuid(), request.getDcaeCompLabel(), request.getNid(), request.getConfigParam()).allMatch(ValidationUtils::validateNotEmpty);
+	}
+
+	private boolean validateVesVersionAndEventDomainMatch(ImportPhaseRequest request) {
+		return request.getPayload().getVersion().equalsIgnoreCase(request.getVersion()) && request.getPayload().getEventType().equalsIgnoreCase(request.getEventType());
+	}
 
 
     /**

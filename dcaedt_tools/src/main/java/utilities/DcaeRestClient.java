@@ -13,6 +13,7 @@ import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import tools.LoggerDebug;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import java.util.stream.Stream;
 @Component("dcaerestclient")
 public class DcaeRestClient implements IDcaeRestClient {
 
+    private static LoggerDebug debugLogger = LoggerDebug.getInstance();
     private static final String GET_RESOURCES_BY_CATEGORY = "/getResourcesByCategory";
     private static final String CREATE_VFCMT = "/createVFCMT";
     private static final String ELEMENTS = "/elements";
@@ -52,6 +54,7 @@ public class DcaeRestClient implements IDcaeRestClient {
     @Override
     public void init(Environment environment) {
         credential = environment.getCredential();
+        debugLogger.log("Connecting to server host: " + environment.getDcaeBeHost() + ", port: " + environment.getDcaeBePort());
         CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultHeaders(defaultHeaders(credential)).build();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         requestFactory.setHttpClient(httpClient);
@@ -144,7 +147,9 @@ public class DcaeRestClient implements IDcaeRestClient {
     }
 
     private String buildRequestPath(String... args){
-        return uri + Stream.of(args).collect(Collectors.joining());
+        String url = uri + Stream.of(args).collect(Collectors.joining());
+        debugLogger.log("Sending request: " + url);
+        return url;
     }
 
     @Override

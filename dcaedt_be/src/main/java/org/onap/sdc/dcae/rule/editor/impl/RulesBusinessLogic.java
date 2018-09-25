@@ -10,6 +10,7 @@ import org.onap.sdc.dcae.errormng.ActionStatus;
 import org.onap.sdc.dcae.errormng.ErrConfMgr;
 import org.onap.sdc.dcae.errormng.ResponseFormat;
 import org.onap.sdc.dcae.errormng.ServiceException;
+import org.onap.sdc.dcae.rule.editor.enums.RuleEditorElementType;
 import org.onap.sdc.dcae.rule.editor.translators.MappingRulesTranslator;
 import org.onap.sdc.dcae.rule.editor.utils.EmptyStringTranslationSerializer;
 import org.onap.sdc.dcae.rule.editor.utils.ValidationUtils;
@@ -22,7 +23,6 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Component
 public class RulesBusinessLogic {
@@ -32,6 +32,13 @@ public class RulesBusinessLogic {
 	private MappingRulesValidator mappingRulesValidator = MappingRulesValidator.getInstance();
 	private MappingRulesTranslator mappingRulesTranslator = MappingRulesTranslator.getInstance();
 	private static Gson gsonTranslator = new GsonBuilder().registerTypeAdapter(String.class, new EmptyStringTranslationSerializer()).enableComplexMapKeySerialization().create();
+
+
+	public List<ServiceException> validateFilter(BaseCondition filter) {
+		List<ResponseFormat> errors = new ArrayList<>();
+		RuleEditorElementType.getElementTypeByName(filter.getClass().getSimpleName()).getValidator().validate(filter, errors);
+		return errors.stream().map(r -> r.getRequestError().getServiceException()).collect(Collectors.toList());
+	}
 
 	public List<ServiceException> validateRule(Rule rule) {
 		List<ResponseFormat> errors = new ArrayList<>();
@@ -43,7 +50,7 @@ public class RulesBusinessLogic {
 
 	public List<ServiceException> validateImportedRules(MappingRules rules) {
 		List<ResponseFormat> errors = new ArrayList<>();
-		if(mappingRulesValidator.validate(rules, errors)){
+		if(mappingRulesValidator.validate(rules, errors)) {
 			rules.getRules().forEach((k,v) -> {
 				v.setUid(k);
 				detectAndResolveActionDependencies(v, errors);
@@ -80,6 +87,7 @@ public class RulesBusinessLogic {
 	}
 
 
+	// when saving a single rule its declared format (supportGroups) must match the existing rules format (a single match is enough as all previously saved rules were already validated)
 	public boolean validateGroupDefinitions(MappingRules rules, boolean supportGroups) {
 		return supportGroups == rules.getRules().values().stream().anyMatch(r -> ValidationUtils.validateNotEmpty(r.getGroupId()));
 	}
@@ -182,11 +190,6 @@ public class RulesBusinessLogic {
 			throw new IllegalStateException(String.format("Duplicate key %s", u));
 		}, LinkedHashMap::new));
 		rules.setRules(rulesMap);
-	}
-
-	public boolean validateTranslateRequestFields(TranslateRequest request) {
-		return Stream.of(request.getVfcmtUuid(), request.getDcaeCompLabel(), request.getNid(), request.getConfigParam(), request.getPublishPhase(), request.getEntryPhase()).allMatch(ValidationUtils::validateNotEmpty)
-				&& !request.getEntryPhase().equalsIgnoreCase(request.getPublishPhase());
 	}
 
 	public void updateGlobalTranslationFields(MappingRules mappingRules, TranslateRequest request, String vfcmtName) {

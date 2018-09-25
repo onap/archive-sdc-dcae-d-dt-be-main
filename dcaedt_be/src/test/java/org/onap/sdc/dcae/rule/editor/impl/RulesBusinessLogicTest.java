@@ -68,10 +68,17 @@ public class RulesBusinessLogicTest {
 		rule.getActions().add(buildCopyAction("2.0","event.commonEventHeader.version"));
 		rule.setDescription("description");
 		rule.setPhase("phase_1");
-		rule.setNotifyId("someValue");
 		rule.setEntryPhase("foi_map");
 		rule.setPublishPhase("map_publish");
 		MappingRules mr = new MappingRules(rule);
+		Condition condition = new Condition();
+		condition.setLeft("${notify OID}");
+		condition.getRight().add("someValue");
+		condition.setOperator("startsWith");
+		condition.setId("id");
+		condition.setLevel("4");
+		condition.setName("3");
+		mr.setFilter(condition);
 		List<ServiceException> errors = rulesBusinessLogic.validateRulesBeforeTranslate(mr);
 		assertTrue(errors.isEmpty());
 		assertEquals(expectedTranslation, rulesBusinessLogic.translateRules(mr));

@@ -8,6 +8,7 @@ import org.mockito.MockitoAnnotations;
 import org.onap.sdc.dcae.catalog.asdc.ASDCException;
 import org.onap.sdc.dcae.client.ISdcClient;
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.MappingRules;
+import org.onap.sdc.dcae.composition.restmodels.ruleeditor.MappingRulesResponse;
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.Rule;
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.SchemaInfo;
 import org.onap.sdc.dcae.composition.restmodels.sdc.Artifact;
@@ -102,17 +103,11 @@ public class RuleEditorBusinessLogicTest {
 
 
 	@Test
-	public void invalidRuleFormatImportRulesFailureTest() throws Exception {
-		String invalidInput = "{rules:[blahblahblah]}";
-		String expectedError = "Error - Rule format is invalid: java.lang.IllegalStateException: Expected BEGIN_ARRAY but was STRING at line 1 column 9 path $.rules[0].";
-		ResponseEntity<ResponseFormat> result = ruleEditorBusinessLogic.importRules(invalidInput, requestId, userId, vfcmtUuid, dcaeCompLabel, nId, configParam);
-		assertEquals(400,result.getStatusCodeValue());
-		assertEquals(expectedError, result.getBody().getRequestError().getServiceException().getFormattedErrorMessage());
-		verify(rulesBusinessLogic, times(0)).validateImportedRules(any());
-		verify(sdcClientMock, times(0)).getResource(anyString(), anyString());
-		verify(sdcClientMock, times(0)).createResourceArtifact(anyString(), anyString(), any(), anyString());
-		verify(sdcClientMock, times(0)).updateResourceArtifact(anyString(), anyString(), any(), anyString());
-		verify(sdcClientMock, times(0)).changeResourceLifecycleState(anyString(), anyString(), anyString(), anyString(), anyString());
+	public void incompatibleEditorVersionFailureTest() throws Exception {
+    	Rule rule = new Rule();
+    	rule.setGroupId("id_1");
+		MappingRules rules = new MappingRules(rule);
+		assertFalse(ruleEditorBusinessLogic.validateEditorVersion(rules, false));
 	}
 
     @Test
@@ -194,6 +189,121 @@ public class RuleEditorBusinessLogicTest {
 		assertEquals(200,result.getStatusCodeValue());
 	}
 
+	private static final String BODY_JSON = "{\n" +
+            "  \"version\": \"4.1\",\n" +
+            "  \"eventType\": \"syslogFields\",\n" +
+            "  \"filter\": {\n" +
+            "    \"name\": \"condition\",\n" +
+            "    \"left\": \"a\",\n" +
+            "    \"right\": [\n" +
+            "      \"b\"\n" +
+            "    ],\n" +
+            "    \"operator\": \"contains\",\n" +
+            "    \"level\": 1,\n" +
+            "    \"emptyIsAssigned\": false,\n" +
+            "    \"id\": 6439610383188\n" +
+            "  },\n" +
+            "  \"vfcmtUuid\": \"6fcb27c8-3e87-4a04-b032-4de70fbd9d03\",\n" +
+            "  \"dcaeCompLabel\": \"Highlandpark_18.06.006\",\n" +
+            "  \"nid\": \"n.1532849382756.2\",\n" +
+            "  \"configParam\": \"centralOrEdge\"\n" +
+            "}\n";
+
+    @Test
+    public void test_applyFilter_missingCompLabel() throws Exception {
+        String json = BODY_JSON.replaceAll("Highlandpark_18.06.006", "");
+
+        ResponseEntity result = ruleEditorBusinessLogic.applyFilter(json, requestId, userId);
+        assertEquals(404,result.getStatusCodeValue());
+    }
+
+    @Test
+    public void test_applyFilter_missingNid() throws Exception {
+        String json = BODY_JSON.replaceAll("n.1532849382756.2", "");
+
+        ResponseEntity result = ruleEditorBusinessLogic.applyFilter(json, requestId, userId);
+        assertEquals(404,result.getStatusCodeValue());
+    }
+
+    @Test
+    public void test_applyFilter_missingVfcmtUuid() throws Exception {
+        String json = BODY_JSON.replaceAll("6fcb27c8-3e87-4a04-b032-4de70fbd9d03", "");
+
+        ResponseEntity result = ruleEditorBusinessLogic.applyFilter(json, requestId, userId);
+        assertEquals(404,result.getStatusCodeValue());
+    }
+
+    @Test
+    public void test_applyFilter_missingConfigParam() throws Exception {
+        String json = BODY_JSON.replaceAll("centralOrEdge", "");
+
+        ResponseEntity result = ruleEditorBusinessLogic.applyFilter(json, requestId, userId);
+        assertEquals(404,result.getStatusCodeValue());
+    }
+
+    @Test
+    public void test_deleteFilter_missingCompLabel() throws Exception {
+        String json = BODY_JSON.replaceAll("Highlandpark_18.06.006", "");
+
+        ResponseEntity result = ruleEditorBusinessLogic.deleteFilter(json, requestId, userId);
+        assertEquals(404,result.getStatusCodeValue());
+    }
+
+    @Test
+    public void test_deleteFilter_missingNid() throws Exception {
+        String json = BODY_JSON.replaceAll("n.1532849382756.2", "");
+
+        ResponseEntity result = ruleEditorBusinessLogic.deleteFilter(json, requestId, userId);
+        assertEquals(404,result.getStatusCodeValue());
+    }
+
+    @Test
+    public void test_deleteFilter_missingVfcmtUuid() throws Exception {
+        String json = BODY_JSON.replaceAll("6fcb27c8-3e87-4a04-b032-4de70fbd9d03", "");
+
+        ResponseEntity result = ruleEditorBusinessLogic.deleteFilter(json, requestId, userId);
+        assertEquals(404,result.getStatusCodeValue());
+    }
+
+    @Test
+    public void test_deleteFilter_missingConfigParam() throws Exception {
+        String json = BODY_JSON.replaceAll("centralOrEdge", "");
+
+        ResponseEntity result = ruleEditorBusinessLogic.deleteFilter(json, requestId, userId);
+        assertEquals(404,result.getStatusCodeValue());
+    }
+
+    @Test
+    public void test_importPhase_missingCompLabel() throws Exception {
+        String json = BODY_JSON.replaceAll("Highlandpark_18.06.006", "");
+
+        ResponseEntity result = ruleEditorBusinessLogic.importPhase(json, requestId, userId);
+        assertEquals(404,result.getStatusCodeValue());
+    }
+
+    @Test
+    public void test_importPhase_missingNid() throws Exception {
+        String json = BODY_JSON.replaceAll("n.1532849382756.2", "");
+
+        ResponseEntity result = ruleEditorBusinessLogic.importPhase(json, requestId, userId);
+        assertEquals(404,result.getStatusCodeValue());
+    }
+
+    @Test
+    public void test_importPhase_missingVfcmtUuid() throws Exception {
+        String json = BODY_JSON.replaceAll("6fcb27c8-3e87-4a04-b032-4de70fbd9d03", "");
+
+        ResponseEntity result = ruleEditorBusinessLogic.importPhase(json, requestId, userId);
+        assertEquals(404,result.getStatusCodeValue());
+    }
+
+    @Test
+    public void test_importPhase_missingConfigParam() throws Exception {
+        String json = BODY_JSON.replaceAll("centralOrEdge", "");
+
+        ResponseEntity result = ruleEditorBusinessLogic.importPhase(json, requestId, userId);
+        assertEquals(404,result.getStatusCodeValue());
+    }
 
     private void emulateMockListOfArtifacts(String dcaeCompLabel, String nid, String configParam, boolean isApprovedArtifact) {
         List<Artifact> listOfArtifactCompositionYml = new ArrayList<>();

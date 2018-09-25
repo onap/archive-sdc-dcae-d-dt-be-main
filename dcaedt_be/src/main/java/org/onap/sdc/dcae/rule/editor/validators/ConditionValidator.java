@@ -1,12 +1,12 @@
 package org.onap.sdc.dcae.rule.editor.validators;
 
+import org.apache.commons.lang.StringUtils;
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.Condition;
 import org.onap.sdc.dcae.errormng.ActionStatus;
 import org.onap.sdc.dcae.errormng.ErrConfMgr;
 import org.onap.sdc.dcae.errormng.ResponseFormat;
 import org.onap.sdc.dcae.rule.editor.enums.OperatorTypeEnum;
 import org.onap.sdc.dcae.rule.editor.utils.ValidationUtils;
-import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -32,10 +32,11 @@ public class ConditionValidator extends BaseConditionValidator<Condition> {
 			valid = false;
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.MISSING_OPERAND, null, "left"));
 		}
-		OperatorTypeEnum operatorTypeEnum = OperatorTypeEnum.getTypeByName(condition.getOperator());
+		OperatorTypeEnum operatorTypeEnum = StringUtils.isNotEmpty(condition.getOperator()) ? OperatorTypeEnum.getTypeByName(condition.getOperator()) : null;
 		if(null == operatorTypeEnum) {
 			valid = false;
-			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.INVALID_OPERATOR, null, condition.getOperator()));
+			String operatorValue = StringUtils.isNotEmpty(condition.getOperator()) ? condition.getOperator() : "empty";
+			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.INVALID_OPERATOR, null, operatorValue));
 		}
 		if(OperatorTypeEnum.ASSIGNED != operatorTypeEnum && OperatorTypeEnum.UNASSIGNED != operatorTypeEnum && (condition.getRight().isEmpty() || !condition.getRight().stream().allMatch(ValidationUtils::validateNotEmpty))) {
 			valid = false;

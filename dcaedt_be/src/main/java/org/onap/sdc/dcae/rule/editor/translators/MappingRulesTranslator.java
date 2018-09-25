@@ -19,7 +19,6 @@ public class MappingRulesTranslator implements IRuleElementTranslator<MappingRul
 	}
 
 	private RuleTranslator ruleTranslator = RuleTranslator.getInstance();
-	private ConditionTranslator conditionTranslator = ConditionTranslator.getInstance();
 
 	public Object translateToHpJson(MappingRules mappingRules) {
 		return new MappingRulesTranslation(mappingRules);
@@ -56,40 +55,9 @@ public class MappingRulesTranslator implements IRuleElementTranslator<MappingRul
 				firstRunPhase = phaseNames.get(0);
 			}
 			//hardcoded entry point processor - added as a phase unit
-			processing.add(0, new RunPhaseRuleTranslation(mappingRules.getEntryPhase(), firstRunPhase, mappingRules.getNotifyId()));
+			processing.add(0, ruleTranslator.entryPhaseTranslation(mappingRules.getEntryPhase(), firstRunPhase, mappingRules.getFilter()));
 			//hardcoded map_publish processor - added as processor unit to last phase unit
 			((RuleTranslation)processing.get(processing.size()-1)).processors.add(new RunPhaseProcessorsTranslation(mappingRules.getPublishPhase()));
 		}
 	}
-
-
-	private class RunPhaseRuleTranslation extends RuleTranslation {
-
-		private RunPhaseRuleTranslation(String phaseName, String runPhase) {
-			phase = phaseName;
-			processors.add(new RunPhaseProcessorsTranslation(runPhase));
-		}
-
-		private RunPhaseRuleTranslation(String phaseName, String runPhase, String notifyOid) {
-			this(phaseName, runPhase);
-			if("snmp_map".equals(phaseName)) {
-				processors.add(0, new SnmpConvertor());
-			}
-			if(ValidationUtils.validateTargetField(notifyOid)) {
-				filter = conditionTranslator.notifyOidTranslation(notifyOid);
-			}
-		}
-	}
-
-	// hardcoded SNMP processor
-	private class SnmpConvertor extends ProcessorTranslation {
-		private String array = "varbinds";
-		private String datacolumn = "varbind_value";
-		private String keycolumn = "varbind_oid";
-
-		private SnmpConvertor() {
-			clazz = "SnmpConvertor";
-		}
-	}
-
 }
