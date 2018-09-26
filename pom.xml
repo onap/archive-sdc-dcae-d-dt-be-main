@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project
-    xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.onap.sdc.dcae-d.dt-be-main</groupId>
     <artifactId>dcae_dt_be_main</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.3.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>dcae-d dt-be-main</name>
 
@@ -34,7 +33,7 @@
         <dependency>
             <groupId>org.onap.sdc.dcae-d.dt-be-property</groupId>
             <artifactId>DCAE-DT-PROPERTY</artifactId>
-            <version>1.2.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -72,29 +71,29 @@
             </plugin>
             <!-- Site Plugin -->
             <plugin>
-      		    <groupId>org.apache.maven.plugins</groupId>
-      			<artifactId>maven-site-plugin</artifactId>
-      			<version>3.4</version>
-      			<dependencies>
-      				<dependency>
-      					<groupId>org.apache.maven.wagon</groupId>
-      					<artifactId>wagon-webdav-jackrabbit</artifactId>
-      					<version>2.10</version>
-      				</dependency>
-      			</dependencies>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.4</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.wagon</groupId>
+                        <artifactId>wagon-webdav-jackrabbit</artifactId>
+                        <version>2.10</version>
+                    </dependency>
+                </dependencies>
             </plugin>
-      		<!-- Staging Plugin -->
-      		<plugin>
-      			<groupId>org.sonatype.plugins</groupId>
-      			<artifactId>nexus-staging-maven-plugin</artifactId>
-      			<version>1.6.7</version>
-      			<extensions>true</extensions>
-      			<configuration>
-      				<nexusUrl>${nexus.proxy}</nexusUrl>
-      				<stagingProfileId>${staging.profile.id}</stagingProfileId>
-      				<serverId>ecomp-staging</serverId>
-      			</configuration>
-      		</plugin>
+            <!-- Staging Plugin -->
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.7</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <nexusUrl>${nexus.proxy}</nexusUrl>
+                    <stagingProfileId>${staging.profile.id}</stagingProfileId>
+                    <serverId>ecomp-staging</serverId>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
