@@ -5,7 +5,7 @@ server.contextPath=/
 scheduled.timer.value=5000
 asdc_catalog_url=asdc
 uri=<%= @protocol %>://<%= @consumerAuth %>@<%= @sdc_be_vip %>:<%= @sdc_be_port %>#demo
-toscalab.url=http://localhost:8085
+toscalab.url=http://<%= @dcae_tosca_lab_vip %>:<%= @dcae_tosca_lab_port %>
 blueprinter.uri=${toscalab.url}/translate
 blueprinter.hcuri=${toscalab.url}/healthcheck
 blueprinter.hcretrynum=3

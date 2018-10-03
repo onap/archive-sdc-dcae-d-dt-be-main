@@ -111,7 +111,7 @@ function probe_docker {
 #
 
 function probe_dcae_tosca {
-    health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}' "http://${IP}:8085/healthcheck")
+    health_check_http_code=$(curl --noproxy "*" -i -o /dev/null -w '%{http_code}' "http://${IP}:8085/healthcheck")
     if [[ "${health_check_http_code}" -eq 200 ]] ; then
         echo "DOCKER start finished in $1 seconds"
         return ${SUCCESS}
@@ -121,7 +121,7 @@ function probe_dcae_tosca {
 #
 
 function probe_dcae_be {
-    health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}' "http://${IP}:8082/dcae/conf/composition")
+    health_check_http_code=$(curl --noproxy "*" -i -o /dev/null -w '%{http_code}' "http://${IP}:8082/dcae/conf/composition")
     if [[ "${health_check_http_code}" -eq 200 ]] ; then
         echo "DOCKER start finished in $1 seconds"
         return ${SUCCESS}
@@ -131,7 +131,7 @@ function probe_dcae_be {
 #
 
 function probe_dcae_fe {
-    health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}' "http://${IP}:8183/dcaed/healthCheck")
+    health_check_http_code=$(curl --noproxy "*" -i -o /dev/null -w '%{http_code}' "http://${IP}:8183/dcaed/healthCheck")
     if [[ "${health_check_http_code}" -eq 200 ]] ; then
         echo "DOCKER start finished in $1 seconds"
         return ${SUCCESS}
@@ -141,7 +141,7 @@ function probe_dcae_fe {
 #
 
 function probe_dcae_dt {
-    health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}' "http://${IP}:8186/dcae/healthCheckOld")
+    health_check_http_code=$(curl --noproxy "*" -i -o /dev/null -w '%{http_code}' "http://${IP}:8186/dcae/healthCheckOld")
     if [[ "${health_check_http_code}" -eq 200 ]] ; then
         echo "DOCKER start finished in $1 seconds"
         return ${SUCCESS}
@@ -152,7 +152,7 @@ function probe_dcae_dt {
 
 # Not applicable for current release. Return Success in any case
 function probe_dcae_tools {
-   health_check_http_code=$(curl -i -o /dev/null -w '%{http_code}'  "http://${IP}:8082/dcae/getResourcesByMonitoringTemplateCategory")
+   health_check_http_code=$(curl --noproxy "*" -i -o /dev/null -w '%{http_code}'  "http://${IP}:8082/dcae/getResourcesByMonitoringTemplateCategory")
     if [[ "${health_check_http_code}" -eq 200 ]] ; then
         echo "DOCKER start finished in $1 seconds"
         return ${SUCCESS}
@@ -254,7 +254,7 @@ function dcae-tosca {
     if [ ${LOCAL} == false ]; then
         docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     fi
-    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${DCAE_TOSCA_JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-TOSCA/:/var/lib/jetty/logs"  --publish 8085:8085  "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
+    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${DCAE_TOSCA_JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-TOSCA/:/var/logs/dcae"  --publish 8085:8085  "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     command_exit_status $? ${DOCKER_NAME}
     echo "please wait while ${DOCKER_NAME^^} is starting....."
     monitor_docker ${DOCKER_NAME}

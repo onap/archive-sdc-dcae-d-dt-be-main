@@ -2,15 +2,19 @@ jetty_base = "#{node['JETTY_BASE']}"
 dcae_logs = "#{node['APP_LOG_DIR']}"
 
 sdc_be_vip = node['BE_VIP']
+dcae_tosca_lab_vip = node['DCAE_TOSCA_LAB_VIP']
+
 
 if node['disableHttp']
   protocol = "https"
-  sdc_be_port = node['SDC']['BE'][:https_port]
-  dcae_be_port = node['DCAE']['BE'][:https_port]
+  sdc_be_port = node['SDC']['BE']['https_port']
+  dcae_be_port = node['DCAE']['BE']['https_port']
+  dcae_tosca_lab_port = node['DCAE']['TOSCA_LAB']['https_port']
 else
   protocol = "http"
   sdc_be_port = node['SDC']['BE'][:http_port]
   dcae_be_port = node['DCAE']['BE'][:http_port]
+  dcae_tosca_lab_port = node['DCAE']['TOSCA_LAB']['http_port']
 end
 
 printf("DEBUG: [%s]:[%s] disableHttp=[%s], protocol=[%s], sdc_be_vip=[%s], sdc_be_port=[%s] !!! \n", cookbook_name, recipe_name, node['disableHttp'], protocol, sdc_be_vip ,sdc_be_port )
@@ -54,6 +58,8 @@ template "dcae-be-config" do
     :sdc_be_vip => sdc_be_vip,
     :sdc_be_port => sdc_be_port,
     :protocol => protocol,
+    :dcae_tosca_lab_vip => dcae_tosca_lab_vip,
+    :dcae_tosca_lab_port => dcae_tosca_lab_port
   })
 end
 
