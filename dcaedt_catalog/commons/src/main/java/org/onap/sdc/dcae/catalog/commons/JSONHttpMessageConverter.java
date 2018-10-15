@@ -91,8 +91,8 @@ public class JSONHttpMessageConverter extends AbstractHttpMessageConverter<Objec
 	private Charset getCharset(HttpHeaders theHeaders) { 
   	if (theHeaders != null &&
 				theHeaders.getContentType() != null &&
-				theHeaders.getContentType().getCharSet() != null) { 
-   		return theHeaders.getContentType().getCharSet(); 
+				theHeaders.getContentType().getCharset() != null) {
+   		return theHeaders.getContentType().getCharset();
   	} 
   	return DEFAULT_CHARSET; 
 	} 

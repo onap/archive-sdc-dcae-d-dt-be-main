@@ -1,23 +1,12 @@
 package org.onap.sdc.dcae.composition;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Properties;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
-
-import javax.servlet.ServletContext;
-
+import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.common.onaplog.OnapLoggerError;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.dcae.composition.util.SystemProperties;
-import org.onap.sdc.dcae.filter.LoggingFilter;
 import org.onap.sdc.dcae.errormng.ErrConfMgr;
-import org.onap.sdc.dcae.errormng.ErrorConfiguration;
 import org.onap.sdc.dcae.errormng.ErrorConfigurationLoader;
+import org.onap.sdc.dcae.filter.LoggingFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -34,6 +23,15 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+import javax.servlet.ServletContext;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Properties;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 @Configuration
 @EnableScheduling
