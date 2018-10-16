@@ -21,9 +21,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 
 public class CompositionBusinessLogicTest {
 
@@ -63,14 +66,14 @@ public class CompositionBusinessLogicTest {
 		emulateListOfArtifactsWithCompositionYml();
 		when(sdcClientMock.getResource(anyString(),anyString())).thenReturn(vfcmt);
 		when(vfcmt.getLifecycleState()).thenReturn("NOT_CERTIFIED_CHECKIN");
-		when(sdcClientMock.changeResourceLifecycleState(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(vfcmt);
+		when(sdcClientMock.changeResourceLifecycleState(anyString(), any(), anyString(), any(), anyString())).thenReturn(vfcmt);
 
 		compositionBusinessLogic.saveComposition(justAString, justAString, justAString, justAString, false);
 
 		verify(sdcClientMock).getResource(anyString(),anyString());
 		verify(sdcClientMock, times(0)).createResourceArtifact(anyString(),anyString(),any(),anyString());
 		verify(sdcClientMock).updateResourceArtifact(anyString(), anyString(), any(), anyString());
-		verify(sdcClientMock, times(2)).changeResourceLifecycleState(anyString(),anyString(),anyString(),anyString(),anyString());
+		verify(sdcClientMock, times(2)).changeResourceLifecycleState(anyString(),any(),anyString(),any(),anyString());
 	}
 
 	@Test
@@ -81,14 +84,14 @@ public class CompositionBusinessLogicTest {
 		when(vfcmt.getLifecycleState()).thenReturn("NOT_CERTIFIED_CHECKIN");
 		RequestError requestError = new RequestError();
 		requestError.setServiceException(new ServiceException("SVC4086", "", null));
-		when(sdcClientMock.changeResourceLifecycleState(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(vfcmt).thenThrow(new ASDCException(HttpStatus.FORBIDDEN, requestError));
+		when(sdcClientMock.changeResourceLifecycleState(anyString(), any(), anyString(), any(), anyString())).thenReturn(vfcmt).thenThrow(new ASDCException(HttpStatus.FORBIDDEN, requestError));
 
 		ResponseEntity result = compositionBusinessLogic.saveComposition(justAString, justAString, justAString, justAString, false);
 
 		verify(sdcClientMock).getResource(anyString(),anyString());
 		verify(sdcClientMock, times(0)).createResourceArtifact(anyString(),anyString(),any(),anyString());
 		verify(sdcClientMock).updateResourceArtifact(anyString(), anyString(), any(), anyString());
-		verify(sdcClientMock, times(3)).changeResourceLifecycleState(anyString(),anyString(),anyString(),anyString(),anyString());
+		verify(sdcClientMock, times(3)).changeResourceLifecycleState(anyString(),any(),anyString(),any(),anyString());
 		assertEquals(403, result.getStatusCodeValue());
 	}
 
