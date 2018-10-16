@@ -25,6 +25,8 @@ public class TemplateContainerTest extends BaseTest {
     @Override
     public void setup() {
         super.setup();
+        super.mockGetItemModel();
+        super.mockGetItemType();
         templateInfos = new ArrayList<>();
         TemplateInfo templateInfo = new TemplateInfo();
         templateInfo.setName(TEMPLATE_INFO_NAME);
