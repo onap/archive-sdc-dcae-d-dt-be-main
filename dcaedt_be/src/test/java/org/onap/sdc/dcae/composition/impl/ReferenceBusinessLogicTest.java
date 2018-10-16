@@ -99,7 +99,7 @@ public class ReferenceBusinessLogicTest {
         mockGetService();
         ResponseEntity responseEntity = classUnderTest.deleteVfcmtReferenceBlueprint(userId, "", monitoringComponentName, serviceUuid, vfiName, "", requestId);
         verify(sdcClientMock).getService(serviceUuid, requestId);
-        verify(sdcClientMock).deleteInstanceArtifact(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+        verify(sdcClientMock).deleteInstanceArtifact(anyString(), anyString(), anyString(), anyString(), any(), anyString());
         Assert.assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
     }
 
@@ -115,7 +115,7 @@ public class ReferenceBusinessLogicTest {
     @Test
     public void deleteVfcmtReferenceBlueprint_exceptionSdcdeleteInstanceResourceArtifact() throws Exception {
         mockGetService();
-        doThrow(new RuntimeException("")).when(sdcClientMock).deleteInstanceArtifact(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+        doThrow(new RuntimeException("")).when(sdcClientMock).deleteInstanceArtifact(anyString(), anyString(), anyString(), anyString(), any(), anyString());
 
         ResponseEntity<ResponseFormat> responseEntity = classUnderTest.deleteVfcmtReferenceBlueprint(userId, "", monitoringComponentName, serviceUuid, vfiName, "", requestId);
 

@@ -1,9 +1,6 @@
 package org.onap.sdc.dcae.composition.controller;
 
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
-import org.onap.sdc.dcae.catalog.engine.CatalogResponse;
-import org.onap.sdc.dcae.catalog.engine.ElementRequest;
-import org.onap.sdc.dcae.catalog.engine.ItemsRequest;
 import org.onap.sdc.dcae.composition.impl.CompositionBusinessLogic;
 import org.onap.sdc.dcae.composition.impl.CompositionCatalogBusinessLogic;
 import org.onap.sdc.dcae.composition.restmodels.MessageResponse;
@@ -18,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.request.async.DeferredResult;
 
 @RestController
 @EnableAutoConfiguration

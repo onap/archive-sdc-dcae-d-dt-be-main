@@ -45,7 +45,6 @@ public class BlueprintBusinessLogicTest {
         resourceDetailed.setUuid(VFCMT_UUID);
         classUnderTest.setSdcRestClient(sdcClientMock);
         when(sdcClientMock.getResource(eq(VFCMT_UUID), eq(REQUEST_ID))).thenReturn(resourceDetailed);
-        when(sdcClientMock.getResourceArtifact(eq(VFCMT_UUID), anyString(), anyString())).thenReturn("\"{\\\\\\\"version\\\\\\\":0,\\\\\\\"flowType\\\\\\\":\\\\\\\"templateInfoFlowType\\\\\\\",\\\\\\\"nodes\\\\\\\":[],\\\\\\\"inputs\\\\\\\":[],\\\\\\\"outputs\\\\\\\":[],\\\\\\\"relations\\\\\\\":[]}\\\"\"");
     }
 
     @Test

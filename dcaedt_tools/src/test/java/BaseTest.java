@@ -12,8 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -44,31 +43,26 @@ abstract class BaseTest {
 
     @Before
     public void setup() {
-        when(dcaeRestClient.getUserId()).thenReturn(USER_ID);
-        mockGetAllVfcmt();
+
+
         mockGetCatalog();
-        mockGetItemModel();
-        mockGetItemType();
-        mockCheckoutVfcmtAndCreateResource();
-        when(dcaeRestClient.saveComposition(anyString(), anyString())).thenReturn("Composition Created");
     }
 
-    private void mockCheckoutVfcmtAndCreateResource() {
+    void mockCheckoutVfcmtAndCreateResource() {
         ResourceDetailed resourceDetailed = new ResourceDetailed();
         resourceDetailed.setName(VFCMT_NAME1);
         resourceDetailed.setUuid(UUID1);
         resourceDetailed.setLifecycleState("NOT_CERTIFIED_CHECKOUT");
         resourceDetailed.setLastUpdaterUserId(USER_ID);
-        when(dcaeRestClient.checkoutVfcmt(anyString())).thenReturn(resourceDetailed);
         when(dcaeRestClient.createResource(any())).thenReturn(resourceDetailed);
     }
 
-    private void mockGetItemType() {
-        when(dcaeRestClient.getItemType(anyString(), anyString())).thenReturn("{\"data\":{\"type\":{\"itemId\":\"e45ec9d7-01df-4cb1-896f-aff2a6ca5a8b/tosca.dcae.nodes.cdapApp.Map\", \"typeinfo\":\"typeInfo\"}}}");
+    void mockGetItemType() {
+        when(dcaeRestClient.getItemType(any(), any())).thenReturn("{\"data\":{\"type\":{\"itemId\":\"e45ec9d7-01df-4cb1-896f-aff2a6ca5a8b/tosca.dcae.nodes.cdapApp.Map\", \"typeinfo\":\"typeInfo\"}}}");
     }
 
-    private void mockGetItemModel() {
-        when(dcaeRestClient.getItemModel(anyString())).thenReturn("{\"data\":{\"model\":{\"itemId\":\"\",\"nodes\":[{\"capability\":{\"type\":\"someType\"}, \"type\":\"type\", \"name\":\"SomeNameFromRequirement\", \"requirements\":[{\"name\":\"SomeNameFromRequirement\"}], \"properties\":[{}], \"capabilities\":[{\"name\":\"SomeNameToCapability\"}],\"type\":\"type\"}]}}}",
+    void mockGetItemModel() {
+        when(dcaeRestClient.getItemModel(any())).thenReturn("{\"data\":{\"model\":{\"itemId\":\"\",\"nodes\":[{\"capability\":{\"type\":\"someType\"}, \"type\":\"type\", \"name\":\"SomeNameFromRequirement\", \"requirements\":[{\"name\":\"SomeNameFromRequirement\"}], \"properties\":[{}], \"capabilities\":[{\"name\":\"SomeNameToCapability\"}],\"type\":\"type\"}]}}}",
                 "{\"data\":{\"model\":{\"itemId\":\"\",\"nodes\":[{\"capability\":{\"type\":\"someType\"}, \"type\":\"type\", \"name\":\"SomeNameToCapability\", \"requirements\":[{\"name\":\"SomeNameFromRequirement\"}], \"properties\":[{}], \"capabilities\":[{\"name\":\"SomeNameToCapability\"}],\"type\":\"type\"}]}}}");
     }
 
@@ -88,11 +82,10 @@ abstract class BaseTest {
 		item.setName(ITEM_NAME3);
 		items.add(item);
 		catalog.put(ELEMENT_NAME3, items);
-		when(dcaeRestClient.getDcaeCatalog()).thenReturn(catalog);
 	}
 
 
-    private void mockGetAllVfcmt() {
+    void mockGetAllVfcmt() {
         List<ResourceDetailed> resourceDetaileds = new ArrayList<>();
         ResourceDetailed resourceDetailed = new ResourceDetailed();
         resourceDetailed.setName(VFCMT_NAME1);
