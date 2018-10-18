@@ -15,10 +15,10 @@
     <module>checker</module>
   </modules>
   <scm>
-    <connection>scm:git:https://github.research.att.com/ASC/ASC-Validator/</connection>
-    <developerConnection>scm:git:https://github.research.att.com/ASC/ASC-Validator/</developerConnection>
+    <connection>scm:git:https://github.research.onap.com/ASC/ASC-Validator/</connection>
+    <developerConnection>scm:git:https://github.research.onap.com/ASC/ASC-Validator/</developerConnection>
     <tag>HEAD</tag>
-    <url>https://github.research.att.com/ASC/ASC-Validator/</url>
+    <url>https://github.research.onap.com/ASC/ASC-Validator/</url>
   </scm>
   <properties>
     <sonar.skip>true</sonar.skip>

@@ -18,11 +18,10 @@
         <module>api</module>
         <module>service</module>
     </modules>
-
     <scm>
-        <connection>scm:git:https://github.research.att.com/ASC/ASC-Catalog/</connection>
-        <developerConnection>scm:git:https://github.research.att.com/ASC/ASC-Catalog/</developerConnection>
+        <connection>scm:git:https://github.research.onap.com/ASC/ASC-Catalog/</connection>
+        <developerConnection>scm:git:https://github.research.onap.com/ASC/ASC-Catalog/</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.research.att.com/ASC/ASC-Catalog/</url>
+        <url>https://github.research.onap.com/ASC/ASC-Catalog/</url>
     </scm>
 </project>
