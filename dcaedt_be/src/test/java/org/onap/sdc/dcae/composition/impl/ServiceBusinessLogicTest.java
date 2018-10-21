@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertNotEquals;
@@ -155,7 +154,7 @@ public class ServiceBusinessLogicTest {
     @Test
     public void test_GetAttachedService() {
 
-        when(serviceBusinessLogic.getSdcRestClient().getResourceArtifact(any(), any(), any())).thenReturn("artifact data");
+        when(serviceBusinessLogic.getSdcRestClient().getResourceArtifact(anyString(), anyString(), anyString())).thenReturn("artifact data");
 
         ResponseEntity<MessageResponse> result = serviceBusinessLogic.getAttachedService(vfcmtUuid, requestId);
         assertEquals(HttpStatus.OK, result.getStatusCode());

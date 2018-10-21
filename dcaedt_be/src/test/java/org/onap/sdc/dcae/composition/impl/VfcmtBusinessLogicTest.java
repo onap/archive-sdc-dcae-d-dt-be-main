@@ -21,6 +21,7 @@ import org.onap.sdc.dcae.errormng.RequestError;
 import org.onap.sdc.dcae.errormng.ResponseFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.boot.web.support.SpringBootServletInitializer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -118,11 +119,11 @@ public class VfcmtBusinessLogicTest {
 
 		verify(sdcClientMock, times(0)).createResource(userId, request, requestId);
 		verify(sdcClientMock).getResource(anyString(),anyString());
-		verify(sdcClientMock).getResourceArtifact(any(),anyString(),anyString());
+		verify(sdcClientMock).getResourceArtifact(anyString(),anyString(),anyString());
 		verify(sdcClientMock, times(0)).createResourceArtifact(anyString(),anyString(),any(),anyString());
 		verify(sdcClientMock, times(0)).updateResourceArtifact(anyString(), anyString(), any(), anyString());
 		verify(sdcClientMock).addExternalMonitoringReference(anyString(),any(),any(),anyString());
-		verify(sdcClientMock).changeResourceLifecycleState(anyString(),any(),anyString(),anyString(),anyString());
+		verify(sdcClientMock).changeResourceLifecycleState(anyString(),anyString(),anyString(),anyString(),anyString());
 	}
 
 

@@ -4,6 +4,7 @@ import org.onap.sdc.dcae.composition.restmodels.ruleeditor.Condition;
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.TopoSearchAction;
 import org.onap.sdc.dcae.rule.editor.enums.OperatorTypeEnum;
 import org.onap.sdc.dcae.rule.editor.enums.RuleEditorElementType;
+import org.onap.sdc.dcae.rule.editor.utils.ValidationUtils;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,7 +33,8 @@ public class TopoSearchTranslator extends ActionTranslator<TopoSearchAction> {
 			clazz = "TopoSearch";
 			searchField = action.searchField();
 			searchValue = action.searchValue();
-			if(action.conditionalSearch()) {
+			// fix - check that the condition is not only declared but also defined
+			if(action.conditionalSearch() && ValidationUtils.validateNotEmpty(action.searchFilter().getLeft())) {
 				searchFilter = getSimpleConditionTranslation(action.searchFilter());
 			}
 			if(action.doEnrich()){

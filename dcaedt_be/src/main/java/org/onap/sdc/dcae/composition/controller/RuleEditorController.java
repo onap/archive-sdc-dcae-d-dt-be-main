@@ -100,12 +100,40 @@ public class RuleEditorController extends BaseController {
         return ruleEditorBusinessLogic.getRulesAndSchema(vfcmtUuid, dcaeCompLabel, nid, configParam, requestId);
     }
 
+	// 1810 US436244 MC table
+	@RequestMapping(value = "/rule/{vfcmtUuid}/{revertedUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", method = {RequestMethod.GET}, produces = "application/json")
+	public ResponseEntity getRules(
+			@PathVariable String vfcmtUuid,
+			@PathVariable String revertedUuid,
+			@PathVariable String dcaeCompLabel,
+			@PathVariable String nid,
+			@PathVariable String configParam,
+			@ModelAttribute("requestId") String requestId) {
+
+		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting getRulesAndSchema", vfcmtUuid);
+		return ruleEditorBusinessLogic.getRulesAndSchema(vfcmtUuid, dcaeCompLabel, nid, configParam, requestId);
+	}
+
 	@RequestMapping(value = "/export/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", method = {RequestMethod.GET}, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
 	public ResponseEntity downloadRules(
 			@PathVariable("vfcmtUuid") String vfcmtUuid,
 			@PathVariable("dcaeCompLabel") String dcaeCompLabel,
 			@PathVariable("nid") String nid,
 			@PathVariable("configParam") String configParam,
+			@ModelAttribute("requestId") String requestId) {
+
+		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting exportRules", vfcmtUuid);
+		return ruleEditorBusinessLogic.downloadRules(vfcmtUuid, dcaeCompLabel, nid, configParam, requestId);
+	}
+
+	// 1810 US436244 MC table
+	@RequestMapping(value = "/export/{vfcmtUuid}/{revertedUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", method = {RequestMethod.GET}, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+	public ResponseEntity downloadRules(
+			@PathVariable String vfcmtUuid,
+			@PathVariable String revertedUuid,
+			@PathVariable String dcaeCompLabel,
+			@PathVariable String nid,
+			@PathVariable String configParam,
 			@ModelAttribute("requestId") String requestId) {
 
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting exportRules", vfcmtUuid);
@@ -224,4 +252,11 @@ public class RuleEditorController extends BaseController {
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting getExistingRuleTargets ", vfcmtUuid);
         return ruleEditorBusinessLogic.getExistingRuleTargets(vfcmtUuid, requestId, dcaeCompLabel, nid);
     }
+
+	// 1810 US436244 MC table
+	@RequestMapping(value = "/getExistingRuleTargets/{vfcmtUuid}/{revertedUuid}/{dcaeCompLabel}/{nid:.*}", method = {RequestMethod.GET}, produces = "application/json")
+	public ResponseEntity getExistingRuleTargets(@PathVariable String vfcmtUuid, @PathVariable String revertedUuid, @PathVariable String dcaeCompLabel, @PathVariable String nid, @ModelAttribute("requestId") String requestId) {
+		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting getExistingRuleTargets ", vfcmtUuid);
+		return ruleEditorBusinessLogic.getExistingRuleTargets(vfcmtUuid, requestId, dcaeCompLabel, nid);
+	}
 }

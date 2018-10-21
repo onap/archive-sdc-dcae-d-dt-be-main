@@ -126,6 +126,12 @@ public class SdcRestClient implements ISdcClient {
         return addExternalMonitoringReference(userId, resource.getContextType(), resource.getServiceUuid(), resource.getVfiName(), vfcmtUuid, requestId);
     }
 
+    public void updateExternalMonitoringReference(String userId, String contextType, String serviceUuid, String vfiName, String vfcmtUuid, ReferenceUUID updatedReference, String requestId) {
+		String url = buildRequestPath(AssetType.getSdcContextPath(contextType), serviceUuid, RESOURCE_INSTANCES_PATH, Normalizers.normalizeComponentInstanceName(vfiName), MONITORING_REFERENCES_PATH, vfcmtUuid);
+		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Updating external monitoring reference from service id {} vfi name {} to vfcmt {} URL={}", serviceUuid, vfiName, vfcmtUuid, url);
+		client.put(url, new HttpEntity<>(updatedReference, postResourceHeaders(userId, requestId)));
+	}
+
     public void deleteExternalMonitoringReference(String userId, String contextType, String serviceUuid, String normalizeVfiName, String vfcmtUuid, String requestId) {
         String url = buildRequestPath(AssetType.getSdcContextPath(contextType), serviceUuid, RESOURCE_INSTANCES_PATH, normalizeVfiName, MONITORING_REFERENCES_PATH, vfcmtUuid);
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Delete external monitoring reference from SDC asset. URL={}", url);

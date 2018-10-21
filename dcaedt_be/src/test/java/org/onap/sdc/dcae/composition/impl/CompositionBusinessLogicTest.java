@@ -21,12 +21,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.*;
 
 public class CompositionBusinessLogicTest {
 
@@ -66,14 +63,14 @@ public class CompositionBusinessLogicTest {
 		emulateListOfArtifactsWithCompositionYml();
 		when(sdcClientMock.getResource(anyString(),anyString())).thenReturn(vfcmt);
 		when(vfcmt.getLifecycleState()).thenReturn("NOT_CERTIFIED_CHECKIN");
-		when(sdcClientMock.changeResourceLifecycleState(anyString(), any(), anyString(), any(), anyString())).thenReturn(vfcmt);
+		when(sdcClientMock.changeResourceLifecycleState(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(vfcmt);
 
 		compositionBusinessLogic.saveComposition(justAString, justAString, justAString, justAString, false);
 
 		verify(sdcClientMock).getResource(anyString(),anyString());
 		verify(sdcClientMock, times(0)).createResourceArtifact(anyString(),anyString(),any(),anyString());
 		verify(sdcClientMock).updateResourceArtifact(anyString(), anyString(), any(), anyString());
-		verify(sdcClientMock, times(2)).changeResourceLifecycleState(anyString(),any(),anyString(),any(),anyString());
+		verify(sdcClientMock, times(2)).changeResourceLifecycleState(anyString(),anyString(),anyString(),anyString(),anyString());
 	}
 
 	@Test
@@ -84,14 +81,14 @@ public class CompositionBusinessLogicTest {
 		when(vfcmt.getLifecycleState()).thenReturn("NOT_CERTIFIED_CHECKIN");
 		RequestError requestError = new RequestError();
 		requestError.setServiceException(new ServiceException("SVC4086", "", null));
-		when(sdcClientMock.changeResourceLifecycleState(anyString(), any(), anyString(), any(), anyString())).thenReturn(vfcmt).thenThrow(new ASDCException(HttpStatus.FORBIDDEN, requestError));
+		when(sdcClientMock.changeResourceLifecycleState(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(vfcmt).thenThrow(new ASDCException(HttpStatus.FORBIDDEN, requestError));
 
 		ResponseEntity result = compositionBusinessLogic.saveComposition(justAString, justAString, justAString, justAString, false);
 
 		verify(sdcClientMock).getResource(anyString(),anyString());
 		verify(sdcClientMock, times(0)).createResourceArtifact(anyString(),anyString(),any(),anyString());
 		verify(sdcClientMock).updateResourceArtifact(anyString(), anyString(), any(), anyString());
-		verify(sdcClientMock, times(3)).changeResourceLifecycleState(anyString(),any(),anyString(),any(),anyString());
+		verify(sdcClientMock, times(3)).changeResourceLifecycleState(anyString(),anyString(),anyString(),anyString(),anyString());
 		assertEquals(403, result.getStatusCodeValue());
 	}
 
@@ -192,12 +189,48 @@ public class CompositionBusinessLogicTest {
 		verify(sdcClientMock).changeResourceLifecycleState(anyString(),anyString(),anyString(),anyString(),anyString());
 	}
 
-	private void emulateListOfArtifactsWithCompositionYml() {
+	@Test
+	public void overwriteRevertedMcSuccess() throws Exception {
+		String latestUuid = "uuid2";
+		emulateListOfRuleArtifacts();
+		when(vfcmt.getLifecycleState()).thenReturn("CERTIFIED");
+        ResourceDetailed latestMc = buildLatestMcVersion();
+		latestMc.setUuid(latestUuid);
+		when(sdcClientMock.getResource(anyString(),anyString())).thenReturn(vfcmt).thenReturn(latestMc);
+		when(sdcClientMock.changeResourceLifecycleState(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(latestMc);
+		when(sdcClientMock.getResourceArtifact(anyString(), anyString(), anyString())).thenReturn(justAString);
+		compositionBusinessLogic.overwriteRevertedMC(justAString, justAString, latestUuid, justAString, justAString);
+		verify(sdcClientMock, times(3)).getResource(anyString(),anyString());
+		verify(sdcClientMock, times(0)).createResourceArtifact(anyString(),anyString(),any(),anyString());
+		verify(sdcClientMock).getResourceArtifact(anyString(), anyString(), anyString());
+		verify(sdcClientMock, times(2)).updateResourceArtifact(anyString(), anyString(), any(), anyString());
+		verify(sdcClientMock).deleteResourceArtifact(anyString(), anyString(), any(), anyString());
+		verify(sdcClientMock).changeResourceLifecycleState(anyString(),anyString(),anyString(),anyString(),anyString());
+	}
+
+	private List<Artifact> emulateListOfArtifactsWithCompositionYml() {
 		List<Artifact> listOfArtifactCompositionYml = new ArrayList<>();
 		Artifact compositionArtifact = Mockito.mock(Artifact.class);
 		when(compositionArtifact.getArtifactName()).thenReturn(DcaeBeConstants.Composition.fileNames.COMPOSITION_YML);
 		listOfArtifactCompositionYml.add(compositionArtifact);
 		when(vfcmt.getArtifacts()).thenReturn(listOfArtifactCompositionYml);
+		return listOfArtifactCompositionYml;
+	}
+
+	private void emulateListOfRuleArtifacts() {
+		List<Artifact> artifacts = emulateListOfArtifactsWithCompositionYml();
+		Artifact rulesArtifact = Mockito.mock(Artifact.class);
+		when(rulesArtifact.getArtifactName()).thenReturn("rulesArtifact.json");
+		when(rulesArtifact.getArtifactChecksum()).thenReturn("rules_checksum");
+		Artifact rulesArtifact2 = Mockito.mock(Artifact.class);
+		when(rulesArtifact2.getArtifactName()).thenReturn("rulesArtifact2.json");
+		when(rulesArtifact2.getArtifactChecksum()).thenReturn("rules2_checksum");
+		when(rulesArtifact2.getArtifactDescription()).thenReturn(justAString);
+		when(rulesArtifact2.getArtifactType()).thenReturn(justAString);
+		when(rulesArtifact2.getArtifactLabel()).thenReturn(justAString);
+		when(rulesArtifact2.getArtifactUUID()).thenReturn(justAString);
+		artifacts.add(rulesArtifact);
+		artifacts.add(rulesArtifact2);
 	}
 
 	private void mockVfiList(String vfiName) {
@@ -216,6 +249,27 @@ public class CompositionBusinessLogicTest {
 		when(blueprint.getArtifactName()).thenReturn(artifactName);
 		instanceArtifacts.add(blueprint);
 		when(service.getResources().get(0).getArtifacts()).thenReturn(instanceArtifacts);
+	}
+
+	private ResourceDetailed buildLatestMcVersion() {
+		ResourceDetailed latestMc = new ResourceDetailed();
+		latestMc.setLifecycleState("NOT_CERTIFIED_CHECKOUT");
+		latestMc.setResourceType("VFCMT");
+		latestMc.setCategory("Template");
+		latestMc.setLastUpdaterUserId(justAString);
+		Artifact cdump = new Artifact();
+		cdump.setArtifactName(DcaeBeConstants.Composition.fileNames.COMPOSITION_YML);
+		Artifact rules = new Artifact();
+		rules.setArtifactName("rulesArtifact.json");
+		rules.setArtifactChecksum("rules_checksum");
+		Artifact rules2 = new Artifact();
+		rules2.setArtifactName("rulesArtifact2.json");
+		rules2.setArtifactChecksum("rules_checksum_xxx");
+		Artifact rules3 = new Artifact();
+		rules3.setArtifactName("rules.json");
+		rules3.setArtifactUUID(justAString);
+		latestMc.setArtifacts(Arrays.asList(cdump, rules, rules2, rules3));
+		return latestMc;
 	}
 
 }

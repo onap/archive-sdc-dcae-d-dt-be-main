@@ -3,8 +3,9 @@ package org.onap.sdc.dcae.utils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpResponse;
@@ -14,6 +15,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import java.io.IOException;
 import java.io.InputStream;
 
+@RunWith(MockitoJUnitRunner.class)
 public class SDCResponseErrorHandlerTest {
     @InjectMocks
     private SDCResponseErrorHandler classUnderTest;
@@ -22,7 +24,6 @@ public class SDCResponseErrorHandlerTest {
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
         clientHttpResponse = new ClientHttpResponse() {
             @Override
             public HttpStatus getStatusCode() throws IOException {

@@ -36,6 +36,19 @@ public class BlueprintController extends BaseController {
 		return blueprintBusinessLogic.generateAndSaveBlueprint(userId, context, vfcmtUuid, serviceUuid, instanceName, "", requestId);
 	}
 
+	// 1810 US436244 MC table
+	@RequestMapping(value = "{context}/createBluePrint/{vfcmtUuid}/{revertedUuid}/{serviceUuid}/{instanceName:.*}", method = RequestMethod.POST)
+	public ResponseEntity createBlueprint(
+			@RequestHeader("USER_ID") String userId,
+			@PathVariable String context,
+			@PathVariable String vfcmtUuid,
+			@PathVariable String revertedUuid,
+			@PathVariable String serviceUuid,
+			@PathVariable String instanceName,
+			@ModelAttribute("requestId") String requestId) {
+		return blueprintBusinessLogic.generateAndSaveBlueprint(userId, context, vfcmtUuid, serviceUuid, instanceName, "", requestId);
+	}
+
 	@Deprecated
 	@RequestMapping(value = "/createBluePrint/{VFCMTUuid}/{serviceUuid}/{instanceName}/{monitoringFlowType:.*}", method = RequestMethod.POST)
 	public ResponseEntity createBluePrintWithFlowType(

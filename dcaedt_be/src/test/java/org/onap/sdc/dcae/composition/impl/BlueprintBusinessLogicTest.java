@@ -3,9 +3,10 @@ package org.onap.sdc.dcae.composition.impl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.onap.sdc.dcae.client.ISdcClient;
 import org.onap.sdc.dcae.composition.restmodels.sdc.Artifact;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
@@ -14,10 +15,12 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.ArrayList;
 
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 import static org.onap.sdc.dcae.composition.util.DcaeBeConstants.Composition.fileNames.COMPOSITION_YML;
 
+@RunWith(MockitoJUnitRunner.class)
 public class BlueprintBusinessLogicTest {
 
     private static final String USER_ID = "UserId";
@@ -36,13 +39,13 @@ public class BlueprintBusinessLogicTest {
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
         new ErrorConfigurationLoader(System.getProperty("user.dir")+"/src/main/webapp/WEB-INF");
 
         resourceDetailed = new ResourceDetailed();
         resourceDetailed.setUuid(VFCMT_UUID);
         classUnderTest.setSdcRestClient(sdcClientMock);
         when(sdcClientMock.getResource(eq(VFCMT_UUID), eq(REQUEST_ID))).thenReturn(resourceDetailed);
+        when(sdcClientMock.getResourceArtifact(eq(VFCMT_UUID), anyString(), anyString())).thenReturn("\"{\\\\\\\"version\\\\\\\":0,\\\\\\\"flowType\\\\\\\":\\\\\\\"templateInfoFlowType\\\\\\\",\\\\\\\"nodes\\\\\\\":[],\\\\\\\"inputs\\\\\\\":[],\\\\\\\"outputs\\\\\\\":[],\\\\\\\"relations\\\\\\\":[]}\\\"\"");
     }
 
     @Test
