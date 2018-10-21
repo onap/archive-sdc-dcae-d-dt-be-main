@@ -5,13 +5,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.onap.sdc.dcae.client.ISdcClient;
 import org.onap.sdc.dcae.composition.restmodels.sdc.Artifact;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
 import org.onap.sdc.dcae.errormng.ErrorConfigurationLoader;
 import org.springframework.http.ResponseEntity;
-
+import org.mockito.MockitoAnnotations;
 import java.util.ArrayList;
 
 import static org.mockito.ArgumentMatchers.eq;

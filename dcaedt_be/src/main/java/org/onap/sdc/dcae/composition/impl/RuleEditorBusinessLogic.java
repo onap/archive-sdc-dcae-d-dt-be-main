@@ -323,16 +323,18 @@ public class RuleEditorBusinessLogic extends BaseBusinessLogic {
 
     public ResponseEntity translateRules(TranslateRequest request, String requestId) {
 
+		// 1810 US436244 MC table
+    	String vfcmtUuid = request.getVfcmtUuid().split("/")[0];
         try {
         	if(!validateTranslateRequestFields(request)) {
         		errLogger.log(LogLevel.ERROR, this.getClass().getName(), "Invalid translate request. request: {}", request);
                 return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.TRANSLATE_FAILED, "", "please enter valid request parameters");
             }
-            ResourceDetailed vfcmt = getSdcRestClient().getResource(request.getVfcmtUuid(), requestId);
+            ResourceDetailed vfcmt = getSdcRestClient().getResource(vfcmtUuid, requestId);
             checkVfcmtType(vfcmt);
 
             if (CollectionUtils.isEmpty(vfcmt.getArtifacts())) {
-                return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.TRANSLATE_FAILED, "", "No rules found on VFCMT " + request.getVfcmtUuid());
+                return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.TRANSLATE_FAILED, "", "No rules found on VFCMT " + vfcmtUuid);
             }
             String artifactLabel = Normalizers.normalizeArtifactLabel(request.getDcaeCompLabel() + request.getNid() + request.getConfigParam());
 
@@ -340,10 +342,10 @@ public class RuleEditorBusinessLogic extends BaseBusinessLogic {
             Artifact rulesArtifact = vfcmt.getArtifacts().stream().filter(a -> artifactLabel.equals(Normalizers.normalizeArtifactLabel(a.getArtifactLabel()))).findAny().orElse(null);
 
             if (rulesArtifact == null) {
-                return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.TRANSLATE_FAILED, "", artifactLabel + " doesn't exist on VFCMT " + request.getVfcmtUuid());
+                return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.TRANSLATE_FAILED, "", artifactLabel + " doesn't exist on VFCMT " + vfcmtUuid);
             }
 
-            String payload = getSdcRestClient().getResourceArtifact(request.getVfcmtUuid(), rulesArtifact.getArtifactUUID(), requestId);
+            String payload = getSdcRestClient().getResourceArtifact(vfcmtUuid, rulesArtifact.getArtifactUUID(), requestId);
             debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Retrieved mapping rules artifact {}, start parsing rules...", artifactLabel);
             MappingRules rules = RulesPayloadUtils.parseMappingRulesArtifactPayload(payload);
             rulesBusinessLogic.updateGlobalTranslationFields(rules, request, vfcmt.getName());

@@ -22,8 +22,10 @@ import org.springframework.util.Base64Utils;
 import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Component
 public class CompositionBusinessLogic extends BaseBusinessLogic {
@@ -79,6 +81,17 @@ public class CompositionBusinessLogic extends BaseBusinessLogic {
             return ErrConfMgr.INSTANCE.handleException(e, ErrConfMgr.ApiType.SAVE_CDUMP);
         }
     }
+
+    // 1810 US436244 Update MC table version representations and actions
+    public ResponseEntity overwriteRevertedMC(String userId, String vfcmtUuid, String revertedUuid, String updatedPayload, String requestId) {
+    	try {
+    		cloneArtifactsToRevertedMC(userId, vfcmtUuid, revertedUuid, requestId, false);
+		}  catch (Exception e) {
+		    errLogger.log(LogLevel.ERROR, this.getClass().getName(), "clone action failed: {}", e);
+			return ErrConfMgr.INSTANCE.handleException(e, ErrConfMgr.ApiType.SAVE_CDUMP);
+		}
+    	return saveComposition(userId, revertedUuid, updatedPayload, requestId, false);
+	}
 
     Artifact submitComposition(String userId, String context, VfcmtData vfcmtData, String resultBlueprintCreation, String requestId) throws JsonProcessingException {
 

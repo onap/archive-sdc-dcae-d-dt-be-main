@@ -3,6 +3,7 @@ package org.onap.sdc.dcae.composition.controller;
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.dcae.composition.impl.CompositionBusinessLogic;
 import org.onap.sdc.dcae.composition.impl.CompositionCatalogBusinessLogic;
+import org.onap.sdc.dcae.composition.restmodels.CreateMcResponse;
 import org.onap.sdc.dcae.composition.restmodels.MessageResponse;
 import org.onap.sdc.dcae.composition.restmodels.ReferenceUUID;
 import org.onap.sdc.dcae.composition.restmodels.sdc.Artifact;
@@ -27,57 +28,6 @@ public class CompositionController extends BaseController {
 	@Autowired
 	private CompositionBusinessLogic compositionBusinessLogic;
 
-//	@Deprecated
-//	@RequestMapping(value = { "/utils/clone/{assetType}/{sourceId}/{targetId}" }, method = { RequestMethod.GET }, produces = { "application/json" })
-//	public ResponseEntity clone(@RequestHeader("USER_ID") String userId,
-//			@PathVariable("assetType") String theAssetType, @PathVariable("sourceId") String theSourceId, @PathVariable("targetId") String theTargetId, @ModelAttribute("requestId") String requestId) {
-//		MessageResponse response = new MessageResponse();
-//
-//		try {
-//			// fetch the source and assert it is a vfcmt containing clone worthy artifacts (composition + rules)
-//			ResourceDetailed sourceVfcmt = baseBusinessLogic.getSdcRestClient().getResource(theSourceId, requestId);
-//			baseBusinessLogic.checkVfcmtType(sourceVfcmt);
-//			List<Artifact> artifactsToClone = CollectionUtils.isEmpty(sourceVfcmt.getArtifacts()) ?
-//					null :
-//					sourceVfcmt.getArtifacts().stream().filter(p -> DcaeBeConstants.Composition.fileNames.COMPOSITION_YML.equals(p.getArtifactName()) || p.getArtifactName().endsWith(DcaeBeConstants.Composition.fileNames.MAPPING_RULE_POSTFIX))
-//							.collect(Collectors.toList());
-//			if (CollectionUtils.isEmpty(artifactsToClone)) {
-//				response.setSuccessResponse("Nothing to clone");
-//				return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
-//			}
-//
-//			// fetch the target
-//			ResourceDetailed vfcmt = baseBusinessLogic.getSdcRestClient().getResource(theTargetId, requestId);
-//			debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), vfcmt.toString());
-//			baseBusinessLogic.checkVfcmtType(vfcmt);
-//			baseBusinessLogic.checkUserIfResourceCheckedOut(userId, vfcmt);
-//			boolean isTargetNeed2Checkout = baseBusinessLogic.isNeedToCheckOut(vfcmt.getLifecycleState());
-//			if (isTargetNeed2Checkout) {
-//				ResourceDetailed targetVfcmt = baseBusinessLogic.getSdcRestClient().changeResourceLifecycleState(userId, theTargetId, LifecycleOperationType.CHECKOUT.name(), "checking out VFCMT before clone", requestId);
-//				if (null == targetVfcmt) {
-//					return ErrConfMgr.INSTANCE.buildErrorResponse(ActionStatus.GENERAL_ERROR);
-//				}
-//				theTargetId = targetVfcmt.getUuid();
-//				debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "New targetVfcmt (for artifact clone) after checkoutVfcmt is: {}", theTargetId);
-//			}
-//
-//			Map<String, Artifact> currentArtifacts = CollectionUtils.isEmpty(vfcmt.getArtifacts()) ? new HashMap<>() : vfcmt.getArtifacts().stream().collect(Collectors.toMap(Artifact::getArtifactName, Function.identity()));
-//
-//			//TODO target VFCMT rule artifacts should be removed
-//			for (Artifact artifactToClone : artifactsToClone) {
-//				String payload = baseBusinessLogic.getSdcRestClient().getResourceArtifact(theSourceId, artifactToClone.getArtifactUUID(), requestId);
-//				baseBusinessLogic.cloneArtifactToTarget(userId, theTargetId, payload, artifactToClone, currentArtifacts.get(artifactToClone.getArtifactName()), requestId);
-//			}
-//
-//			baseBusinessLogic.getSdcRestClient().changeResourceLifecycleState(userId, theTargetId, LifecycleOperationType.CHECKIN.name(), "check in VFCMT after clone", requestId);
-//			debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Cloning {} from {} has finished successfully", theSourceId, theTargetId);
-//			response.setSuccessResponse("Clone VFCMT complete");
-//			return new ResponseEntity<>(response, HttpStatus.OK);
-//		} catch (Exception e) {
-//			return handleException(e, ApiType.CLONE_VFCMT);
-//		}
-//	}
-
 	@RequestMapping(value = "/{theItemId}/model", method = RequestMethod.GET , produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity model(@ModelAttribute("requestId") String requestId, @PathVariable String theItemId) {
 		return compositionCatalogBusinessLogic.getModelById(requestId, theItemId);
@@ -85,7 +35,7 @@ public class CompositionController extends BaseController {
 
 	@RequestMapping(value = "/{theItemId}/type/{theTypeName:.*}", method = RequestMethod.GET , produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity typeInfo(@ModelAttribute("requestId") String requestId, @PathVariable String theItemId, @PathVariable String theTypeName) {
-		return compositionCatalogBusinessLogic.getTypeInfo(theItemId, theTypeName);
+		return compositionCatalogBusinessLogic.getTypeInfo(theItemId, theTypeName, requestId);
 	}
 
 	@RequestMapping(value = "/catalog", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -116,11 +66,22 @@ public class CompositionController extends BaseController {
 		}
 	}
 
-
 	@RequestMapping(value = { "/getMC/{vfcmtUuid}" }, method = RequestMethod.GET , produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity getMC(@PathVariable String vfcmtUuid, @ModelAttribute String requestId) {
 		try {
 			return new ResponseEntity<>(compositionBusinessLogic.getDataAndComposition(vfcmtUuid, requestId), HttpStatus.OK);
+		} catch (Exception e) {
+			return handleException(e, ApiType.GET_VFCMT);
+		}
+	}
+
+	// 1810 US436244 MC table
+	@RequestMapping(value = { "/getMC/{vfcmtUuid}/{revertedUuid}" }, method = RequestMethod.GET , produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity getSubmittedMcWithRevertedReference(@PathVariable String vfcmtUuid, @PathVariable String revertedUuid, @ModelAttribute String requestId) {
+		try {
+			CreateMcResponse res = compositionBusinessLogic.getDataAndComposition(vfcmtUuid, requestId);
+			res.getVfcmt().setUuid(vfcmtUuid.concat("/").concat(revertedUuid));
+			return new ResponseEntity<>(res, HttpStatus.OK);
 		} catch (Exception e) {
 			return handleException(e, ApiType.GET_VFCMT);
 		}
@@ -150,5 +111,22 @@ public class CompositionController extends BaseController {
 			}
 		}
 		return res;
+	}
+
+	@RequestMapping(value = "/{contextType}/{serviceUuid}/{vfiName}/saveComposition/{vfcmtUuid}/{revertedUuid}", method = RequestMethod.POST)
+	public ResponseEntity overwriteRevertedComposition(@RequestHeader("USER_ID") String userId, @RequestBody String theCdump,
+			@PathVariable String contextType, @PathVariable String serviceUuid, @PathVariable String vfiName, @PathVariable String vfcmtUuid, @PathVariable String revertedUuid, @ModelAttribute String requestId) {
+		try {
+			debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Reverted MC version {} is about to be overwritten with submitted MC version {}", revertedUuid, vfcmtUuid);
+			ResponseEntity res = compositionBusinessLogic.overwriteRevertedMC(userId, vfcmtUuid, revertedUuid, theCdump, requestId);
+			debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Reverted MC version {} overwrite result status code: {}", revertedUuid, res.getStatusCodeValue());
+			if(HttpStatus.OK == res.getStatusCode()) {
+				debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "About to undo revert of external monitoring reference from service {} to MC {}", serviceUuid, revertedUuid);
+				compositionBusinessLogic.undoRevert(userId, contextType, serviceUuid, vfiName, revertedUuid, requestId);
+			}
+			return res;
+		} catch (Exception e) {
+			return handleException(e, ApiType.SAVE_CDUMP);
+		}
 	}
 }

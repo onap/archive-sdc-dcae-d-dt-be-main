@@ -18,7 +18,6 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
@@ -57,14 +56,6 @@ public class CompositionCatalogBusinessLogicTest {
 	public void getModelByIdInvalidUuidFailureTest() {
 		ResponseEntity result = compositionCatalogBusinessLogic.getModelById(REQUEST_ID, "invalidId");
 		assertEquals("Invalid UUID string: invalidId", ((ResponseFormat)result.getBody()).getNotes());
-	}
-
-	@Test
-	public void getTypeInfoModelNotLoadedFailureTest() {
-		String uuid = UUID.randomUUID().toString();
-		// this is pretty awful. you cannot call 'getTypeInfo' unless it is preceded by a 'getModel' call of the containing model, so that the 'catalogs' item is populated by the container model id.
-		ResponseEntity result = compositionCatalogBusinessLogic.getTypeInfo(uuid, "tosca.nodes.Root");
-		assertEquals("No catalog available for resource " + uuid + ". You might want to fetch the model first.", ((ResponseFormat)result.getBody()).getNotes());
 	}
 
 	private void mockCatalog() {

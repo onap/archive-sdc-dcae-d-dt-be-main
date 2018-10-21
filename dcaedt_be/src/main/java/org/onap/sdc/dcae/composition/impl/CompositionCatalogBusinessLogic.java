@@ -39,7 +39,7 @@ public class CompositionCatalogBusinessLogic extends BaseBusinessLogic {
 	public ResponseEntity getModelById(String requestId, String theItemId) {
 
 		try {
-			ResourceDetailed resourceDetailed = fetchAndExtractTemplateAndSchema(theItemId, requestId);
+			ResourceDetailed resourceDetailed = catalogController.getCatalog().hasCachedItem(theItemId) ? fetchCachedArtifactsMetadata(theItemId, requestId) : fetchAndExtractTemplateAndSchema(theItemId, requestId);
 			Future<Catalog.Template> modelFuture = catalogController.getCatalog().template(resourceDetailed).withInputs().withOutputs().withNodes().withNodeProperties().withNodePropertiesAssignments().withNodeRequirements().withNodeCapabilities().withNodeCapabilityProperties()
 					.withNodeCapabilityPropertyAssignments().withPolicies().withPolicyProperties().withPolicyPropertiesAssignments().execute();
 			if(modelFuture.succeeded()) {
@@ -56,9 +56,15 @@ public class CompositionCatalogBusinessLogic extends BaseBusinessLogic {
 	}
 
 
-	public ResponseEntity getTypeInfo(String theItemId, String theTypeName) {
+	public ResponseEntity getTypeInfo(String theItemId, String theTypeName, String requestId) {
 
 		try {
+			// temporary patch - precede with caching verification //
+			if(!catalogController.getCatalog().hasCachedItem(theItemId)) {
+				ResourceDetailed resourceDetailed = fetchAndExtractTemplateAndSchema(theItemId, requestId);
+				catalogController.getCatalog().template(resourceDetailed).execute();
+			}
+			//         //         //         //         //         //
 			Future<Catalog.Type> theTypeInfoFuture = catalogController.getCatalog().type(theItemId, theTypeName).withHierarchy().withCapabilities().withRequirements().execute();
 			if(theTypeInfoFuture.succeeded()) {
 				CatalogResponse response = new CatalogResponse(ElementRequest.EMPTY_REQUEST);
@@ -85,14 +91,16 @@ public class CompositionCatalogBusinessLogic extends BaseBusinessLogic {
 
 
 	private ResourceDetailed fetchAndExtractTemplateAndSchema(String uuid, String requestId) throws IOException {
-		String toscaModelPath = "/sdc/v1/catalog/resources/".concat(uuid).concat("/toscaModel/");
-		if(!catalogController.getCatalog().hasCachedItem(uuid)){
-			ResourceDetailed resourceDetailed = new ResourceDetailed();
-			resourceDetailed.setUuid(uuid);
-			resourceDetailed.setToscaModelURL(toscaModelPath);
-			resourceDetailed.setArtifacts(extractToscaArtifactsFromCsar(sdcRestClient.getResourceToscaModel(uuid, requestId), toscaModelPath));
-			return resourceDetailed;
-		}
+		String toscaModelPath = toscaModelPath(uuid);
+		ResourceDetailed resourceDetailed = new ResourceDetailed();
+		resourceDetailed.setUuid(uuid);
+		resourceDetailed.setToscaModelURL(toscaModelPath);
+		resourceDetailed.setArtifacts(extractToscaArtifactsFromCsar(sdcRestClient.getResourceToscaModel(uuid, requestId), toscaModelPath));
+		return resourceDetailed;
+	}
+
+	private ResourceDetailed fetchCachedArtifactsMetadata(String uuid, String requestId) throws IOException {
+		String toscaModelPath = toscaModelPath(uuid);
 		ResourceDetailed cachedVf = sdcRestClient.getResource(uuid, requestId);
 		cachedVf.getArtifacts().forEach(a -> a.setArtifactURL(toscaModelPath.concat(a.getArtifactName())));
 		return cachedVf;
@@ -113,6 +121,10 @@ public class CompositionCatalogBusinessLogic extends BaseBusinessLogic {
 			}
 			return extracted;
 		}
+	}
+
+	private String toscaModelPath(String uuid) {
+		return "/sdc/v1/catalog/resources/".concat(uuid).concat("/toscaModel/");
 	}
 
 }

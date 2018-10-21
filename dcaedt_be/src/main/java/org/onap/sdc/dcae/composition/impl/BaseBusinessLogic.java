@@ -8,6 +8,7 @@ import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.common.onaplog.OnapLoggerError;
 import org.onap.sdc.dcae.client.ISdcClient;
 import org.onap.sdc.dcae.composition.restmodels.CreateMcResponse;
+import org.onap.sdc.dcae.composition.restmodels.ReferenceUUID;
 import org.onap.sdc.dcae.composition.restmodels.VfcmtData;
 import org.onap.sdc.dcae.composition.restmodels.sdc.*;
 import org.onap.sdc.dcae.composition.util.DcaeBeConstants;
@@ -25,12 +26,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Base64Utils;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.zip.ZipEntry;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.zip.ZipInputStream;
 
 @Component
@@ -44,6 +47,8 @@ public class BaseBusinessLogic {
 
     protected static OnapLoggerError errLogger = OnapLoggerError.getInstance();
     protected static OnapLoggerDebug debugLogger = OnapLoggerDebug.getInstance();
+
+	protected static final String REVERTED_REF = "_reverted";
 
     public ISdcClient getSdcRestClient() {
         return sdcRestClient;
@@ -62,7 +67,44 @@ public class BaseBusinessLogic {
         return sdcRestClient.createResourceArtifact(userId, targetId, cloned, requestId);
     }
 
-    public void cloneArtifactToTarget(String userId, String targetId, String payload, Artifact artifactToClone, Artifact artifactToOverride, String requestId) throws JsonProcessingException {
+    public void undoRevert(String userId, String contextType, String serviceUuid, String vfiName, String revertedUuid, String requestId) {
+		sdcRestClient.updateExternalMonitoringReference(userId, contextType, serviceUuid, vfiName, revertedUuid.concat(REVERTED_REF), new ReferenceUUID(revertedUuid), requestId);
+	}
+
+	// 1810 US436244 Update MC table version representations and actions
+	void cloneArtifactsToRevertedMC(String userId, String vfcmtUuid, String revertedUuid, String requestId, boolean cloneComposition) throws JsonProcessingException {
+		List<String> exclude = new ArrayList<>();
+		exclude.add(DcaeBeConstants.Composition.fileNames.SVC_REF);
+		if(!cloneComposition) {
+			exclude.add(DcaeBeConstants.Composition.fileNames.COMPOSITION_YML);
+		}
+		ResourceDetailed sourceVfcmt = sdcRestClient.getResource(vfcmtUuid, requestId);
+		ResourceDetailed targetVfcmt = sdcRestClient.getResource(revertedUuid, requestId);
+		Map<String, Artifact> currentArtifacts = targetVfcmt.getArtifacts().stream().collect(Collectors.toMap(Artifact::getArtifactName, Function.identity()));
+		debugLogger.log(LogLevel.DEBUG,this.getClass().getName(), "latest MC version artifact names: {}", currentArtifacts.keySet());
+		Predicate<Artifact> predicate = p -> !exclude.contains(p.getArtifactName()) && (null == currentArtifacts.get(p.getArtifactName()) || !currentArtifacts.get(p.getArtifactName()).getArtifactChecksum().equals(p.getArtifactChecksum()));
+		List<Artifact> artifactsToClone = sourceVfcmt.getArtifacts().stream().filter(predicate).collect(Collectors.toList());
+		debugLogger.log(LogLevel.DEBUG,this.getClass().getName(), "submitted MC version artifacts to clone or overwrite on latest MC: {}", artifactsToClone.stream().map(Artifact::getArtifactName).collect(Collectors.toList()));
+		// clone source artifacts to target
+		if(!artifactsToClone.isEmpty()) {
+			checkVfcmtType(targetVfcmt);
+			checkUserIfResourceCheckedOut(userId, targetVfcmt);
+			if (isNeedToCheckOut(targetVfcmt.getLifecycleState())) {
+				targetVfcmt = sdcRestClient.changeResourceLifecycleState(userId, revertedUuid, LifecycleOperationType.CHECKOUT.name(), "checking out VFCMT before clone", requestId);
+			}
+			for (Artifact artifactToClone : artifactsToClone) {
+				String payload = sdcRestClient.getResourceArtifact(vfcmtUuid, artifactToClone.getArtifactUUID(), requestId);
+				cloneArtifactToTarget(userId, revertedUuid, payload, artifactToClone, currentArtifacts.get(artifactToClone.getArtifactName()), requestId);
+			}
+		}
+        // delete any target artifacts that do not match source artifacts
+		List<String> artifactsNames = sourceVfcmt.getArtifacts().stream().map(Artifact::getArtifactName).collect(Collectors.toList());
+		targetVfcmt.getArtifacts().stream().filter(p -> !artifactsNames.contains(p.getArtifactName())).forEach(a ->
+			sdcRestClient.deleteResourceArtifact(userId, revertedUuid, a.getArtifactUUID(), requestId)
+		);
+	}
+
+    private void cloneArtifactToTarget(String userId, String targetId, String payload, Artifact artifactToClone, Artifact artifactToOverride, String requestId) throws JsonProcessingException {
         if (null != artifactToOverride) {
             artifactToOverride.setDescription(artifactToOverride.getArtifactDescription());
             artifactToOverride.setPayloadData(Base64Utils.encodeToString(payload.getBytes()));

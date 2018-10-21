@@ -17,12 +17,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 public class ReferenceBusinessLogicTest {
@@ -34,8 +32,6 @@ public class ReferenceBusinessLogicTest {
 
     @Mock
     private ISdcClient sdcClientMock;
-    @Mock
-    private ResourceDetailed templateMC;
 
     @InjectMocks
     private ReferenceBusinessLogic classUnderTest;
@@ -49,25 +45,42 @@ public class ReferenceBusinessLogicTest {
 
     @Test
     public void successfulFetchMonitoringComponents() throws Exception {
-        when(sdcClientMock.getResource(anyString(),anyString())).thenReturn(templateMC);
+    	ResourceDetailed mock_b = mockMcDetails("a", "b", "NOT_CERTIFIED_CHECKOUT");
+    	ResourceDetailed mock_u = mockMcDetails("u", "u", "CERTIFIED");
+    	ResourceDetailed mock_w = mockMcDetails("w", "w", "NOT_CERTIFIED_CHECKIN");
+		MonitoringComponent expected_b = new MonitoringComponent(mock_b, "vfi1");
+		expected_b.setSubmittedUuid("a");
+		expected_b.setStatus("Submitted");
+		MonitoringComponent expected_u = new MonitoringComponent(mock_u, "vfi2");
+		expected_u.setUuid("u/v");
+		MonitoringComponent expected_w = new MonitoringComponent(mock_w, "vfi2");
+        when(sdcClientMock.getResource(eq("a"),anyString())).thenReturn(mockMcDetails("a", "a", "CERTIFIED"));
+		when(sdcClientMock.getResource(eq("b"),anyString())).thenReturn(mock_b);
+		when(sdcClientMock.getResource(eq("u"),anyString())).thenReturn(mock_u);
+		when(sdcClientMock.getResource(eq("v"),anyString())).thenReturn(mockMcDetails("u", "v", "NOT_CERTIFIED_CHECKIN"));
+		when(sdcClientMock.getResource(eq("w"),anyString())).thenReturn(mock_w);
         ExternalReferencesMap refs = new ExternalReferencesMap();
-        refs.put("vfi1", Arrays.asList("a","b","c","d"));
-        refs.put("vfi2", Arrays.asList("u","v","w","x","y","z"));
-        Map<String, List<MonitoringComponent>> result = classUnderTest.fetchMonitoringComponents(refs, requestId);
-        verify(sdcClientMock,times(10)).getResource(anyString(),anyString());
+        refs.put("vfi1", Arrays.asList("a","b"));
+		refs.put("vfi2", Arrays.asList("u","v_reverted","w"));
+        Map<String, Collection<MonitoringComponent>> result = classUnderTest.fetchMonitoringComponents(refs, requestId);
+        verify(sdcClientMock,times(5)).getResource(anyString(),anyString());
         Assert.assertEquals(1, result.size());
-        Assert.assertEquals(10, result.get("monitoringComponents").size());
+        Assert.assertEquals(3, result.get("monitoringComponents").size());
+        Assert.assertTrue(result.get("monitoringComponents").contains(expected_b));
+		Assert.assertTrue(result.get("monitoringComponents").contains(expected_u));
+		Assert.assertTrue(result.get("monitoringComponents").contains(expected_w));
     }
 
     @Test
     public void partialSuccessfulFetchMonitoringComponents() throws Exception {
-        when(sdcClientMock.getResource(anyString(),anyString())).thenReturn(templateMC);
+        when(sdcClientMock.getResource(eq("abc"),anyString())).thenReturn(mockMcDetails("abc", "abc", "CERTIFIED"));
+		when(sdcClientMock.getResource(eq("xyz"),anyString())).thenReturn(mockMcDetails("xyz", "xyz", "CERTIFIED"));
         when(sdcClientMock.getResource(eq("no_such_uuid"),anyString())).thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
         ExternalReferencesMap refs = new ExternalReferencesMap();
         refs.put("vfi1", Collections.singletonList("abc"));
         refs.put("vfi2", Collections.singletonList("xyz"));
         refs.put("vfi3", Collections.singletonList("no_such_uuid"));
-        Map<String, List<MonitoringComponent>> result = classUnderTest.fetchMonitoringComponents(refs, requestId);
+        Map<String, Collection<MonitoringComponent>> result = classUnderTest.fetchMonitoringComponents(refs, requestId);
         verify(sdcClientMock,times(3)).getResource(anyString(),anyString());
         Assert.assertEquals(2, result.size());
         Assert.assertEquals(2, result.get("monitoringComponents").size());
@@ -123,4 +136,12 @@ public class ReferenceBusinessLogicTest {
 
         Assert.assertEquals("The request was partially successful. Removing the attached Blueprint from the service has failed. You must manually delete the artifact.", responseEntity.getBody().getRequestError().getServiceException().getFormattedErrorMessage());
     }
+
+    private ResourceDetailed mockMcDetails(String invariantUuid, String uuid, String lifecycleState) {
+    	ResourceDetailed res = new ResourceDetailed();
+    	res.setUuid(uuid);
+    	res.setInvariantUUID(invariantUuid);
+    	res.setLifecycleState(lifecycleState);
+    	return res;
+	}
 }

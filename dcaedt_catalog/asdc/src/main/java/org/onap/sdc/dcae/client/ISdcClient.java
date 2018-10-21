@@ -25,6 +25,8 @@ public interface ISdcClient {
 
     String addExternalMonitoringReference(String userId, CreateVFCMTRequest resource, ReferenceUUID vfcmtUuid, String requestId);
 
+    void updateExternalMonitoringReference(String userId, String contextType, String serviceUuid, String vfiName, String vfcmtUuid, ReferenceUUID updatedReference, String requestId);
+
     void deleteExternalMonitoringReference(String userId, String contextType, String uuid, String vfiName, String vfcmtUuid, String requestId);
 
     ResourceDetailed createResource(String userId, CreateVFCMTRequest resource, String requestId);

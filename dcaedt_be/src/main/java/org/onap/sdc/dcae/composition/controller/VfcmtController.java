@@ -169,6 +169,43 @@ public class VfcmtController extends BaseController{
         return referenceBusinessLogic.deleteVfcmtReferenceBlueprint(userId, contextType, monitoringComponentName, serviceUuid, vfiName, vfcmtUuid, requestId);
     }
 
+    // 1810 US436244 MC table functionality
+	@RequestMapping(value = { "/{contextType}/{monitoringComponentName}/{serviceUuid}/{vfiName}/{vfcmtUuid}/{revertedUuid}/deleteVfcmtReference" }, method = { RequestMethod.DELETE }, produces = {"application/json" })
+	public ResponseEntity deleteVfcmtReferenceWithBlueprint(@RequestHeader("USER_ID") String userId,
+			                                                @PathVariable String contextType,
+			                                                @PathVariable String monitoringComponentName,
+			                                                @PathVariable String serviceUuid,
+			                                                @PathVariable String vfiName,
+			                                                @PathVariable String vfcmtUuid,
+			                                                @PathVariable String revertedUuid,
+			                                                @ModelAttribute String requestId) {
+		try {
+			referenceBusinessLogic.deleteVfcmtReference(userId, contextType, serviceUuid, vfiName, vfcmtUuid, revertedUuid, requestId);
+		} catch (Exception e) {
+			return handleException(e, ApiType.DELETE_VFCMT_REFERENCE);
+		}
+		return referenceBusinessLogic.deleteVfcmtReferenceBlueprint(userId, contextType, monitoringComponentName, serviceUuid, vfiName, vfcmtUuid, requestId);
+	}
+
+	// 1810 US436244 MC table functionality
+	@RequestMapping(value = { "/{contextType}/{monitoringComponentName}/{serviceUuid}/{vfiName}/{vfcmtUuid}/deleteVfcmtReference/{submittedUuid}" }, method = { RequestMethod.DELETE }, produces = {"application/json" })
+	public ResponseEntity deleteVfcmtReferencesWithBlueprint(@RequestHeader("USER_ID") String userId,
+			@PathVariable String contextType,
+			@PathVariable String monitoringComponentName,
+			@PathVariable String serviceUuid,
+			@PathVariable String vfiName,
+			@PathVariable String vfcmtUuid,
+			@PathVariable String submittedUuid,
+			@ModelAttribute String requestId) {
+		try {
+			referenceBusinessLogic.deleteVfcmtReference(userId, contextType, serviceUuid, vfiName, vfcmtUuid, requestId);
+			referenceBusinessLogic.deleteVfcmtReference(userId, contextType, serviceUuid, vfiName, submittedUuid, requestId);
+		} catch (Exception e) {
+			return handleException(e, ApiType.DELETE_VFCMT_REFERENCE);
+		}
+		return referenceBusinessLogic.deleteVfcmtReferenceBlueprint(userId, contextType, monitoringComponentName, serviceUuid, vfiName, submittedUuid, requestId);
+	}
+
     @RequestMapping(value = { "/getVfcmtReferenceData/{vfcmtUuid}" }, method = { RequestMethod.GET }, produces = {"application/json" })
     public ResponseEntity getVfcmtReferenceData(@PathVariable String vfcmtUuid, @ModelAttribute String requestId) {
         try {
@@ -183,4 +220,24 @@ public class VfcmtController extends BaseController{
 	    return referenceBusinessLogic.checkoutAndBindToServiceIfCertified(userId, contextType, serviceUuid, vfiName, vfcmtUuid, requestId);
 	}
 
+	// 1810 US436244 MC table functionality
+	@RequestMapping(value = { "/{contextType}/{serviceUuid}/{vfiName}/{vfcmtUuid}/{revertedUuid}/getLatestMcUuid" }, method = { RequestMethod.GET }, produces = {"application/json" })
+	public ResponseEntity getLatestMcUuid(@RequestHeader("USER_ID")  String userId, @PathVariable String contextType, @PathVariable String serviceUuid, @PathVariable String vfiName, @PathVariable String vfcmtUuid, @PathVariable String revertedUuid, @ModelAttribute String requestId) {
+		return referenceBusinessLogic.checkoutAndUndoRevertMC(userId, contextType, serviceUuid, vfiName, vfcmtUuid, revertedUuid, requestId);
+	}
+
+	@RequestMapping(value = { "/{contextType}/{serviceUuid}/{vfiName}/{vfcmtUuid}/revert/{submittedUuid}" }, method = { RequestMethod.POST }, produces = {"application/json" })
+	public ResponseEntity revertToSubmittedMC(@RequestHeader("USER_ID")  String userId,
+			                                                @PathVariable String contextType,
+			                                                @PathVariable String serviceUuid,
+			                                                @PathVariable String vfiName,
+			                                                @PathVariable String vfcmtUuid,
+			                                                @PathVariable String submittedUuid,
+			                                                @ModelAttribute String requestId) {
+		try {
+			return ResponseEntity.ok(referenceBusinessLogic.revertToSubmittedMC(userId, contextType, serviceUuid, vfiName, vfcmtUuid, submittedUuid, requestId));
+		} catch (Exception e) {
+			return handleException(e, ApiType.ATTACH_TO_SERVICE);
+		}
+	}
 }

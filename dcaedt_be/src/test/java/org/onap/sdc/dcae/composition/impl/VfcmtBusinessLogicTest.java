@@ -21,6 +21,7 @@ import org.onap.sdc.dcae.errormng.RequestError;
 import org.onap.sdc.dcae.errormng.ResponseFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
 import java.util.ArrayList;
 import java.util.Arrays;

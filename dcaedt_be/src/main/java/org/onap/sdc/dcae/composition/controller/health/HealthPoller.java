@@ -1,29 +1,22 @@
 package org.onap.sdc.dcae.composition.controller.health;
 
-import java.net.URI;
-import java.util.Collections;
-
+import com.google.gson.Gson;
+import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.common.onaplog.OnapLoggerError;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
-import org.onap.sdc.dcae.composition.restmodels.health.ComponentsInfo;
-import org.onap.sdc.dcae.catalog.commons.Future;
 import org.onap.sdc.dcae.catalog.commons.Http;
+import org.onap.sdc.dcae.composition.restmodels.health.ComponentsInfo;
 import org.onap.sdc.dcae.composition.util.DcaeBeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import com.google.gson.Gson;
+import java.net.URI;
+import java.util.Collections;
 
 @Configuration
 @EnableAsync
@@ -50,20 +43,22 @@ public class HealthPoller {
 		ComponentsInfo toscaLabHealthRes = null;
 		ResponseEntity<String> healthRes = null;
 		try {
-			for(int i=0; i<Integer.valueOf(hcretrynum); i++){ // 3 tries
+			for (int i = 0; i < Integer.valueOf(hcretrynum); i++) { // 3 tries
 				healthRes = sendHealthCheck();
 				debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Try #{}: {}", i, healthRes);
-				if(healthRes.getStatusCode()==HttpStatus.OK){
-					String result = (String) healthRes.getBody();
+				if (healthRes.getStatusCode() == HttpStatus.OK) {
+					String result = healthRes.getBody();
 					toscaLabHealthRes = gson.fromJson(result, ComponentsInfo.class);
 					break;
 				}
 			}
 		} catch (Exception e) {
 			toscaLabHealthRes = getNegativeHealth(e.getMessage());
+			errLogger.log(LogLevel.ERROR, this.getClass().getName(), "HealthCheck Exception: {}", e);
 		}
-		if(toscaLabHealthRes == null){
-			toscaLabHealthRes = getNegativeHealth(healthRes.getBody() + "-" + healthRes.getStatusCode());
+		if (toscaLabHealthRes == null) {
+			String msg = null != healthRes ? healthRes.getBody() + "-" + healthRes.getStatusCode() : "";
+			toscaLabHealthRes = getNegativeHealth(msg);
 		}
 		toscaLabHealthState.setToscaLabHealthResponse(toscaLabHealthRes);
 	}

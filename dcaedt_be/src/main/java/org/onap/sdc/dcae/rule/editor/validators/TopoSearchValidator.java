@@ -1,11 +1,13 @@
 package org.onap.sdc.dcae.rule.editor.validators;
 
 import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.dcae.composition.restmodels.ruleeditor.Condition;
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.TopoSearchAction;
 import org.onap.sdc.dcae.errormng.ActionStatus;
 import org.onap.sdc.dcae.errormng.ErrConfMgr;
 import org.onap.sdc.dcae.errormng.ResponseFormat;
 import org.onap.sdc.dcae.rule.editor.utils.ValidationUtils;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -26,7 +28,7 @@ public class TopoSearchValidator extends BaseActionValidator<TopoSearchAction> {
 	public boolean validate(TopoSearchAction action, List<ResponseFormat> errors) {
 
 		boolean valid = super.validate(action, errors);
-		if (action.conditionalSearch() && !conditionValidator.validateConditionalAction(action.searchFilter(), errors)) {
+		if (action.conditionalSearch() && searchFilterHasNoneEmptyFields(action.searchFilter()) && !conditionValidator.validateConditionalAction(action.searchFilter(), errors)) {
 			valid = false;
 		}
 		if (!ValidationUtils.validateNotEmpty(action.searchField())) {
@@ -40,6 +42,9 @@ public class TopoSearchValidator extends BaseActionValidator<TopoSearchAction> {
 		return validateEnrichOrUpdates(action, errors) && valid;
 	}
 
+	private boolean searchFilterHasNoneEmptyFields(Condition searchFilter) {
+		return ValidationUtils.validateNotEmpty(searchFilter.getLeft()) || ValidationUtils.validateNotEmpty(searchFilter.getOperator()) || !CollectionUtils.isEmpty(searchFilter.getRight()) && searchFilter.getRight().stream().anyMatch(ValidationUtils::validateNotEmpty);
+	}
 
 	private boolean validateEnrichOrUpdates(TopoSearchAction action, List<ResponseFormat> errors) {
 		if (!action.doEnrich()) {

@@ -11,7 +11,7 @@ import tools.TemplateContainer;
 
 import java.util.*;
 
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -27,6 +27,7 @@ public class TemplateContainerTest extends BaseTest {
         super.setup();
         super.mockGetItemModel();
         super.mockGetItemType();
+
         templateInfos = new ArrayList<>();
         TemplateInfo templateInfo = new TemplateInfo();
         templateInfo.setName(TEMPLATE_INFO_NAME);
