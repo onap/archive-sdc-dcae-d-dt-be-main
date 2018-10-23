@@ -4,7 +4,6 @@ import json.templateInfo.TemplateInfo;
 import org.onap.sdc.dcae.composition.restmodels.CreateVFCMTRequest;
 import org.onap.sdc.dcae.composition.restmodels.sdc.ResourceDetailed;
 import org.onap.sdc.dcae.composition.util.DcaeBeConstants;
-import org.springframework.web.client.HttpServerErrorException;
 import utilities.IDcaeRestClient;
 import utilities.IReport;
 

@@ -261,5 +261,11 @@
             <artifactId>junit</artifactId>
             <version>4.12</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>5.0.9.RELEASE</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>
