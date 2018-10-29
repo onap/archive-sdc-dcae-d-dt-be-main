@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.mockito.MockitoAnnotations;
 import java.util.ArrayList;
 
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 import static org.onap.sdc.dcae.composition.util.DcaeBeConstants.Composition.fileNames.COMPOSITION_YML;
 

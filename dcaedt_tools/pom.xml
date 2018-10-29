@@ -207,7 +207,7 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.8.0</version>
+            <version>2.8.5</version>
         </dependency>
         <dependency>
             <groupId>org.onap.sdc.dcae-d.dt-be-property</groupId>
@@ -217,13 +217,13 @@
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
-            <version>2.0.0-beta.5</version>
+            <version>1.6.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-            <version>2.0.0-beta.5</version>
+            <artifactId>powermock-api-mockito</artifactId>
+            <version>1.6.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -265,7 +265,6 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
             <version>5.0.9.RELEASE</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

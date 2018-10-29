@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 abstract class BaseTest {
@@ -42,7 +42,6 @@ abstract class BaseTest {
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
-
         mockGetCatalog();
     }
 

@@ -7,7 +7,7 @@ import tools.DeployTemplate;
 
 import java.util.*;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -28,6 +28,7 @@ public class DeployTemplateTest extends BaseTest {
         super.mockCheckoutVfcmtAndCreateResource();
         when(dcaeRestClient.getUserId()).thenReturn(USER_ID);
         when(dcaeRestClient.saveComposition(any(), any())).thenReturn("Composition Created");
+
         templateInfoToJsonObjectMap = new HashMap<>();
         TemplateInfo templateInfo = new TemplateInfo();
         templateInfo.setName(VFCMT_NAME1);
