@@ -148,7 +148,7 @@ public class CompositionBusinessLogic extends BaseBusinessLogic {
         if (null != vfiRefs && 1 < vfiRefs.size()) {
             debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Found {} external monitoring references for vfi {} on service {}:{}", vfiRefs.size(), newReferencedMc.getVfiName(), service.getUuid(), vfiRefs);
             Collections.synchronizedList(vfiRefs).parallelStream()
-                    .filter(p -> !newReferencedMc.getUuid().equals(p))
+                    .filter(p -> !newReferencedMc.getUuid().equals(p) && !p.endsWith(REVERTED_REF))
                     .filter(p -> newReferencedMc.getInvariantUUID().equals(sdcRestClient.getResource(p, requestId).getInvariantUUID()))
                     .forEach(id -> sdcRestClient.deleteExternalMonitoringReference(userId, context, service.getUuid(), normalizedInstanceName, id, requestId));
         } else {

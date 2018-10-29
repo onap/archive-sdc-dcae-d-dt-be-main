@@ -24,7 +24,7 @@ public class StringTransformTranslator extends ActionTranslator<StringTransformA
 			targetCase = action.targetCase();
 			trim = String.valueOf(action.trim());
 			toField = action.getTarget();
-			value = action.fromValue();
+			value = action.startValue();
 		}
 	}
 

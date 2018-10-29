@@ -21,7 +21,6 @@ import org.onap.sdc.dcae.errormng.RequestError;
 import org.onap.sdc.dcae.errormng.ResponseFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,13 +29,14 @@ import java.util.List;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.mockito.MockitoAnnotations.initMocks;
 import static org.onap.sdc.dcae.composition.util.DcaeBeConstants.LifecycleStateEnum.CERTIFIED;
 import static org.onap.sdc.dcae.composition.util.DcaeBeConstants.LifecycleStateEnum.NOT_CERTIFIED_CHECKOUT;
 
 public class VfcmtBusinessLogicTest {
 
-	private ISdcClient sdcClientMock = Mockito.mock(ISdcClient.class);
-	private ResourceDetailed templateMC = Mockito.mock(ResourceDetailed.class);
+	private ISdcClient sdcClientMock = mock(ISdcClient.class);
+	private ResourceDetailed templateMC = mock(ResourceDetailed.class);
 
 	private VfcmtBusinessLogic vfcmtBusinessLogic = new VfcmtBusinessLogic();
 	private ImportVFCMTRequest request = new ImportVFCMTRequest();
@@ -46,7 +46,7 @@ public class VfcmtBusinessLogicTest {
 
 	@Before
 	public void setup(){
-		MockitoAnnotations.initMocks(this);
+		initMocks(this);
 		new ErrorConfigurationLoader(System.getProperty("user.dir")+"/src/main/webapp/WEB-INF");
 		vfcmtBusinessLogic.setSdcRestClient(sdcClientMock);
 		request.setTemplateUuid("577");
@@ -91,7 +91,7 @@ public class VfcmtBusinessLogicTest {
 	public void successfulCreationAndAttachmentOfVfcmt() throws Exception {
 		when(templateMC.getUuid()).thenReturn("3");
 		when(sdcClientMock.getResource(anyString(),anyString())).thenReturn(templateMC);
-		ResourceDetailed mockedVfcmt = Mockito.mock(ResourceDetailed.class);
+		ResourceDetailed mockedVfcmt = mock(ResourceDetailed.class);
 		when(mockedVfcmt.getUuid()).thenReturn("5");
 		when(sdcClientMock.createResource(anyString(),any(),anyString())).thenReturn(mockedVfcmt);
 		when(sdcClientMock.getResourceArtifact(anyString(),anyString(),anyString())).thenReturn("3243324");
@@ -292,7 +292,7 @@ public class VfcmtBusinessLogicTest {
 
 	private void emulateListOfArtifactsWithCompositionYml() {
 		List<Artifact> listOfArtifactCompositionYml = new ArrayList<>();
-		Artifact compositionArtifact = Mockito.mock(Artifact.class);
+		Artifact compositionArtifact = mock(Artifact.class);
 		when(compositionArtifact.getArtifactName()).thenReturn(DcaeBeConstants.Composition.fileNames.COMPOSITION_YML);
 		when(compositionArtifact.getArtifactUUID()).thenReturn("compositionArtifactUuid");
 		when(compositionArtifact.getPayloadData()).thenReturn("{\"flowType\":\"don't override\"}");
@@ -303,7 +303,7 @@ public class VfcmtBusinessLogicTest {
 
 	private void emulateCdumpArtifactWithoutFlowtype() {
 		List<Artifact> listOfArtifactCompositionYml = new ArrayList<>();
-		Artifact compositionArtifact = Mockito.mock(Artifact.class);
+		Artifact compositionArtifact = mock(Artifact.class);
 		when(compositionArtifact.getArtifactName()).thenReturn(DcaeBeConstants.Composition.fileNames.COMPOSITION_YML);
 		when(compositionArtifact.getArtifactUUID()).thenReturn("compositionArtifactUuid");
 		when(compositionArtifact.getPayloadData()).thenReturn("{\"cid\":\"xsssdaerrwr\"}\"");
@@ -313,8 +313,8 @@ public class VfcmtBusinessLogicTest {
 
 	private void emulateListOfArtifactsWithCompositionYmlAndSvcRef() {
 		List<Artifact> listOfArtifactCompositionYml = new ArrayList<>();
-		Artifact compositionArtifact = Mockito.mock(Artifact.class);
-		Artifact svcRefArtifact = Mockito.mock(Artifact.class);
+		Artifact compositionArtifact = mock(Artifact.class);
+		Artifact svcRefArtifact = mock(Artifact.class);
 		when(compositionArtifact.getArtifactName()).thenReturn(DcaeBeConstants.Composition.fileNames.COMPOSITION_YML);
 		when(compositionArtifact.getArtifactUUID()).thenReturn("compositionArtifactUuid");
 		when(compositionArtifact.getPayloadData()).thenReturn("{\"flowType\":\"don't override\"}");
