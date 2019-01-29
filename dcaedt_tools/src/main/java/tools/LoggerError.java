@@ -8,11 +8,11 @@ public class LoggerError {
     }
 
     public void log(String logLine) {
-        System.err.println(logLine);
+    	//System.err.println(logLine);
     }
 
     public void log(String logLine, Exception e) {
-        System.err.println(logLine);
+        //System.err.println(logLine);
         e.printStackTrace();
     }
 }
