@@ -71,7 +71,7 @@ function dir_perms {
     mkdir -p "${WORKSPACE}/data/logs/DCAE-DT/DCAE"
     mkdir -p "${WORKSPACE}/data/logs/DCAE-TOSCA/DCAE"
 
-    chmod -R 775 "${WORKSPACE}/data/logs"
+    chmod -R 777 "${WORKSPACE}/data/logs"
 }
 #
 
