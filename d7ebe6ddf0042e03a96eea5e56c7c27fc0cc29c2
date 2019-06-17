@@ -1,0 +1,11 @@
+Verified+1: ONAP Jobbuilder <onap-jobbuilder@jenkins.onap.org>
+Code-Review+1: Krystian Kedron <k.kedron@partner.samsung.com>
+Code-Review+1: Samuli Silvius <s.silvius@partner.samsung.com>
+Code-Review+1: Piotr Borelowski <p.borelowski@partner.samsung.com>
+Code-Review+1: Liav Ezer <le056g@att.com>
+Code-Review+2: Ofir Sonsino <ofir.sonsino@intl.att.com>
+Submitted-by: Ofir Sonsino <ofir.sonsino@intl.att.com>
+Submitted-at: Mon, 17 Jun 2019 07:15:45 +0000
+Reviewed-on: https://gerrit.onap.org/r/c/sdc/dcae-d/dt-be-main/+/89025
+Project: sdc/dcae-d/dt-be-main
+Branch: refs/heads/master
