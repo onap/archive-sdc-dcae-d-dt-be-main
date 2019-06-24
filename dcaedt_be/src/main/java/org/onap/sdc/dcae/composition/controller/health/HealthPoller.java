@@ -1,7 +1,7 @@
 package org.onap.sdc.dcae.composition.controller.health;
 
 import com.google.gson.Gson;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.common.onaplog.OnapLoggerError;
 import org.onap.sdc.dcae.catalog.commons.Http;

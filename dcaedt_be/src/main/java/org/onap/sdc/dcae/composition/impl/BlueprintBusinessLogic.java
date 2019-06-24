@@ -2,7 +2,7 @@ package org.onap.sdc.dcae.composition.impl;
 
 import com.google.gson.Gson;
 import org.apache.commons.lang.StringUtils;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.dcae.catalog.commons.Recycler;
 import org.onap.sdc.dcae.composition.restmodels.MessageResponse;
 import org.onap.sdc.dcae.composition.restmodels.VfcmtData;
@@ -20,7 +20,6 @@ import org.springframework.web.client.RestTemplate;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;

@@ -2,7 +2,7 @@ package org.onap.sdc.dcae.composition.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang.StringUtils;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.dcae.composition.restmodels.CreateVFCMTRequest;
 import org.onap.sdc.dcae.composition.restmodels.ImportVFCMTRequest;
 import org.onap.sdc.dcae.composition.restmodels.ReferenceUUID;

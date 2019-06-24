@@ -31,7 +31,7 @@ import jdk.nashorn.api.scripting.AbstractJSObject;
 import org.apache.commons.jxpath.JXPathContext;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.common.onaplog.OnapLoggerError;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 
 
 /**

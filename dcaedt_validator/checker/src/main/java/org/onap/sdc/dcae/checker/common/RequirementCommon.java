@@ -1,7 +1,7 @@
 package org.onap.sdc.dcae.checker.common;
 
 import org.apache.commons.jxpath.JXPathContext;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.dcae.checker.*;
 
 import java.util.*;

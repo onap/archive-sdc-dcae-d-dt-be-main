@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 import com.google.common.reflect.Invokable;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.common.onaplog.OnapLoggerError;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.dcae.checker.common.*;
 import org.onap.sdc.dcae.checker.validation.TOSCAValidator;
 import org.yaml.snakeyaml.Yaml;
