@@ -1,21 +1,15 @@
 package org.onap.sdc.dcae.filter;
 
-import org.apache.http.impl.EnglishReasonPhraseCatalog;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
-import org.onap.sdc.common.onaplog.Enums.OnapLoggerErrorCode;
-import org.onap.sdc.common.onaplog.OnapMDCWrapper;
 
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Enumeration;
-import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.never;

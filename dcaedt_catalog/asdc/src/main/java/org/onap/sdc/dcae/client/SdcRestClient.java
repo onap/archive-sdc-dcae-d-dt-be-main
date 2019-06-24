@@ -5,7 +5,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHeader;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.dcae.composition.restmodels.CreateVFCMTRequest;
 import org.onap.sdc.dcae.composition.restmodels.ReferenceUUID;

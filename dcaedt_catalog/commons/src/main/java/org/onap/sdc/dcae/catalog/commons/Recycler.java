@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.yaml.snakeyaml.Yaml;
 
 

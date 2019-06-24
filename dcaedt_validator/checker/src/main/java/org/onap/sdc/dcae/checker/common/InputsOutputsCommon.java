@@ -1,12 +1,7 @@
 package org.onap.sdc.dcae.checker.common;
 
-import kwalify.Rule;
-import kwalify.Validator;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
 import org.onap.sdc.dcae.checker.*;
-import org.onap.sdc.dcae.checker.validation.TOSCAValidator;
 
-import java.util.Iterator;
 import java.util.Map;
 
 import static org.onap.sdc.dcae.checker.common.ConstCommon.DEFAULT;

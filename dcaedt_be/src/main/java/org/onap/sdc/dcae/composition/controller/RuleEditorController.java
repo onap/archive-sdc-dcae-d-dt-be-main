@@ -1,7 +1,7 @@
 package org.onap.sdc.dcae.composition.controller;
 
 import com.google.gson.JsonParseException;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.dcae.composition.impl.RuleEditorBusinessLogic;
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.MappingRulesResponse;
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.TranslateRequest;

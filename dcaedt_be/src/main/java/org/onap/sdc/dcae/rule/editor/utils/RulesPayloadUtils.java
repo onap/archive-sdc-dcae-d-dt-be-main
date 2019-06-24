@@ -2,7 +2,7 @@ package org.onap.sdc.dcae.rule.editor.utils;
 
 import java.util.List;
 
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerError;
 import org.onap.sdc.dcae.composition.restmodels.sdc.Artifact;
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.*;

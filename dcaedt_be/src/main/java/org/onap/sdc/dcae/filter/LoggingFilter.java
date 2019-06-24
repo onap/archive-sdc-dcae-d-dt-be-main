@@ -19,8 +19,8 @@ import org.apache.http.impl.EnglishReasonPhraseCatalog;
 import org.onap.sdc.common.onaplog.OnapLoggerAudit;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.common.onaplog.OnapMDCWrapper;
-import org.onap.sdc.common.onaplog.Enums.OnapLoggerErrorCode;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.OnapLoggerErrorCode;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 
 public class LoggingFilter implements Filter {
 

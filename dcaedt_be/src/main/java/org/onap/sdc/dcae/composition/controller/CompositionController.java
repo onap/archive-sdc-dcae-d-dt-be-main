@@ -1,6 +1,6 @@
 package org.onap.sdc.dcae.composition.controller;
 
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.dcae.composition.impl.CompositionBusinessLogic;
 import org.onap.sdc.dcae.composition.impl.CompositionCatalogBusinessLogic;
 import org.onap.sdc.dcae.composition.restmodels.CreateMcResponse;

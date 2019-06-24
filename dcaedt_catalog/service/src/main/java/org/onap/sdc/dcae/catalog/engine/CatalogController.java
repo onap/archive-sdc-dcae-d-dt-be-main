@@ -18,7 +18,7 @@ under the License.
  */
 package org.onap.sdc.dcae.catalog.engine;
 
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.dcae.catalog.asdc.ASDCCatalog;
 import org.onap.sdc.dcae.catalog.commons.Future;

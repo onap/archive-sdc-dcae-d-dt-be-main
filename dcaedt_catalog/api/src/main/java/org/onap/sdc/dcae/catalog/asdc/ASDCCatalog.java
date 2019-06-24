@@ -6,7 +6,7 @@ import org.apache.commons.jxpath.JXPathContext;
 import org.apache.commons.jxpath.JXPathNotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.dcae.catalog.Catalog;
 import org.onap.sdc.dcae.catalog.commons.*;

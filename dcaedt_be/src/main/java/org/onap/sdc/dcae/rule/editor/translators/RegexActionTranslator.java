@@ -1,6 +1,6 @@
 package org.onap.sdc.dcae.rule.editor.translators;
 
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 
 import org.onap.sdc.dcae.composition.restmodels.ruleeditor.BaseCopyAction;
 

@@ -23,7 +23,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Table;
 import com.google.common.collect.HashBasedTable;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 
 /*
  * Oddball: tracking inputs as data templates could be seen as rather

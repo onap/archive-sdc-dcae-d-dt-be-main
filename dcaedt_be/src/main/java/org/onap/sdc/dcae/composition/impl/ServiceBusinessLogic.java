@@ -1,6 +1,6 @@
 package org.onap.sdc.dcae.composition.impl;
 
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.dcae.composition.restmodels.AttachVFCMTServiceRequest;
 import org.onap.sdc.dcae.composition.restmodels.DcaeMinimizedService;
 import org.onap.sdc.dcae.composition.restmodels.MessageResponse;

@@ -3,7 +3,7 @@ package org.onap.sdc.dcae.composition.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.common.onaplog.OnapLoggerError;
 import org.onap.sdc.dcae.client.ISdcClient;

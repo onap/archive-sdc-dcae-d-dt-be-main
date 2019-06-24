@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.regex.PatternSyntaxException;
 
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 
 /**

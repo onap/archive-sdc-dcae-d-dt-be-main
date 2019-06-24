@@ -14,7 +14,7 @@ import java.util.regex.PatternSyntaxException;
 import com.google.common.collect.Table;
 import com.google.common.collect.HashBasedTable;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 
 /*
  * String -- 'primitive tosca type' converters, used in verifying valuations

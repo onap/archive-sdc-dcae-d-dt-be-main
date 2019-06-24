@@ -8,7 +8,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
-import org.onap.sdc.common.onaplog.Enums.LogLevel;
+import org.onap.sdc.common.onaplog.enums.LogLevel;
 
 
 /**
