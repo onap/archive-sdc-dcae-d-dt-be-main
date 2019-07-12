@@ -24,7 +24,6 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
         <nexus.proxy>https://nexus.onap.org</nexus.proxy>
-        <staging.profile.id>176c31dfe190a</staging.profile.id>
         <sitePath>/content/sites/site/org/openecomp/sdc/${project.version}</sitePath>
         <sonar.branch>${project.version}</sonar.branch>
     </properties>
@@ -85,18 +84,6 @@
                         <version>2.10</version>
                     </dependency>
                 </dependencies>
-            </plugin>
-            <!-- Staging Plugin -->
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.7</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <nexusUrl>${nexus.proxy}</nexusUrl>
-                    <stagingProfileId>${staging.profile.id}</stagingProfileId>
-                    <serverId>ecomp-staging</serverId>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
