@@ -9,11 +9,10 @@
     <name>dcae-d dt-be-main</name>
 
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>1.5.9.RELEASE</version>
+        <groupId>org.onap.oparent</groupId>
+        <artifactId>oparent</artifactId>
+        <version>2.0.0</version>
         <relativePath/>
-        <!-- lookup parent from repository -->
     </parent>
 
     <properties>
@@ -24,9 +23,23 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
         <nexus.proxy>https://nexus.onap.org</nexus.proxy>
+        <springboot.version>1.5.9.RELEASE</springboot.version>
+        <staging.profile.id>176c31dfe190a</staging.profile.id>
         <sitePath>/content/sites/site/org/openecomp/sdc/${project.version}</sitePath>
         <sonar.branch>${project.version}</sonar.branch>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-parent</artifactId>
+                <version>${springboot.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -53,6 +66,14 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>2.17</version>
+                <configuration>
+                    <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
+                    <suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
