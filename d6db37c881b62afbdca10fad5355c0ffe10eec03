@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8806699f_43c23ded",
+        "filename": "dcaedt_validator/kwalify/src/main/java/kwalify/BaseException.java",
+        "patchSetId": 5
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 3663
+      },
+      "writtenOn": "2019-07-16T11:32:15Z",
+      "side": 1,
+      "message": "At the moment have to give -1 cause I am not sure whether we are not breaking the law here. Kwalify lib was published with license GNU General Public License ver.2",
+      "revId": "d6db37c881b62afbdca10fad5355c0ffe10eec03",
+      "serverId": "14b4e41f-c4e3-4fb9-9955-6a9b5656895a",
+      "unresolved": false
+    }
+  ]
+}
