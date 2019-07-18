@@ -16,6 +16,24 @@
       "revId": "d6db37c881b62afbdca10fad5355c0ffe10eec03",
       "serverId": "14b4e41f-c4e3-4fb9-9955-6a9b5656895a",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c9d3a50f_a0957e4e",
+        "filename": "dcaedt_validator/kwalify/src/main/java/kwalify/BaseException.java",
+        "patchSetId": 5
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 3663
+      },
+      "writtenOn": "2019-07-18T08:19:43Z",
+      "side": 1,
+      "message": "Agreed with Ofir that we will discuss this offline not to hold jjb migration",
+      "parentUuid": "8806699f_43c23ded",
+      "revId": "d6db37c881b62afbdca10fad5355c0ffe10eec03",
+      "serverId": "14b4e41f-c4e3-4fb9-9955-6a9b5656895a",
+      "unresolved": false
     }
   ]
 }
