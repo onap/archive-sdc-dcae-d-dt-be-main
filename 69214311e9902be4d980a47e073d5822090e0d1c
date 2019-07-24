@@ -1,0 +1,9 @@
+Verified+1: ONAP Jobbuilder <onap-jobbuilder@jenkins.onap.org>
+Code-Review+1: Piotr Darosz <piotr.darosz@nokia.com>
+Code-Review+1: Tomasz Golabek <tomasz.golabek@nokia.com>
+Code-Review+2: Ofir Sonsino <ofir.sonsino@intl.att.com>
+Submitted-by: Ofir Sonsino <ofir.sonsino@intl.att.com>
+Submitted-at: Wed, 24 Jul 2019 07:11:14 +0000
+Reviewed-on: https://gerrit.onap.org/r/c/sdc/dcae-d/dt-be-main/+/91866
+Project: sdc/dcae-d/dt-be-main
+Branch: refs/heads/master
