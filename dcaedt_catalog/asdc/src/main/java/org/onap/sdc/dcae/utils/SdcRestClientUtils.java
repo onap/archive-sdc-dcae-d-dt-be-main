@@ -3,6 +3,7 @@
  * SDC
  * ================================================================================
  * Copyright (C) 2019 AT&T Intellectual Property. All rights reserved.
+ * Modifications Copyright (c) 2019 Samsung
  * ================================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,11 +35,13 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class SdcRestClientUtils {
 
     private static final String SDC_CATALOG_PATH = "/sdc/v1/catalog/";
+
+    private SdcRestClientUtils() {
+    }
 
     // TODO consider moving params elsewhere (user/password/instanceId can be constant)
     public static EnumMap<SdcConsumerInfo, String> extractConsumerInfoFromUri(URI configUri) {
@@ -68,7 +71,7 @@ public class SdcRestClientUtils {
             filters.add("category="+category);
         if(!StringUtils.isEmpty(subcategory))
             filters.add("subCategory="+subcategory);
-        return "?"+filters.stream().collect(Collectors.joining("&"));
+        return "?"+ String.join("&", filters);
     }
 
     public static UserRemarks buildUserRemarksObject(String userRemarks) {
