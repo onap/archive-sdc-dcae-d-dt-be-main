@@ -45,6 +45,30 @@
       "revId": "9dfaa95ecf34d920219763f9032d26ca8ccda4e7",
       "serverId": "14b4e41f-c4e3-4fb9-9955-6a9b5656895a",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bc7b8b3f_46522fa5",
+        "filename": "dcaedt_catalog/asdc/src/test/java/org/onap/sdc/dcae/utils/utils/SdcRestClientUtilsTest.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 3949
+      },
+      "writtenOn": "2019-08-06T15:45:29Z",
+      "side": 1,
+      "message": "...and should there be another test case for testing invalid URI (which is the other IllegalArgumentException case?)",
+      "parentUuid": "98a57f94_5edbd34c",
+      "range": {
+        "startLine": 79,
+        "startChar": 4,
+        "endLine": 79,
+        "endChar": 52
+      },
+      "revId": "9dfaa95ecf34d920219763f9032d26ca8ccda4e7",
+      "serverId": "14b4e41f-c4e3-4fb9-9955-6a9b5656895a",
+      "unresolved": false
     }
   ]
 }
