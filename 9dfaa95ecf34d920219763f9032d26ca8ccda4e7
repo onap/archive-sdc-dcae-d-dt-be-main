@@ -69,6 +69,30 @@
       "revId": "9dfaa95ecf34d920219763f9032d26ca8ccda4e7",
       "serverId": "14b4e41f-c4e3-4fb9-9955-6a9b5656895a",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "928795de_4bffe20a",
+        "filename": "dcaedt_catalog/asdc/src/test/java/org/onap/sdc/dcae/utils/utils/SdcRestClientUtilsTest.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 5335
+      },
+      "writtenOn": "2019-08-07T07:09:25Z",
+      "side": 1,
+      "message": "This other IllegalArgumentException can be thrown only in one condition when the SDC_CATALOG_PATH will be incorrect (all different values always will be valid because we using already created URI object to build another one), so is only one way to test this -\u003e use Reflection (because this is a private field) and then changing the hardcoded value of the SDC_CATALOG_PATH. So I don\u0027t think this will be a good test.",
+      "parentUuid": "bc7b8b3f_46522fa5",
+      "range": {
+        "startLine": 79,
+        "startChar": 4,
+        "endLine": 79,
+        "endChar": 52
+      },
+      "revId": "9dfaa95ecf34d920219763f9032d26ca8ccda4e7",
+      "serverId": "14b4e41f-c4e3-4fb9-9955-6a9b5656895a",
+      "unresolved": false
     }
   ]
 }
