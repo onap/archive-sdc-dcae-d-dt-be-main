@@ -167,7 +167,7 @@ public class DcaeRestClient implements IDcaeRestClient {
     }
 
     private String buildRequestPath(String... args){
-        String url = uri + Stream.of(args).collect(Collectors.joining());
+        String url = uri + String.join("", args);
         debugLogger.log("Sending request: " + url);
         return url;
     }
