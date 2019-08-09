@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "73b79dc4_c957e8ee",
+        "filename": "dcaedt_tools/src/main/java/tools/DeployTemplate.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 3949
+      },
+      "writtenOn": "2019-08-09T14:53:18Z",
+      "side": 1,
+      "message": "Tabs? This file (and maybe the others too) could use ONAP formatting?",
+      "range": {
+        "startLine": 136,
+        "startChar": 0,
+        "endLine": 136,
+        "endChar": 3
+      },
+      "revId": "708fc3f61b9b406b58beefbe8349fb3ef0b205b7",
+      "serverId": "14b4e41f-c4e3-4fb9-9955-6a9b5656895a",
+      "unresolved": false
+    }
+  ]
+}
