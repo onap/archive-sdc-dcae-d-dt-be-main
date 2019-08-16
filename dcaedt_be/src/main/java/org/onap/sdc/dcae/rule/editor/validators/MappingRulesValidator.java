@@ -51,34 +51,45 @@ public class MappingRulesValidator implements IRuleElementValidator<MappingRules
 			valid = false;
 			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.INVALID_RULE_FORMAT, "", "no rules found"));
 		}
+		// TODO consider using 'allMatch' which will stop on the first error
 		return rules.getRules().values().stream().map(r -> ruleValidator.validate(r, errors))
 				.reduce(true, (x,y) -> x && y) && valid;
-		// TODO consider using 'allMatch' which will stop on the first error
 	}
 
-	public boolean validateVersionAndType(MappingRules rules) {
-		Map<String, Set<String>> supportedVersions = VesStructureLoader.getAvailableVersionsAndEventTypes();
-		return ValidationUtils.validateNotEmpty(rules.getVersion()) && supportedVersions.containsKey(rules.getVersion()) && ValidationUtils.validateNotEmpty(rules.getEventType()) && supportedVersions.get(rules.getVersion()).contains(rules.getEventType());
-	}
+    public boolean validateVersionAndType(MappingRules rules) {
+        Map<String, Set<String>> supportedVersions =
+            VesStructureLoader.getAvailableVersionsAndEventTypes();
+
+        return ValidationUtils.validateNotEmpty(rules.getVersion())
+            && supportedVersions.containsKey(rules.getVersion())
+            && ValidationUtils.validateNotEmpty(rules.getEventType())
+            && supportedVersions.get(rules.getVersion()).contains(rules.getEventType());
+    }
 
 
 	public boolean validateGroupDefinitions(MappingRules rules) {
-		return rules.getRules().values().stream().allMatch(r -> ValidationUtils.validateNotEmpty(r.getGroupId()) && ValidationUtils.validateNotEmpty(r.getPhase()))
-				&& rules.getRules().values().stream().collect(Collectors.groupingBy(Rule::getGroupId, Collectors.mapping(Rule::getPhase, Collectors.toSet()))).values().stream().allMatch(p -> 1 == p.size());
+        return rules.getRules().values().stream().allMatch(r -> ValidationUtils.validateNotEmpty(r.getGroupId()) &&
+				ValidationUtils.validateNotEmpty(r.getPhase())) &&
+				rules.getRules().values().stream().collect(
+						Collectors.groupingBy(Rule::getGroupId, Collectors.mapping(Rule::getPhase, Collectors.toSet())))
+						.values().stream().allMatch(p -> 1 == p.size());
 	}
 
 
-	public boolean validateTranslationPhaseNames(MappingRules rules, List<ResponseFormat> errors) {
-		boolean valid = true;
-		Set<String> phases = rules.getRules().values().stream().map(Rule::getPhase).collect(Collectors.toSet());
-		if(phases.contains(rules.getEntryPhase())) {
-			valid = false;
-			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.TRANSLATE_FAILED, null, "entry phase name already exists"));
-		}
-		if(phases.contains(rules.getPublishPhase())) {
-			valid = false;
-			errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.TRANSLATE_FAILED, null, "publish phase name already exists"));
-		}
-		return valid;
-	}
+    public boolean validateTranslationPhaseNames(MappingRules rules, List<ResponseFormat> errors) {
+        boolean valid = true;
+        Set<String> phases =
+            rules.getRules().values().stream().map(Rule::getPhase).collect(Collectors.toSet());
+        if (phases.contains(rules.getEntryPhase())) {
+            valid = false;
+            errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.TRANSLATE_FAILED, null,
+                "entry phase name already exists"));
+        }
+        if (phases.contains(rules.getPublishPhase())) {
+            valid = false;
+            errors.add(ErrConfMgr.INSTANCE.getResponseFormat(ActionStatus.TRANSLATE_FAILED, null,
+                "publish phase name already exists"));
+        }
+        return valid;
+    }
 }
