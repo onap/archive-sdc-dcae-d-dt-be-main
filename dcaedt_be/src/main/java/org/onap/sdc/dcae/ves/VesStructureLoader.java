@@ -58,7 +58,8 @@ public class VesStructureLoader {
     private VesStructureLoader() {
     }
 
-    @PostConstruct public void init() {
+    @PostConstruct
+    public void init() {
 
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "VesStructureLoader: Trying to load json schemas");
         String jettyBase = System.getProperty("jetty.base");
