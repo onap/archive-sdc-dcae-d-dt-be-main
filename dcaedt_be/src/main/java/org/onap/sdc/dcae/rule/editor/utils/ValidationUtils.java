@@ -27,6 +27,9 @@ public class ValidationUtils {
 
 	private static final String EXPLICIT_EMPTY = "\"\"";
 
+	private ValidationUtils() {
+	}
+
 	public static boolean validateNotEmpty(String value){
 		return StringUtils.isNoneBlank(value);
 	}
