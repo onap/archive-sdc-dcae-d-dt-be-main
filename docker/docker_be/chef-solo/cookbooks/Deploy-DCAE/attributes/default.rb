@@ -13,9 +13,9 @@ default['SDC']['BE']['http_port'] = 8080
 default['SDC']['BE']['https_port'] = 8443
 default['DCAE']['TOSCA_LAB']['https_port'] = 8085
 
-default['jetty']['keystore_pwd'] = "OBF:1cp61iuj194s194u194w194y1is31cok"
-default['jetty']['keymanager_pwd'] = "OBF:1cp61iuj194s194u194w194y1is31cok"
-default['jetty']['truststore_pwd'] = "OBF:1cp61iuj194s194u194w194y1is31cok"
+default['jetty']['keystore_pwd'] = "rTIS;B4kM]2GHcNK2c3B4&Ng"
+default['jetty']['keymanager_pwd'] = "rTIS;B4kM]2GHcNK2c3B4&Ng"
+default['jetty']['truststore_pwd'] = "Y,f975ZNJfVZhV*{+Y[}pA?0"
 
 default['disableHttp'] = true
 
