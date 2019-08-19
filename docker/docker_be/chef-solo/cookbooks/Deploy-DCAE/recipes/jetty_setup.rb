@@ -22,16 +22,16 @@ end
 
 
 # Create Keystore
-cookbook_file "/#{jetty_base}/etc/keystore" do
-   source "keystore"
+cookbook_file "/#{jetty_base}/etc/org.onap.sdc.p12" do
+   source "org.onap.sdc.p12"
    owner "jetty"
    group "jetty"
    mode 0755
 end
 
 # Create Truststore
-cookbook_file "/#{jetty_base}/etc/truststore" do
-   source "truststore"
+cookbook_file "/#{jetty_base}/etc/org.onap.sdc.trust.jks" do
+   source "org.onap.sdc.trust.jks"
    owner "jetty"
    group "jetty"
    mode 0755
