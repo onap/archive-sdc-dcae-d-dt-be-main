@@ -15,10 +15,7 @@ DEP_ENV="AUTO"
 
 
 # Java Options:
-DCAE_BE_JAVA_OPTIONS="-XX:MaxPermSize=256m -Xmx1024m -Dconfig.home=config -Dlog.home=/var/lib/jetty/logs/ -Dlogging.config=config/dcae-be/logback-spring.xml"
-DCAE_FE_JAVA_OPTIONS="-XX:MaxPermSize=256m -Xmx1024m -Dconfig.home=config -Dlog.home=/var/lib/jetty/logs/ -Dlogging.config=config/dcae-fe/logback-spring.xml"
-DCAE_DT_JAVA_OPTIONS="-XX:MaxPermSize=256m -Xmx1024m -Dconfig.home=config -Dlog.home=/var/lib/jetty/logs/ -Dlogging.config=config/dcae-dt/logback-spring.xml"
-DCAE_TOSCA_JAVA_OPTIONS="-XX:MaxPermSize=256m -Xmx1024m"
+JAVA_OPTIONS="-XX:MaxPermSize=256m -Xmx1024m"
 
 
 #Define this as variable, so it can be excluded in run commands on Docker for OSX, as /etc/localtime cant be mounted there.
@@ -111,7 +108,7 @@ function probe_docker {
 #
 
 function probe_dcae_tosca {
-    health_check_http_code=$(curl --noproxy "*" -i -o /dev/null -w '%{http_code}' "http://${IP}:8085/healthcheck")
+    health_check_http_code=$(curl --noproxy "*" -k -i -o /dev/null -w '%{http_code}' "http://${IP}:8085/healthcheck")
     if [[ "${health_check_http_code}" -eq 200 ]] ; then
         echo "DOCKER start finished in $1 seconds"
         return ${SUCCESS}
@@ -120,8 +117,9 @@ function probe_dcae_tosca {
 }
 #
 
+# probe script used the secure connection to do health check (https is always turn on)
 function probe_dcae_be {
-    health_check_http_code=$(curl --noproxy "*" -i -o /dev/null -w '%{http_code}' "http://${IP}:8082/dcae/conf/composition")
+    health_check_http_code=$(curl --noproxy "*" -k -i -o /dev/null -w '%{http_code}' "https://${IP}:8444/dcae/conf/composition")
     if [[ "${health_check_http_code}" -eq 200 ]] ; then
         echo "DOCKER start finished in $1 seconds"
         return ${SUCCESS}
@@ -131,7 +129,7 @@ function probe_dcae_be {
 #
 
 function probe_dcae_fe {
-    health_check_http_code=$(curl --noproxy "*" -i -o /dev/null -w '%{http_code}' "http://${IP}:8183/dcaed/healthCheck")
+    health_check_http_code=$(curl --noproxy "*" -k -i -o /dev/null -w '%{http_code}' "https://${IP}:9444/dcaed/healthCheck")
     if [[ "${health_check_http_code}" -eq 200 ]] ; then
         echo "DOCKER start finished in $1 seconds"
         return ${SUCCESS}
@@ -141,7 +139,7 @@ function probe_dcae_fe {
 #
 
 function probe_dcae_dt {
-    health_check_http_code=$(curl --noproxy "*" -i -o /dev/null -w '%{http_code}' "http://${IP}:8186/dcae/healthCheckOld")
+    health_check_http_code=$(curl --noproxy "*" -k -i -o /dev/null -w '%{http_code}' "https://${IP}:9446/dcae/healthCheckOld")
     if [[ "${health_check_http_code}" -eq 200 ]] ; then
         echo "DOCKER start finished in $1 seconds"
         return ${SUCCESS}
@@ -152,7 +150,7 @@ function probe_dcae_dt {
 
 # Not applicable for current release. Return Success in any case
 function probe_dcae_tools {
-   health_check_http_code=$(curl --noproxy "*" -i -o /dev/null -w '%{http_code}'  "http://${IP}:8082/dcae/getResourcesByMonitoringTemplateCategory")
+   health_check_http_code=$(curl --noproxy "*" -k -i -o /dev/null -w '%{http_code}'  "https://${IP}:8444/dcae/getResourcesByMonitoringTemplateCategory")
     if [[ "${health_check_http_code}" -eq 200 ]] ; then
         echo "DOCKER start finished in $1 seconds"
         return ${SUCCESS}
@@ -218,16 +216,16 @@ function monitor_docker {
 }
 #
 
-
+# healthCheck script used the secure connection to send request (https is always turn on)
 function healthCheck {
 
     echo "BE health-Check:"
-    curl --noproxy "*" "http://${IP}:8080/sdc2/rest/healthCheck"
+    curl -k --noproxy "*" "https://${IP}:8443/sdc2/rest/healthCheck"
 
     echo ""
     echo ""
     echo "FE health-Check:"
-    curl --noproxy "*" "http://${IP}:8181/sdc1/rest/healthCheck"
+    curl -k --noproxy "*" "https://${IP}:9443/sdc1/rest/healthCheck"
 }
 #
 
@@ -254,7 +252,7 @@ function dcae-tosca {
     if [ ${LOCAL} == false ]; then
         docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     fi
-    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${DCAE_TOSCA_JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-TOSCA/:/var/logs/dcae"  --publish 8085:8085  "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
+    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-TOSCA/:/var/logs/dcae"  --publish 8085:8085  "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     command_exit_status $? ${DOCKER_NAME}
     echo "please wait while ${DOCKER_NAME^^} is starting....."
     monitor_docker ${DOCKER_NAME}
@@ -269,7 +267,7 @@ function dcae-be {
     if [ ${LOCAL} == false ]; then
         docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     fi
-    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${DCAE_BE_JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-BE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/var/opt/dcae-be/chef-solo/environments" --publish 8444:8444 --publish 8082:8082 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
+    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-BE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/root/chef-solo/environments" --publish 8444:8444 --publish 8082:8082 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
     command_exit_status $? ${DOCKER_NAME}
     echo "please wait while ${DOCKER_NAME^^} is starting....."
     monitor_docker ${DOCKER_NAME}
@@ -299,7 +297,7 @@ function dcae-fe {
     if [ ${LOCAL} == false ]; then
         docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     fi
-    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${DCAE_FE_JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-FE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/var/opt/dcae-fe/chef-solo/environments/" --publish 9444:9444 --publish 8183:8183 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
+    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-FE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/root/chef-solo/environments" --publish 9444:9444 --publish 8183:8183 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
     command_exit_status $? ${DOCKER_NAME}
     echo "please wait while ${DOCKER_NAME^^} is starting....."
     monitor_docker ${DOCKER_NAME}
@@ -313,7 +311,7 @@ function dcae-dt {
     if [ ${LOCAL} == false ]; then
         docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     fi
-    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${DCAE_DT_JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-DT/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/var/opt/dcae-dt/chef-solo/environments/" --publish 9446:9446 --publish 8186:8186 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
+    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-DT/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/root/chef-solo/environments/" --publish 9446:9446 --publish 8186:8186 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
     command_exit_status $? ${DOCKER_NAME}
     echo "please wait while ${DOCKER_NAME^^} is starting....."
     monitor_docker ${DOCKER_NAME}
