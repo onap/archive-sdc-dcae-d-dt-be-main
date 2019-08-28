@@ -22,9 +22,18 @@ package org.onap.sdc.dcae.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.onap.sdc.common.onaplog.enums.LogLevel;
 import org.onap.sdc.common.onaplog.OnapLoggerDebug;
 import org.onap.sdc.dcae.composition.restmodels.CreateVFCMTRequest;
@@ -48,13 +57,15 @@ import org.springframework.util.Base64Utils;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import java.net.URI;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Component("sdcrestclient")
 public class SdcRestClient implements ISdcClient {
@@ -85,12 +96,19 @@ public class SdcRestClient implements ISdcClient {
     private void init() {
         URI configUri = URI.create(systemProperties.getProperties().getProperty(DcaeBeConstants.Config.URI));
         EnumMap<SdcConsumerInfo, String> userInfo = SdcRestClientUtils.extractConsumerInfoFromUri(configUri);
-        CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultHeaders(defaultHeaders(userInfo)).build();
-        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
-        requestFactory.setHttpClient(httpClient);
-        client = new RestTemplate(requestFactory);
-        client.setErrorHandler(new SDCResponseErrorHandler());
-        uri = userInfo.get(SdcConsumerInfo.CATALOG_URL);
+        try {
+            List<BasicHeader> headers = defaultHeaders(userInfo);
+            CloseableHttpClient httpClient = buildRestClient(headers);
+
+            HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
+            requestFactory.setHttpClient(httpClient);
+
+            client = new RestTemplate(requestFactory);
+            client.setErrorHandler(new SDCResponseErrorHandler());
+            uri = userInfo.get(SdcConsumerInfo.CATALOG_URL);
+        } catch (SSLException e) {
+            debugLogger.log(LogLevel.ERROR, this.getClass().getName(), e.getMessage());
+        }
     }
 
     private List<BasicHeader> defaultHeaders(EnumMap<SdcConsumerInfo, String> userInfo) {
@@ -247,6 +265,25 @@ public class SdcRestClient implements ISdcClient {
     }
 
     private String buildRequestPath(String... args){
-        return uri + Stream.of(args).collect(Collectors.joining(SLASH));
+        return uri + String.join(SLASH, args);
+    }
+
+    private CloseableHttpClient buildRestClient(List<BasicHeader> headers) throws SSLException {
+        SSLContextBuilder builder = new SSLContextBuilder();
+        try {
+            builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                SSLContext.getDefault(), NoopHostnameVerifier.INSTANCE);
+            Registry<ConnectionSocketFactory> registry =
+                RegistryBuilder.<ConnectionSocketFactory>create()
+                    .register("http", new PlainConnectionSocketFactory()).register("https", sslsf)
+                    .build();
+            PoolingHttpClientConnectionManager cm =
+                new PoolingHttpClientConnectionManager(registry);
+            return HttpClients.custom().setDefaultHeaders(headers)
+                    .setSSLSocketFactory(sslsf).setConnectionManager(cm).build();
+        } catch (NoSuchAlgorithmException | KeyStoreException e) {
+            throw new SSLException(e);
+        }
     }
 }

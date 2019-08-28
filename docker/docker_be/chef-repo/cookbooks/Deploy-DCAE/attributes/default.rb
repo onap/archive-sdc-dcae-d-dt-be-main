@@ -12,7 +12,8 @@ default['DCAE']['TOSCA_LAB']['http_port'] = 8085
 default['SDC']['BE']['http_port'] = 8080
 default['SDC']['BE']['https_port'] = 8443
 default['DCAE']['TOSCA_LAB']['https_port'] = 8085
-
+# TO CHANGE THE TRUSTSTORE CERT THE JVM CONFIGURATION
+# MUST BE ALSO CHANGE IN THE startup.sh FILE
 default['jetty']['keystore_pwd'] = "rTIS;B4kM]2GHcNK2c3B4&Ng"
 default['jetty']['keymanager_pwd'] = "rTIS;B4kM]2GHcNK2c3B4&Ng"
 default['jetty']['truststore_pwd'] = "Y,f975ZNJfVZhV*{+Y[}pA?0"

@@ -5,7 +5,7 @@ cd /var/opt/dcae-tools/chef-solo
 chef-solo -c solo.rb -E ${ENVNAME} --log_level "debug" --logfile "/tmp/Chef-Solo.log"
 
 status=$?
-if [ $status != 0 ]; then
+if [[ ${status} != 0 ]]; then
   echo "[ERROR] Problem detected while running chef. Aborting !"
   exit 1
 fi
