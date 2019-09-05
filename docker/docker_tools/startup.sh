@@ -1,8 +1,13 @@
 #!/bin/sh
-set -x 
-# Run chef-solo for configuration
-cd /var/opt/dcae-tools/chef-solo
-chef-solo -c solo.rb -E ${ENVNAME} --log_level "debug" --logfile "/tmp/Chef-Solo.log"
+
+JAVA_OPTIONS=" ${JAVA_OPTIONS} -Dconfig.home=${JETTY_BASE}/config \
+               -Dlog.home=${JETTY_BASE}/logs \
+               -Djetty.console-capture.dir=${JETTY_BASE}/logs \
+               -Djavax.net.ssl.trustStore=${JETTY_BASE}/etc/org.onap.sdc.trust.jks \
+               -Djavax.net.ssl.trustStorePassword=c+QY7@v1bQ!lo0c4ydi)))AV"
+
+cd /root/chef-solo
+chef-solo -c solo.rb -E ${ENVNAME}
 
 status=$?
 if [[ ${status} != 0 ]]; then
@@ -10,8 +15,7 @@ if [[ ${status} != 0 ]]; then
   exit 1
 fi
 
-# Execute DCAE tools
-cd /var/opt/dcae-tools/app
-java -jar dcaedt_tools.jar conf/environment.json conf/config.json
+cd ${JETTY_BASE}/webapps
+java ${JAVA_OPTIONS} -jar dcaedt_tools.jar ../conf/environment.json ../conf/config.json
 
 exec "$@";

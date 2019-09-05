@@ -74,7 +74,7 @@
                                     <goal>copy-resources</goal>
                                 </goals>
                                 <configuration>
-                                    <outputDirectory>${project.parent.basedir}/docker/docker_tools/chef-solo/cookbooks/Deploy-DCAE/files/default</outputDirectory>
+                                    <outputDirectory>${project.parent.basedir}/docker/docker_tools/chef-repo/cookbooks/Deploy-DCAE/files/default</outputDirectory>
                                     <resources>
                                         <resource>
                                             <directory>${project.basedir}/src/main/resources/conf</directory>
@@ -260,5 +260,16 @@
             <artifactId>spring-web</artifactId>
             <version>5.0.9.RELEASE</version>
         </dependency>
+<!-- TO-DO: UNCOMMENT WHEN SDC-2554 BUG WILL BE SOLVE-->
+<!--        <dependency>-->
+<!--            <groupId>org.springframework</groupId>-->
+<!--            <artifactId>spring-core</artifactId>-->
+<!--            <version>${org.springframework.version}</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.slf4j</groupId>-->
+<!--            <artifactId>slf4j-simple</artifactId>-->
+<!--            <version>1.7.26</version>-->
+<!--        </dependency>-->
     </dependencies>
 </project>

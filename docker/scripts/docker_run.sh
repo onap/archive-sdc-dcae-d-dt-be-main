@@ -282,7 +282,7 @@ function dcae-tools {
     if [ ${LOCAL} == false ]; then
         docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     fi
-    docker run ${DOCKER_RUN_MODE_BG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/BE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/var/opt/dcae-tools/chef-solo/environments"  "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
+    docker run ${DOCKER_RUN_MODE_BG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${JAVA_OPTIONS}" ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/BE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/root/chef-solo/environments"  "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     command_exit_status $? ${DOCKER_NAME}
     echo "please wait while ${DOCKER_NAME^^} is starting....."
     monitor_docker ${DOCKER_NAME}
