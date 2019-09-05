@@ -25,6 +25,7 @@
         <nexus.proxy>https://nexus.onap.org</nexus.proxy>
         <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
         <springboot.version>1.5.9.RELEASE</springboot.version>
+        <org.springframework.version>5.1.9.RELEASE</org.springframework.version>
         <staging.profile.id>176c31dfe190a</staging.profile.id>
         <sitePath>/content/sites/site/org/openecomp/sdc/${project.version}</sitePath>
         <sonar.branch>${project.version}</sonar.branch>
