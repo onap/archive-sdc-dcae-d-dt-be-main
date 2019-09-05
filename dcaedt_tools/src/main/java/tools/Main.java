@@ -65,22 +65,22 @@ public class Main {
         IReport report = new Report();
         try {
             ObjectMapper mapper = new ObjectMapper();
-            DeployTemplateConfig deployTemplateConfig = mapper.readValue(new File(System.getProperty(CONFIG_FILE, "conf/config.json")), DeployTemplateConfig.class);
-            Environment environment = mapper.readValue(new File(System.getProperty(ENVIRONMENT_CONFIG, "conf/environment.json")), Environment.class);
-
+            DeployTemplateConfig deployTemplateConfig =
+                mapper.readValue(new File(System.getProperty(CONFIG_FILE, "conf/config.json")),
+                    DeployTemplateConfig.class);
+            Environment environment = mapper.readValue(
+                new File(System.getProperty(ENVIRONMENT_CONFIG, "conf/environment.json")),
+                Environment.class);
             IDcaeRestClient dcaeRestClient = new DcaeRestClient(environment.getCredential());
             dcaeRestClient.init(environment);
-
             Map<String, List<Resource>> elementsByFolderNames = dcaeRestClient.getDcaeCatalog();
-
-            TemplateContainer templateContainer = new TemplateContainer(report, dcaeRestClient, deployTemplateConfig.getTemplateInfo(), elementsByFolderNames);
-            Map<TemplateInfo, JsonObject> templateInfoToJsonObjectMap = templateContainer.getCdumps();
-
+            TemplateContainer templateContainer = new TemplateContainer(report, dcaeRestClient,
+                deployTemplateConfig.getTemplateInfo(), elementsByFolderNames);
+            Map<TemplateInfo, JsonObject> templateInfoToJsonObjectMap =
+                templateContainer.getCdumps();
             DeployTemplate deployTemplate = new DeployTemplate(report, dcaeRestClient);
             deployTemplate.deploy(templateInfoToJsonObjectMap);
-
             debugLogger.log( "VFCMT template deployment completed");
-
         } catch (RuntimeException e) {
             errLogger.log("ERROR - Template deployment failed with error " + e, e);
             report.setStatusCode(2);

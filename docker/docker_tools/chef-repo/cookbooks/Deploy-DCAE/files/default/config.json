@@ -1,0 +1,250 @@
+
+{
+  "templateInfo": [{
+    "name": "Syslog Collector",
+    "flowType": "Syslog Collector",
+    "description": "Syslog Collector",
+    "category": "Template",
+    "subCategory":"Base Monitoring Template",
+    "updateIfExist": "false",
+    "composition": [{
+      "type": "SyslogCollector",
+      "alias": ""
+    }]
+  },{
+    "name": "Syslog MSEA",
+    "flowType": "Syslog MSEA",
+    "description": "Syslog MSEA",
+    "category": "Template",
+    "subCategory":"Base Monitoring Template",
+    "updateIfExist": "false",
+    "composition": [{
+      "type": "Map",
+      "alias": ""
+    }, {
+      "type": "Supplement",
+      "alias": ""
+    }, {
+      "type": "Enrich",
+      "alias": ""
+    }, {
+      "type": "Alert",
+      "alias": ""
+    }],
+    "relations": [{
+      "fromComponent": "Supplement",
+      "fromRequirement": "dependency",
+      "toComponent": "Map",
+      "toCapability": "feature"
+    },{
+      "fromComponent": "Enrich",
+      "fromRequirement": "dependency",
+      "toComponent": "Supplement",
+      "toCapability": "feature"
+    },{
+      "fromComponent": "Alert",
+      "fromRequirement": "dependency",
+      "toComponent": "Enrich",
+      "toCapability": "feature"
+    }]
+  },
+
+    {
+      "name": "Status Poller MSE",
+      "flowType": "Status Poller MSE",
+      "description": "Status Poller MSE",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "Map",
+        "alias": ""
+      }, {
+        "type": "Supplement",
+        "alias": ""
+      }, {
+        "type": "Enrich",
+        "alias": ""
+      }],
+      "relations": [{
+        "fromComponent": "Supplement",
+        "fromRequirement": "dependency",
+        "toComponent": "Map",
+        "toCapability": "feature"
+      },{
+        "fromComponent": "Enrich",
+        "fromRequirement": "dependency",
+        "toComponent": "Supplement",
+        "toCapability": "feature"
+      }]
+    }, {
+      "name": "FOI Collector",
+      "flowType": "FOI Collector",
+      "description": "FOI Collector",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "FOICollector",
+        "alias": ""
+      }]
+
+    }, {
+      "name": "SNMP MSE",
+      "flowType": "SNMP MSE",
+      "description": "SNMP MSE",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "Map",
+        "alias": ""
+      }, {
+        "type": "Supplement",
+        "alias": ""
+      }, {
+        "type": "Enrich",
+        "alias": ""
+      }],
+      "relations": [{
+        "fromComponent": "Supplement",
+        "fromRequirement": "dependency",
+        "toComponent": "Map",
+        "toCapability": "feature"
+      },{
+        "fromComponent": "Enrich",
+        "fromRequirement": "dependency",
+        "toComponent": "Supplement",
+        "toCapability": "feature"
+      }]
+    }, {
+      "name": "Docker Map",
+      "flowType": "Docker Map",
+      "description": "Docker Map",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "DockerMap",
+        "alias": ""
+      }]
+    },
+    {
+      "name": "SAM Collector",
+      "flowType": "SAM Collector",
+      "description": "SAM Collector",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "SAMCollector1806",
+        "alias": ""
+      }]
+    },
+    {
+      "name": "SNMP PM Poller",
+      "flowType": "SNMP PM Poller",
+      "description": "SNMP PM Poller",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "PM Poller",
+        "alias": ""
+      }]
+    },
+    {
+      "name": "Status Poller Collector",
+      "flowType": "Status Poller Collector",
+      "description": "Status Poller Collector",
+      "category": "Template",
+      "subCategory": "Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [
+        {
+          "type": "StatusPoller",
+          "alias": ""
+        }]
+    },
+    {
+      "name": "VES Collector",
+      "flowType": "VES Collector",
+      "description": "VES Collector",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "VES Collector",
+        "alias": ""
+      }]
+    },
+    {
+      "name": "VES Fault SE",
+      "flowType": "VES Fault SE",
+      "description": "VES Fault SE",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "Supplement",
+        "alias": ""
+      }, {
+        "type": "Enrich",
+        "alias": ""
+      }],
+      "relations": [{
+        "fromComponent": "Enrich",
+        "fromRequirement": "dependency",
+        "toComponent": "Supplement",
+        "toCapability": "feature"
+      }]
+    },
+    {
+      "name": "Docker Supplement",
+      "flowType": "Docker Supplement",
+      "description": "Docker Supplement",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "Docker_Supplement",
+        "alias": ""
+      }]
+    },
+    {
+      "name": "Docker Enrich",
+      "flowType": "Docker Enrich",
+      "description": "Docker Enrich",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "DockerEnrich",
+        "alias": ""
+      }]
+    },
+    {
+      "name": "MIB Poller",
+      "flowType": "MIB Poller",
+      "description": "MIB Poller",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "MIBPoller",
+        "alias": ""
+      }]
+    },
+    {
+      "name": "Discovery Poller",
+      "flowType": "Discovery Poller",
+      "description": "Discovery Poller",
+      "category": "Template",
+      "subCategory":"Base Monitoring Template",
+      "updateIfExist": "false",
+      "composition": [{
+        "type": "Discovery",
+        "alias": ""
+      }]
+    }]
+}

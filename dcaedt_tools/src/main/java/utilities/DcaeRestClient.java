@@ -22,9 +22,19 @@ package utilities;
 
 import json.Credential;
 import json.Environment;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.onap.sdc.dcae.composition.restmodels.CreateVFCMTRequest;
 import org.onap.sdc.dcae.composition.restmodels.canvas.DcaeComponentCatalog;
 import org.onap.sdc.dcae.composition.restmodels.sdc.Resource;
@@ -36,6 +46,10 @@ import org.springframework.web.client.RestTemplate;
 import tools.LoggerDebug;
 
 import javax.annotation.PostConstruct;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +63,6 @@ public class DcaeRestClient implements IDcaeRestClient {
     private static LoggerDebug debugLogger = LoggerDebug.getInstance();
     private static final String GET_RESOURCES_BY_CATEGORY = "/getResourcesByCategory";
     private static final String CREATE_VFCMT = "/createVFCMT";
-    private static final String ELEMENTS = "/elements";
 	private static final String CATALOG = "/catalog";
 
 
@@ -75,11 +88,15 @@ public class DcaeRestClient implements IDcaeRestClient {
     public void init(Environment environment) {
         credential = environment.getCredential();
         debugLogger.log("Connecting to server host: " + environment.getDcaeBeHost() + ", port: " + environment.getDcaeBePort());
-        CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultHeaders(defaultHeaders(credential)).build();
-        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
-        requestFactory.setHttpClient(httpClient);
-        client = new RestTemplate(requestFactory);
+        try {
+            HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
+            requestFactory.setHttpClient(buildRestClient());
+            client = new RestTemplate(requestFactory);
+        } catch (SSLException e) {
+            debugLogger.log("ERROR: Build rest client failed because: " + e.getMessage());
+        }
         uri = String.format("%s:%s%s", environment.getDcaeBeHost(), environment.getDcaeBePort(), environment.getApiPath());
+        debugLogger.log("end function");
     }
 
     private List<BasicHeader> defaultHeaders(Credential credential) {
@@ -175,5 +192,23 @@ public class DcaeRestClient implements IDcaeRestClient {
     @Override
     public void updateResource(ResourceDetailed vfcmt) {
         // Do nothing
+    }
+
+    private CloseableHttpClient buildRestClient() throws SSLException {
+        SSLContextBuilder builder = new SSLContextBuilder();
+        try {
+            builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                SSLContext.getDefault(), NoopHostnameVerifier.INSTANCE);
+            Registry<ConnectionSocketFactory> registry =
+                RegistryBuilder.<ConnectionSocketFactory>create()
+                    .register("http", new PlainConnectionSocketFactory()).register("https", sslsf)
+                    .build();
+            PoolingHttpClientConnectionManager cm =
+                new PoolingHttpClientConnectionManager(registry);
+            return HttpClients.custom().setSSLSocketFactory(sslsf).setConnectionManager(cm).build();
+        } catch (NoSuchAlgorithmException | KeyStoreException e) {
+            throw new SSLException(e);
+        }
     }
 }
