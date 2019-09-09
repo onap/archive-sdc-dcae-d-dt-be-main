@@ -4,7 +4,7 @@ JAVA_OPTIONS=" ${JAVA_OPTIONS} -Dconfig.home=${JETTY_BASE}/config \
                -Dlog.home=${JETTY_BASE}/logs \
                -Dlogback.configurationFile=${JETTY_BASE}/dcae-be/logback-spring.xml
                -Djavax.net.ssl.trustStore=${JETTY_BASE}/etc/org.onap.sdc.trust.jks \
-               -Djavax.net.ssl.trustStorePassword=Y,f975ZNJfVZhV*{+Y[}pA?0 \
+               -Djavax.net.ssl.trustStorePassword=].][xgtze]hBhz*wy]}m#lf* \
                -Djetty.console-capture.dir=${JETTY_BASE}/logs"
 
 cd /root/chef-solo
