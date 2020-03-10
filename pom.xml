@@ -6,7 +6,7 @@
     <artifactId>dcae_dt_be_main</artifactId>
     <version>1.3.2-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>dcae-d dt-be-main</name>
+    <name>sdc-dcae-d dt-be-main</name>
 
     <parent>
         <groupId>org.onap.oparent</groupId>
@@ -29,6 +29,9 @@
         <staging.profile.id>176c31dfe190a</staging.profile.id>
         <sitePath>/content/sites/site/org/openecomp/sdc/${project.version}</sitePath>
         <sonar.branch>${project.version}</sonar.branch>
+		<sonar.coverage.jacoco.xmlReportPaths>
+			${project.reporting.outputDirectory}/jacoco-ut/jacoco.xml
+		</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencyManagement>
