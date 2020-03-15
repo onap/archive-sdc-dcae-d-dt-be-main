@@ -267,7 +267,7 @@ function dcae-be {
     if [ ${LOCAL} == false ]; then
         docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     fi
-    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-BE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/root/chef-solo/environments" --publish 8444:8444 --publish 8082:8082 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
+    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-BE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/var/lib/jetty/chef-solo/environments" --publish 8444:8444 --publish 8082:8082 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
     command_exit_status $? ${DOCKER_NAME}
     echo "please wait while ${DOCKER_NAME^^} is starting....."
     monitor_docker ${DOCKER_NAME}
@@ -282,7 +282,7 @@ function dcae-tools {
     if [ ${LOCAL} == false ]; then
         docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     fi
-    docker run ${DOCKER_RUN_MODE_BG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${JAVA_OPTIONS}" ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/BE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/root/chef-solo/environments"  "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
+    docker run ${DOCKER_RUN_MODE_BG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${JAVA_OPTIONS}" ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/BE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/var/lib/jetty/chef-solo/environments"  "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     command_exit_status $? ${DOCKER_NAME}
     echo "please wait while ${DOCKER_NAME^^} is starting....."
     monitor_docker ${DOCKER_NAME}
@@ -297,7 +297,7 @@ function dcae-fe {
     if [ ${LOCAL} == false ]; then
         docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     fi
-    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-FE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/root/chef-solo/environments" --publish 9444:9444 --publish 8183:8183 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
+    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-FE/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/var/lib/jetty/chef-solo/environments" --publish 9444:9444 --publish 8183:8183 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
     command_exit_status $? ${DOCKER_NAME}
     echo "please wait while ${DOCKER_NAME^^} is starting....."
     monitor_docker ${DOCKER_NAME}
@@ -311,7 +311,7 @@ function dcae-dt {
     if [ ${LOCAL} == false ]; then
         docker pull "${PREFIX}/${DOCKER_NAME}:${RELEASE}"
     fi
-    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-DT/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/root/chef-solo/environments/" --publish 9446:9446 --publish 8186:8186 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
+    docker run ${DOCKER_RUN_MODE_FG} --name ${DOCKER_NAME} --env HOST_IP="${IP}" --env ENVNAME="${DEP_ENV}" --env JAVA_OPTIONS="${JAVA_OPTIONS}" --log-driver=json-file --log-opt max-size=100m --log-opt max-file=10 --ulimit memlock=-1:-1 --ulimit nofile=4096:100000 ${LOCAL_TIME_MOUNT_CMD}  --volume "${WORKSPACE}/data/logs/DCAE-DT/:/var/lib/jetty/logs" --volume "${WORKSPACE}/data/environments:/var/lib/jetty/chef-solo/environments/" --publish 9446:9446 --publish 8186:8186 "${PREFIX}/${DOCKER_NAME}:${RELEASE}" /bin/sh
     command_exit_status $? ${DOCKER_NAME}
     echo "please wait while ${DOCKER_NAME^^} is starting....."
     monitor_docker ${DOCKER_NAME}

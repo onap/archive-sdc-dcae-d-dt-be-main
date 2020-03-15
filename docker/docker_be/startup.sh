@@ -7,7 +7,7 @@ JAVA_OPTIONS=" ${JAVA_OPTIONS} -Dconfig.home=${JETTY_BASE}/config \
                -Djavax.net.ssl.trustStorePassword=].][xgtze]hBhz*wy]}m#lf* \
                -Djetty.console-capture.dir=${JETTY_BASE}/logs"
 
-cd /root/chef-solo
+cd /var/lib/jetty/chef-solo
 chef-solo -c solo.rb -E ${ENVNAME}
 
 status=$?

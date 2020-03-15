@@ -6,7 +6,7 @@ JAVA_OPTIONS=" ${JAVA_OPTIONS} -Dconfig.home=${JETTY_BASE}/config \
                -Djavax.net.ssl.trustStore=${JETTY_BASE}/etc/org.onap.sdc.trust.jks \
                -Djavax.net.ssl.trustStorePassword=].][xgtze]hBhz*wy]}m#lf*"
 
-cd /root/chef-solo
+cd /var/lib/jetty/chef-solo
 chef-solo -c solo.rb -E ${ENVNAME}
 
 status=$?
