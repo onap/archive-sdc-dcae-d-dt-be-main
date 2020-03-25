@@ -8,7 +8,7 @@
   <parent>
     <groupId>org.onap.sdc.dcae-d.dt-be-main</groupId>
     <artifactId>dcae_dt_be_main</artifactId>
-    <version>1.3.3-SNAPSHOT</version>
+    <version>1.3.4-SNAPSHOT</version>
   </parent>
   <modules>
     <module>kwalify</module>
