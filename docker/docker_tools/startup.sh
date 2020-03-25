@@ -4,7 +4,7 @@ JAVA_OPTIONS=" ${JAVA_OPTIONS} -Dconfig.home=${JETTY_BASE}/config \
                -Dlog.home=${JETTY_BASE}/logs \
                -Djetty.console-capture.dir=${JETTY_BASE}/logs \
                -Djavax.net.ssl.trustStore=${JETTY_BASE}/etc/org.onap.sdc.trust.jks \
-               -Djavax.net.ssl.trustStorePassword=].][xgtze]hBhz*wy]}m#lf*"
+               -Djavax.net.ssl.trustStorePassword=z+KEj;t+,KN^iimSiS89e#p0"
 
 cd /var/lib/jetty/chef-solo
 chef-solo -c solo.rb -E ${ENVNAME}

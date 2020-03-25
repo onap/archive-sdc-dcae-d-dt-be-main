@@ -13,11 +13,11 @@ default['SDC']['BE']['http_port'] = 8080
 default['SDC']['BE']['https_port'] = 8443
 default['DCAE']['TOSCA_LAB']['https_port'] = 8085
 
-default['jetty'][:keystore_pwd] = "!ppJ.JvWn0hGh)oVF]([Kv)^"
-default['jetty'][:keymanager_pwd] = "!ppJ.JvWn0hGh)oVF]([Kv)^"
+default['jetty'][:keystore_pwd] = "?(kP!Yur![*!Y5!E^f(ZKc31"
+default['jetty'][:keymanager_pwd] = "?(kP!Yur![*!Y5!E^f(ZKc31"
 # TO CHANGE THE TRUSTSTORE CERT THE JVM CONFIGURATION
 # MUST BE ALSO CHANGE IN THE startup.sh FILE
-default['jetty'][:truststore_pwd] = "].][xgtze]hBhz*wy]}m#lf*"
+default['jetty'][:truststore_pwd] = "z+KEj;t+,KN^iimSiS89e#p0"
 
 default['disableHttp'] = true
 
