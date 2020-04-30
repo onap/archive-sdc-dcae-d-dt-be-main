@@ -48,17 +48,17 @@ public class CompositionController extends BaseController {
 	@Autowired
 	private CompositionBusinessLogic compositionBusinessLogic;
 
-	@RequestMapping(value = "/{theItemId}/model", method = RequestMethod.GET , produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/{theItemId}/model", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity model(@ModelAttribute("requestId") String requestId, @PathVariable String theItemId) {
 		return compositionCatalogBusinessLogic.getModelById(requestId, theItemId);
 	}
 
-	@RequestMapping(value = "/{theItemId}/type/{theTypeName:.*}", method = RequestMethod.GET , produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/{theItemId}/type/{theTypeName:.*}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity typeInfo(@ModelAttribute("requestId") String requestId, @PathVariable String theItemId, @PathVariable String theTypeName) {
 		return compositionCatalogBusinessLogic.getTypeInfo(theItemId, theTypeName, requestId);
 	}
 
-	@RequestMapping(value = "/catalog", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/catalog", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity getCatalog(@ModelAttribute("requestId") String requestId) {
 		try {
 			return new ResponseEntity<>(compositionCatalogBusinessLogic.getCatalog(requestId), HttpStatus.OK);
@@ -67,7 +67,7 @@ public class CompositionController extends BaseController {
 		}
 	}
 
-	@RequestMapping(value = { "/getComposition/{vfcmtUuid}" }, method = RequestMethod.GET , produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = { "/getComposition/{vfcmtUuid}" }, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity getComposition(@PathVariable("vfcmtUuid") String vfcmtUuid, @ModelAttribute("requestId") String requestId) {
 		MessageResponse response = new MessageResponse();
 		try {
@@ -86,7 +86,7 @@ public class CompositionController extends BaseController {
 		}
 	}
 
-	@RequestMapping(value = { "/getMC/{vfcmtUuid}" }, method = RequestMethod.GET , produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = { "/getMC/{vfcmtUuid}" }, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity getMC(@PathVariable String vfcmtUuid, @ModelAttribute String requestId) {
 		try {
 			return new ResponseEntity<>(compositionBusinessLogic.getDataAndComposition(vfcmtUuid, requestId), HttpStatus.OK);
@@ -96,7 +96,7 @@ public class CompositionController extends BaseController {
 	}
 
 	// 1810 US436244 MC table
-	@RequestMapping(value = { "/getMC/{vfcmtUuid}/{revertedUuid}" }, method = RequestMethod.GET , produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = { "/getMC/{vfcmtUuid}/{revertedUuid}" } , produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity getSubmittedMcWithRevertedReference(@PathVariable String vfcmtUuid, @PathVariable String revertedUuid, @ModelAttribute String requestId) {
 		try {
 			CreateMcResponse res = compositionBusinessLogic.getDataAndComposition(vfcmtUuid, requestId);
@@ -107,14 +107,14 @@ public class CompositionController extends BaseController {
 		}
 	}
 
-	@RequestMapping(value = "/saveComposition/{vfcmtUuid}", method = RequestMethod.POST)
+	@PostMapping(value = "/saveComposition/{vfcmtUuid}")
 	public ResponseEntity saveComposition(@RequestHeader("USER_ID") String userId, @RequestBody String theCdump, @PathVariable("vfcmtUuid") String vfcmtUuid, @ModelAttribute("requestId") String requestId) {
 
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "ARTIFACT CDUMP: {}", theCdump);
 		return compositionBusinessLogic.saveComposition(userId, vfcmtUuid, theCdump, requestId, true);
 	}
 
-	@RequestMapping(value = "/{contextType}/{serviceUuid}/{vfiName}/saveComposition/{vfcmtUuid}", method = RequestMethod.POST)
+	@PostMapping(value = "/{contextType}/{serviceUuid}/{vfiName}/saveComposition/{vfcmtUuid}")
 	public ResponseEntity updateComposition(@RequestHeader("USER_ID") String userId, @RequestBody String theCdump,
 			@PathVariable String contextType, @PathVariable String serviceUuid, @PathVariable String vfiName, @PathVariable String vfcmtUuid, @ModelAttribute String requestId) {
 
@@ -133,7 +133,7 @@ public class CompositionController extends BaseController {
 		return res;
 	}
 
-	@RequestMapping(value = "/{contextType}/{serviceUuid}/{vfiName}/saveComposition/{vfcmtUuid}/{revertedUuid}", method = RequestMethod.POST)
+	@PostMapping(value = "/{contextType}/{serviceUuid}/{vfiName}/saveComposition/{vfcmtUuid}/{revertedUuid}")
 	public ResponseEntity overwriteRevertedComposition(@RequestHeader("USER_ID") String userId, @RequestBody String theCdump,
 			@PathVariable String contextType, @PathVariable String serviceUuid, @PathVariable String vfiName, @PathVariable String vfcmtUuid, @PathVariable String revertedUuid, @ModelAttribute String requestId) {
 		try {
