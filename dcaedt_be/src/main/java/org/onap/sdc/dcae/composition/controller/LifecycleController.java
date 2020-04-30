@@ -36,7 +36,7 @@ import java.util.UUID;
 @CrossOrigin
 public class LifecycleController extends BaseController {
 
-    @RequestMapping(value={"/checkin/{assetType}/{uuid}"}, method={RequestMethod.PUT}, produces={"application/json"})
+    @PutMapping(value={"/checkin/{assetType}/{uuid}"}}, produces={"application/json"})
     public ResponseEntity putCheckin(
             @PathVariable("assetType") String assetType,
             @PathVariable("uuid") UUID uuid,
@@ -55,7 +55,7 @@ public class LifecycleController extends BaseController {
         }
     }
 
-    @RequestMapping(value={"/checkout/{assetType}/{uuid}"}, method={RequestMethod.PUT}, produces={"application/json"})
+    @PutMapping(value={"/checkout/{assetType}/{uuid}"}}, produces={"application/json"})
     public ResponseEntity putCheckout(
             @PathVariable("assetType") String assetType,
             @PathVariable("uuid") UUID uuid,
@@ -74,7 +74,7 @@ public class LifecycleController extends BaseController {
         }
     }
 
-    @RequestMapping(value={"/certify/{assetType}/{uuid}"}, method={RequestMethod.PUT}, produces={"application/json"})
+    @PutMapping(value={"/certify/{assetType}/{uuid}"}}, produces={"application/json"})
     public ResponseEntity putCertify(
             @PathVariable("assetType") String assetType,
             @PathVariable("uuid") String uuid,

@@ -45,7 +45,7 @@ public class BlueprintController extends BaseController {
 	 * @param requestId
 	 * @return ResponseEntity
 	 */
-	@RequestMapping(value = "{context}/createBluePrint/{VFCMTUuid}/{serviceUuid}/{instanceName:.*}", method = RequestMethod.POST)
+	@PostMapping(value = "{context}/createBluePrint/{VFCMTUuid}/{serviceUuid}/{instanceName:.*}")
 	public ResponseEntity createBlueprint(
 			@RequestHeader("USER_ID") String userId,
 			@PathVariable String context,
@@ -57,7 +57,7 @@ public class BlueprintController extends BaseController {
 	}
 
 	// 1810 US436244 MC table
-	@RequestMapping(value = "{context}/createBluePrint/{vfcmtUuid}/{revertedUuid}/{serviceUuid}/{instanceName:.*}", method = RequestMethod.POST)
+	@PostMapping(value = "{context}/createBluePrint/{vfcmtUuid}/{revertedUuid}/{serviceUuid}/{instanceName:.*}")
 	public ResponseEntity createBlueprint(
 			@RequestHeader("USER_ID") String userId,
 			@PathVariable String context,
@@ -70,7 +70,7 @@ public class BlueprintController extends BaseController {
 	}
 
 	@Deprecated
-	@RequestMapping(value = "/createBluePrint/{VFCMTUuid}/{serviceUuid}/{instanceName}/{monitoringFlowType:.*}", method = RequestMethod.POST)
+	@PostMapping(value = "/createBluePrint/{VFCMTUuid}/{serviceUuid}/{instanceName}/{monitoringFlowType:.*}")
 	public ResponseEntity createBluePrintWithFlowType(
 			@RequestHeader("USER_ID") String userId,
 			@PathVariable("VFCMTUuid") String vfcmtUuid,

@@ -52,7 +52,7 @@ public class ConfigurationController extends BaseController {
     @ApiResponses(value = {
                 @ApiResponse(code = 200, message = "Successfully retrieved available flow types list"),
                 @ApiResponse(code = 500, message = "Flow types couldn't be fetched due to internal error")})
-    @RequestMapping(value = "/composition", method = RequestMethod.GET)
+    @GetMapping(value = "/composition")
     public ResponseEntity getCompositionConfig() {
         try {
             return new ResponseEntity<>(compositionConfig, HttpStatus.OK);
@@ -62,7 +62,7 @@ public class ConfigurationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/ves/schemaversions", method = RequestMethod.GET)
+    @GetMapping(value = "/ves/schemaversions")
     public ResponseEntity getCommonEventFormatVersion() {
         try {
             Set<String> availableVersionsSet = VesStructureLoader.getAvailableVersionsList();
@@ -76,7 +76,7 @@ public class ConfigurationController extends BaseController {
         }
     }
 
-	@RequestMapping(value = "/getPhases/{flowType}", method = RequestMethod.GET)
+	@GetMapping(value = "/getPhases/{flowType}")
 	public ResponseEntity getPhasesByFlowType(@PathVariable String flowType) {
 		try {
 			CompositionConfig.FlowType phases = compositionConfig.getFlowTypesMap().get(flowType);
