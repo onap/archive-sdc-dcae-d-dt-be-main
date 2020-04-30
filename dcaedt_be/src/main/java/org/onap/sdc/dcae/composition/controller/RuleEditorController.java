@@ -44,14 +44,14 @@ public class RuleEditorController extends BaseController {
     @Autowired
     private RuleEditorBusinessLogic ruleEditorBusinessLogic;
 
-    @RequestMapping(value = "/list-events-by-versions", method = RequestMethod.GET)
+    @GetMapping(value = "/list-events-by-versions")
     public ResponseEntity getEventsByVersion() {
 
         debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting getEventsByVersion");
         return ruleEditorBusinessLogic.getEventsByVersion();
     }
 
-    @RequestMapping(value = {"/definition/{version:.*}/{eventType}"}, method = {RequestMethod.GET}, produces = {"application/json"})
+    @GetMapping(value = {"/definition/{version:.*}/{eventType}"}, produces = {"application/json"})
     public ResponseEntity getDefinition(@PathVariable("version") String version,
                                         @PathVariable("eventType") String eventType) {
 
@@ -73,7 +73,7 @@ public class RuleEditorController extends BaseController {
      * 2. That the cdump holds a dcae component with such nid (to avoid orphan rules)
      * 3. Check that the fetched VFCMT is actually a VFCMT and not a regular VF
      */
-    @RequestMapping(value = "/rule/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", method = {RequestMethod.POST}, produces = "application/json")
+    @PostMapping(value = "/rule/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", produces = "application/json")
     public ResponseEntity saveRule(@RequestBody String json, @ModelAttribute("requestId") String requestId,
                                    @RequestHeader("USER_ID") String userId,
                                    @PathVariable("vfcmtUuid") String vfcmtUuid,
@@ -86,13 +86,13 @@ public class RuleEditorController extends BaseController {
     }
 
 
-	@RequestMapping(value = "/applyFilter", method = {RequestMethod.POST}, produces = "application/json")
+	@PostMapping(value = "/applyFilter", produces = "application/json")
 	public ResponseEntity applyFilter(@RequestBody String json, @ModelAttribute("requestId") String requestId, @RequestHeader("USER_ID") String userId) {
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting applyFilter", json);
 		return ruleEditorBusinessLogic.applyFilter(json, requestId, userId);
 	}
 
-	@RequestMapping(value = "/deleteFilter", method = {RequestMethod.POST}, produces = "application/json")
+	@PostMapping(value = "/deleteFilter", produces = "application/json")
 	public ResponseEntity deleteFilter(@RequestBody String json, @ModelAttribute("requestId") String requestId, @RequestHeader("USER_ID") String userId) {
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting deleteFilter", json);
 		return ruleEditorBusinessLogic.deleteFilter(json, requestId, userId);
@@ -108,7 +108,7 @@ public class RuleEditorController extends BaseController {
      * @param configParam   - the name of the DCAE Component configuration property the rule is linked to
      * @return json representing the rule editor UI
      */
-    @RequestMapping(value = "/rule/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", method = {RequestMethod.GET}, produces = "application/json")
+    @GetMapping(value = "/rule/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", produces = "application/json")
     public ResponseEntity getRules(
             @PathVariable("vfcmtUuid") String vfcmtUuid,
             @PathVariable("dcaeCompLabel") String dcaeCompLabel,
@@ -121,7 +121,7 @@ public class RuleEditorController extends BaseController {
     }
 
 	// 1810 US436244 MC table
-	@RequestMapping(value = "/rule/{vfcmtUuid}/{revertedUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", method = {RequestMethod.GET}, produces = "application/json")
+	@GetMapping(value = "/rule/{vfcmtUuid}/{revertedUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", produces = "application/json")
 	public ResponseEntity getRules(
 			@PathVariable String vfcmtUuid,
 			@PathVariable String revertedUuid,
@@ -134,7 +134,7 @@ public class RuleEditorController extends BaseController {
 		return ruleEditorBusinessLogic.getRulesAndSchema(vfcmtUuid, dcaeCompLabel, nid, configParam, requestId);
 	}
 
-	@RequestMapping(value = "/export/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", method = {RequestMethod.GET}, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+	@GetMapping(value = "/export/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
 	public ResponseEntity downloadRules(
 			@PathVariable("vfcmtUuid") String vfcmtUuid,
 			@PathVariable("dcaeCompLabel") String dcaeCompLabel,
@@ -147,7 +147,7 @@ public class RuleEditorController extends BaseController {
 	}
 
 	// 1810 US436244 MC table
-	@RequestMapping(value = "/export/{vfcmtUuid}/{revertedUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", method = {RequestMethod.GET}, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+	@GetMapping(value = "/export/{vfcmtUuid}/{revertedUuid}/{dcaeCompLabel}/{nid}/{configParam:.*}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
 	public ResponseEntity downloadRules(
 			@PathVariable String vfcmtUuid,
 			@PathVariable String revertedUuid,
@@ -160,7 +160,7 @@ public class RuleEditorController extends BaseController {
 		return ruleEditorBusinessLogic.downloadRules(vfcmtUuid, dcaeCompLabel, nid, configParam, requestId);
 	}
 
-	@RequestMapping(value = "/import/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam}/{supportGroups}", method = {RequestMethod.POST}, produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/import/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam}/{supportGroups}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity importRules(
 			@RequestBody String json, @ModelAttribute("requestId") String requestId,
 			@RequestHeader("USER_ID") String userId,
@@ -184,7 +184,7 @@ public class RuleEditorController extends BaseController {
 		return ruleEditorBusinessLogic.importRules(mappingRules, requestId, userId, vfcmtUuid, dcaeCompLabel, nid, configParam);
 	}
 
-	@RequestMapping(value = "/importPhase", method = {RequestMethod.POST}, produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/importPhase", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity importPhase(@RequestBody String json, @ModelAttribute("requestId") String requestId, @RequestHeader("USER_ID") String userId) {
 
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting importPhase", json);
@@ -201,7 +201,7 @@ public class RuleEditorController extends BaseController {
      * @param ruleUid       - the unique id of the rule to delete
      * @return operation result
      */
-    @RequestMapping(value = "/rule/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam}/{ruleUid}", method = {RequestMethod.DELETE}, produces = "application/json")
+    @DeleteMapping(value = "/rule/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam}/{ruleUid}", produces = "application/json")
     public ResponseEntity deleteRule(
             @RequestHeader("USER_ID") String userId,
             @PathVariable("vfcmtUuid") String vfcmtUuid,
@@ -226,7 +226,7 @@ public class RuleEditorController extends BaseController {
 	 * @param groupId       - the unique id of the group to delete
 	 * @return operation result
 	 */
-	@RequestMapping(value = "/group/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam}/{groupId}", method = {RequestMethod.DELETE}, produces = "application/json")
+	@DeleteMapping(value = "/group/{vfcmtUuid}/{dcaeCompLabel}/{nid}/{configParam}/{groupId}", produces = "application/json")
 	public ResponseEntity deleteGroup(
 			@RequestHeader("USER_ID") String userId,
 			@PathVariable("vfcmtUuid") String vfcmtUuid,
@@ -256,7 +256,7 @@ public class RuleEditorController extends BaseController {
      * 3. Check that the fetched VFCMT is actually a VFCMT and not a regular VF
      */
 
-	@RequestMapping(value = "/rule/translate", method = {RequestMethod.POST}, produces = "application/json")
+	@PostMapping(value = "/rule/translate", produces = "application/json")
 	public ResponseEntity translateRules(@RequestBody String body, @ModelAttribute("requestId") String requestId)
 	{
 		TranslateRequest request = gson.fromJson(body, TranslateRequest.class);
@@ -265,7 +265,7 @@ public class RuleEditorController extends BaseController {
 	}
 
 
-    @RequestMapping(value = "/getExistingRuleTargets/{vfcmtUuid}/{dcaeCompLabel}/{nid:.*}", method = {RequestMethod.GET}, produces = "application/json")
+    @GetMapping(value = "/getExistingRuleTargets/{vfcmtUuid}/{dcaeCompLabel}/{nid:.*}", produces = "application/json")
     public ResponseEntity getExistingRuleTargets(@PathVariable("vfcmtUuid") String vfcmtUuid, @ModelAttribute("requestId") String requestId,
                                                  @PathVariable("dcaeCompLabel") String dcaeCompLabel,
                                                  @PathVariable("nid") String nid) {
@@ -274,7 +274,7 @@ public class RuleEditorController extends BaseController {
     }
 
 	// 1810 US436244 MC table
-	@RequestMapping(value = "/getExistingRuleTargets/{vfcmtUuid}/{revertedUuid}/{dcaeCompLabel}/{nid:.*}", method = {RequestMethod.GET}, produces = "application/json")
+	@GetMapping(value = "/getExistingRuleTargets/{vfcmtUuid}/{revertedUuid}/{dcaeCompLabel}/{nid:.*}", produces = "application/json")
 	public ResponseEntity getExistingRuleTargets(@PathVariable String vfcmtUuid, @PathVariable String revertedUuid, @PathVariable String dcaeCompLabel, @PathVariable String nid, @ModelAttribute("requestId") String requestId) {
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting getExistingRuleTargets ", vfcmtUuid);
 		return ruleEditorBusinessLogic.getExistingRuleTargets(vfcmtUuid, requestId, dcaeCompLabel, nid);
