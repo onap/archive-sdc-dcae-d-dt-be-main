@@ -41,7 +41,7 @@ public class ServicesController extends BaseController {
 	 * @param vfcmtUuid
 	 * @return ResponseEntity
 	 */
-	@RequestMapping(value = { "/services/{vfcmtUuid}" }, method = { RequestMethod.GET }, produces = {"application/json" })
+	@GetMapping(value = { "/services/{vfcmtUuid}" }, produces = {"application/json" })
 	public ResponseEntity services(@RequestHeader("USER_ID") String userId, @PathVariable String vfcmtUuid, @ModelAttribute("requestId") String requestId) {
 
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting services");
@@ -53,7 +53,7 @@ public class ServicesController extends BaseController {
 	 * @param theServiceId
 	 * @return ResponseEntity
 	 */
-	@RequestMapping(value = { "/service/{theServiceId}" }, method = { RequestMethod.GET }, produces = {"application/json" })
+	@GetMapping(value = { "/service/{theServiceId}" }, produces = {"application/json" })
 	public ResponseEntity service(@PathVariable String theServiceId, @ModelAttribute("requestId") String requestId) {
 
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting service");
@@ -68,7 +68,7 @@ public class ServicesController extends BaseController {
 	 * @return ResponseEntity
 	 */
 	@Deprecated
-	@RequestMapping(value = "/{vfcmtUuid}/attachment", method = RequestMethod.POST, produces = {"application/json" })
+	@PostMapping(value = "/{vfcmtUuid}/attachment", produces = {"application/json" })
 	public ResponseEntity attachService(
 			@PathVariable("vfcmtUuid") String vfcmtUuid, 
 			@RequestHeader("USER_ID") String userId,
@@ -79,7 +79,7 @@ public class ServicesController extends BaseController {
 		return serviceBusinessLogic.attachService(vfcmtUuid,userId,request,requestId);
 	}
 
-	@RequestMapping(value = { "/{vfcmtUuid}/attachment" }, method = { RequestMethod.GET }, produces = {"application/json" })
+	@GetMapping(value = { "/{vfcmtUuid}/attachment" }, produces = {"application/json" })
 	public ResponseEntity getAttachedService(@PathVariable("vfcmtUuid") String vfcmtUuid, @ModelAttribute("requestId") String requestId) {
 
 		debugLogger.log(LogLevel.DEBUG, this.getClass().getName(), "Starting getAttachedService");
