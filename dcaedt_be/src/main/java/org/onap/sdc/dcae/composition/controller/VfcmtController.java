@@ -57,7 +57,7 @@ public class VfcmtController extends BaseController{
      * @param theResourceId retrieved resource id
      * @return ResponseEntity
      */
-    @RequestMapping(value = { "/resource/{theResourceId}" }, method = { RequestMethod.GET }, produces = {"application/json" })
+    @GetMapping(value = { "/resource/{theResourceId}" }, produces = {"application/json" })
     public ResponseEntity resource(@PathVariable String theResourceId, @ModelAttribute("requestId") String requestId) {
         try {
             ResourceDetailed resource = baseBusinessLogic.getSdcRestClient().getResource(theResourceId, requestId);
@@ -71,7 +71,7 @@ public class VfcmtController extends BaseController{
      * Get All resources
      * @return ResponseEntity
      */
-    @RequestMapping(value = { "/getResourcesByCategory" }, method = { RequestMethod.GET }, produces = {"application/json" })
+    @GetMapping(value = { "/getResourcesByCategory" }, produces = {"application/json" })
     public ResponseEntity getResourcesByCategory(@ModelAttribute("requestId") String requestId) {
         try {
             List<Resource> resources = baseBusinessLogic.getSdcRestClient().getResources(AssetType.VFCMT.name(), TEMPLATE, MONITORING_TEMPLATE, requestId);
@@ -86,7 +86,7 @@ public class VfcmtController extends BaseController{
      * @return ResponseEntity
      */
 
-    @RequestMapping(value = { "/{contextType}/{uuid}/{version}/getVfcmtsForMigration" }, method = { RequestMethod.GET }, produces = {"application/json" })
+    @GetMapping(value = { "/{contextType}/{uuid}/{version}/getVfcmtsForMigration" }, produces = {"application/json" })
     public ResponseEntity getVfcmtsForMigration(@RequestHeader("USER_ID") String userId,
                                                        @PathVariable String contextType,
                                                        @PathVariable String uuid,
@@ -100,7 +100,7 @@ public class VfcmtController extends BaseController{
      * Get All resources by Monitoring Template Category
      * @return ResponseEntity
      */
-    @RequestMapping(value = { "/getResourcesByMonitoringTemplateCategory" }, method = { RequestMethod.GET }, produces = {"application/json" })
+    @GetMapping(value = { "/getResourcesByMonitoringTemplateCategory" }, produces = {"application/json" })
     public ResponseEntity getResourcesByMonitoringTemplateCategory(@ModelAttribute("requestId") String requestId) {
         try {
             List<Resource> resources = baseBusinessLogic.getSdcRestClient().getResources(AssetType.VFCMT.name(), TEMPLATE, BASE_MONITORING_TEMPLATE, requestId);
@@ -116,7 +116,7 @@ public class VfcmtController extends BaseController{
      * @param request retrieved request
      * @return ResponseEntity
      */
-    @RequestMapping(value = "/createVFCMT", method = RequestMethod.POST, produces = {"application/json" })
+    @PostMapping(value = "/createVFCMT", produces = {"application/json" })
     public ResponseEntity createVFCMT(@RequestHeader("USER_ID") String userId, @RequestBody CreateVFCMTRequest request, @ModelAttribute("requestId") String requestId) {
         vfcmtBusinessLogic.addSdcMandatoryFields(request, userId);
         try {
@@ -134,7 +134,7 @@ public class VfcmtController extends BaseController{
      * @param request retrieved request
      * @return ResponseEntity
      */
-    @RequestMapping(value = "/createMC", method = RequestMethod.POST, produces = {"application/json" })
+    @PostMapping(value = "/createMC", produces = {"application/json" })
     public ResponseEntity createMC(@RequestHeader("USER_ID") String userId, @RequestBody CreateVFCMTRequest request, @ModelAttribute("requestId") String requestId) {
         return vfcmtBusinessLogic.createMcFromTemplate(userId, request, requestId);
     }
@@ -146,7 +146,7 @@ public class VfcmtController extends BaseController{
      * @param request
      * @return ResponseEntity
      */
-    @RequestMapping(value = "/importMC", method = RequestMethod.POST, produces = {"application/json" })
+    @PostMapping(value = "/importMC", produces = {"application/json" })
     public ResponseEntity importMC(@RequestHeader("USER_ID") String userId, @RequestBody ImportVFCMTRequest request, @ModelAttribute("requestId") String requestId) {
         return vfcmtBusinessLogic.importMC(userId, request, requestId);
     }
@@ -158,7 +158,7 @@ public class VfcmtController extends BaseController{
      * @param version the version of the entity requested
      * @return ResponseEntity
      */
-    @RequestMapping(value = { "/{contextType}/{uuid}/{version}/monitoringComponents" }, method = { RequestMethod.GET }, produces = {"application/json" })
+    @GetMapping(value = { "/{contextType}/{uuid}/{version}/monitoringComponents" }, produces = {"application/json" })
     public ResponseEntity getMonitoringComponents(@PathVariable String contextType, @PathVariable String uuid, @PathVariable String version, @ModelAttribute("requestId") String requestId) {
         try {
             ExternalReferencesMap mcRefs = baseBusinessLogic.getSdcRestClient().getMonitoringReferences(contextType, uuid, version, requestId);
@@ -169,7 +169,7 @@ public class VfcmtController extends BaseController{
         }
     }
 
-    @RequestMapping(value = { "/{contextType}/{serviceUuid}/{vfiName}/{vfcmtUuid}/deleteVfcmtReference" }, method = { RequestMethod.DELETE }, produces = {"application/json" })
+    @DeleteMapping(value = { "/{contextType}/{serviceUuid}/{vfiName}/{vfcmtUuid}/deleteVfcmtReference" }, produces = {"application/json" })
     public ResponseEntity deleteVfcmtReference(@RequestHeader("USER_ID")  String userId, @PathVariable String contextType, @PathVariable String serviceUuid, @PathVariable String vfiName, @PathVariable String vfcmtUuid, @ModelAttribute String requestId) {
         try {
             referenceBusinessLogic.deleteVfcmtReference(userId, contextType, serviceUuid, vfiName, vfcmtUuid, requestId);
@@ -179,7 +179,7 @@ public class VfcmtController extends BaseController{
         }
     }
 
-    @RequestMapping(value = { "/{contextType}/{monitoringComponentName}/{serviceUuid}/{vfiName}/{vfcmtUuid}/deleteVfcmtReference" }, method = { RequestMethod.DELETE }, produces = {"application/json" })
+    @DeleteMapping(value = { "/{contextType}/{monitoringComponentName}/{serviceUuid}/{vfiName}/{vfcmtUuid}/deleteVfcmtReference" }, produces = {"application/json" })
     public ResponseEntity deleteVfcmtReferenceWithBlueprint(@RequestHeader("USER_ID")  String userId, @PathVariable String contextType, @PathVariable String monitoringComponentName, @PathVariable String serviceUuid, @PathVariable String vfiName, @PathVariable String vfcmtUuid, @ModelAttribute String requestId) {
         try {
             referenceBusinessLogic.deleteVfcmtReference(userId, contextType, serviceUuid, vfiName, vfcmtUuid, requestId);
@@ -190,7 +190,7 @@ public class VfcmtController extends BaseController{
     }
 
     // 1810 US436244 MC table functionality
-	@RequestMapping(value = { "/{contextType}/{monitoringComponentName}/{serviceUuid}/{vfiName}/{vfcmtUuid}/{revertedUuid}/deleteVfcmtReference" }, method = { RequestMethod.DELETE }, produces = {"application/json" })
+	@DeleteMapping(value = { "/{contextType}/{monitoringComponentName}/{serviceUuid}/{vfiName}/{vfcmtUuid}/{revertedUuid}/deleteVfcmtReference" }, produces = {"application/json" })
 	public ResponseEntity deleteVfcmtReferenceWithBlueprint(@RequestHeader("USER_ID") String userId,
 			                                                @PathVariable String contextType,
 			                                                @PathVariable String monitoringComponentName,
@@ -208,7 +208,7 @@ public class VfcmtController extends BaseController{
 	}
 
 	// 1810 US436244 MC table functionality
-	@RequestMapping(value = { "/{contextType}/{monitoringComponentName}/{serviceUuid}/{vfiName}/{vfcmtUuid}/deleteVfcmtReference/{submittedUuid}" }, method = { RequestMethod.DELETE }, produces = {"application/json" })
+	@DeleteMapping(value = { "/{contextType}/{monitoringComponentName}/{serviceUuid}/{vfiName}/{vfcmtUuid}/deleteVfcmtReference/{submittedUuid}" }, produces = {"application/json" })
 	public ResponseEntity deleteVfcmtReferencesWithBlueprint(@RequestHeader("USER_ID") String userId,
 			@PathVariable String contextType,
 			@PathVariable String monitoringComponentName,
@@ -226,7 +226,7 @@ public class VfcmtController extends BaseController{
 		return referenceBusinessLogic.deleteVfcmtReferenceBlueprint(userId, contextType, monitoringComponentName, serviceUuid, vfiName, submittedUuid, requestId);
 	}
 
-    @RequestMapping(value = { "/getVfcmtReferenceData/{vfcmtUuid}" }, method = { RequestMethod.GET }, produces = {"application/json" })
+    @GetMapping(value = { "/getVfcmtReferenceData/{vfcmtUuid}" }, produces = {"application/json" })
     public ResponseEntity getVfcmtReferenceData(@PathVariable String vfcmtUuid, @ModelAttribute String requestId) {
         try {
             return vfcmtBusinessLogic.getVfcmtReferenceData(vfcmtUuid, requestId);
@@ -235,18 +235,18 @@ public class VfcmtController extends BaseController{
         }
     }
 
-	@RequestMapping(value = { "/{contextType}/{serviceUuid}/{vfiName}/{vfcmtUuid}/getLatestMcUuid" }, method = { RequestMethod.GET }, produces = {"application/json" })
+	@GetMapping(value = { "/{contextType}/{serviceUuid}/{vfiName}/{vfcmtUuid}/getLatestMcUuid" }, produces = {"application/json" })
 	public ResponseEntity getLatestMcUuid(@RequestHeader("USER_ID")  String userId, @PathVariable String contextType, @PathVariable String serviceUuid, @PathVariable String vfiName, @PathVariable String vfcmtUuid, @ModelAttribute String requestId) {
 	    return referenceBusinessLogic.checkoutAndBindToServiceIfCertified(userId, contextType, serviceUuid, vfiName, vfcmtUuid, requestId);
 	}
 
 	// 1810 US436244 MC table functionality
-	@RequestMapping(value = { "/{contextType}/{serviceUuid}/{vfiName}/{vfcmtUuid}/{revertedUuid}/getLatestMcUuid" }, method = { RequestMethod.GET }, produces = {"application/json" })
+	@GetMapping(value = { "/{contextType}/{serviceUuid}/{vfiName}/{vfcmtUuid}/{revertedUuid}/getLatestMcUuid" }, produces = {"application/json" })
 	public ResponseEntity getLatestMcUuid(@RequestHeader("USER_ID")  String userId, @PathVariable String contextType, @PathVariable String serviceUuid, @PathVariable String vfiName, @PathVariable String vfcmtUuid, @PathVariable String revertedUuid, @ModelAttribute String requestId) {
 		return referenceBusinessLogic.checkoutAndUndoRevertMC(userId, contextType, serviceUuid, vfiName, vfcmtUuid, revertedUuid, requestId);
 	}
 
-	@RequestMapping(value = { "/{contextType}/{serviceUuid}/{vfiName}/{vfcmtUuid}/revert/{submittedUuid}" }, method = { RequestMethod.POST }, produces = {"application/json" })
+	@PostMapping(value = { "/{contextType}/{serviceUuid}/{vfiName}/{vfcmtUuid}/revert/{submittedUuid}" }, produces = {"application/json" })
 	public ResponseEntity revertToSubmittedMC(@RequestHeader("USER_ID")  String userId,
 			                                                @PathVariable String contextType,
 			                                                @PathVariable String serviceUuid,
