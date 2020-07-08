@@ -1,0 +1,10 @@
+distribution_type: 'container'
+container_release_tag: '1.3.2.1'
+project: 'sdc'
+log_dir: 'sdc-dcae-d-dt-be-main-maven-docker-stage-elalto/7'
+ref: d13aa32284c54b8932b74dafd57cfa2e81f29159
+containers:
+  - name: 'dcae-be'
+    version: '1.3.2.1-20200708T1003'
+  - name: 'dcae-tools'
+    version: '1.3.2.1-20200708T1003'
