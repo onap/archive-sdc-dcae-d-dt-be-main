@@ -1,0 +1,10 @@
+distribution_type: 'container'
+container_release_tag: '1.3.2-1'
+project: 'sdc-dcae-d'
+log_dir: 'sdc-dcae-d-dt-be-main-maven-docker-stage-elalto/????'
+ref: REVISION_ID_JENKINS_JOB
+containers:
+  - name: 'dcae-be'
+    version: '1.3.2-1-20200708T1003'
+  - name: 'dcae-tools'
+    version: '1.3.2-1-20200708T1003'
