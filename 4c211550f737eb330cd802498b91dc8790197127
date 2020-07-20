@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f4e0fc92_94829d7a",
+        "filename": "dcaedt_be/src/main/java/org/onap/sdc/dcae/composition/controller/RuleEditorController.java",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 5562
+      },
+      "writtenOn": "2020-07-20T08:41:51Z",
+      "side": 1,
+      "message": "produces \u003d MediaType.APPLICATION_JSON_VALUE",
+      "range": {
+        "startLine": 54,
+        "startChar": 66,
+        "endLine": 54,
+        "endChar": 97
+      },
+      "revId": "4c211550f737eb330cd802498b91dc8790197127",
+      "serverId": "14b4e41f-c4e3-4fb9-9955-6a9b5656895a",
+      "unresolved": true
+    }
+  ]
+}
